@@ -1,4 +1,4 @@
-![](Documentation/rosdyn_logo.png =300x)
+![](Documentation/rosdyn_logo.png)
 
 
 ## Work in progress
