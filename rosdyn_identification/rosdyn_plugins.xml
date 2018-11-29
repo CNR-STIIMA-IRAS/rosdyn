@@ -1,0 +1,19 @@
+
+<library path="lib/librosdyn_identification">  
+  <class name="rosdyn/MetoGenInterfaceNodelet" type="rosdyn::MetoGenInterfaceNodelet" base_class_type="nodelet::Nodelet">
+  <description>
+    Meto Generate Trajectories Interface
+  </description>
+  </class>
+  <class name="rosdyn/MetoParEstimInterfaceNodelet" type="rosdyn::MetoParEstimInterfaceNodelet" base_class_type="nodelet::Nodelet">
+  <description>
+    Meto Regressor and Parameters Identification Interface
+  </description>
+  </class>
+  <class name="rosdyn/MetoExecInterfaceNodelet" type="rosdyn::MetoExecInterfaceNodelet" base_class_type="nodelet::Nodelet">
+  <description>
+    Meto Exciting Trajectories Simulation Interface
+  </description>
+  </class>
+</library>
+

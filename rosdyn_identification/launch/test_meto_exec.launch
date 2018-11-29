@@ -1,0 +1,15 @@
+<launch>
+  
+  <arg name="trj_namespace" default="prototype5_identification" />
+  <arg name="stage_number" default="stage2" />
+  <arg name="group_name" default="FourByThreeGroup" />
+  
+  <node pkg="itia_dynamics_parameters_identification" 
+        name="test_meto_exec_interface_node" 
+        type="test_meto_exec_interface_node" 
+        args="$(arg trj_namespace) 
+              $(arg stage_number) 
+              $(arg group_name)" 
+        output="screen" />     
+
+</launch>

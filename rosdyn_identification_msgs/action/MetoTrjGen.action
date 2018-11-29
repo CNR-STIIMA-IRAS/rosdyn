@@ -1,0 +1,19 @@
+#Goal
+string move_group_name
+string type #(arm,tool)
+string trj_namespace
+---
+#Result
+int32 SUCCESSFUL = 0
+int32 GENERIC_ERROR = -1
+int32 INVALID_GROUP_NAME = -2
+int32 INVALID_OPT_TYPE = -3
+int32 INVALID_TRJ_NAMESPACE = -4
+
+int32 result
+---
+#Feedback
+int32 STEP_1_GEN = 1
+int32 STEP_2_GEN = 2
+Header header
+int32 status

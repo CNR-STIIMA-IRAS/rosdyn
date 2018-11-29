@@ -1,0 +1,18 @@
+<launch>
+  
+  <arg name="move_group_name" default="FourByThreeGroup" />
+  <arg name="type" default="arm" />
+  <arg name="trj_namespace" default="prototype5_identification" />
+  <arg name="xml_name" default="prototype4.urdf" />
+  <arg name="xml_path" default="$(find fourbythree_description)/urdf" />
+  
+  <node pkg="itia_dynamics_parameters_identification" 
+        name="test_meto_gen_interface_node" 
+        type="test_meto_gen_interface_node" 
+        args="$(arg move_group_name)
+              $(arg type)
+              $(arg trj_namespace) 
+              $(arg xml_name) 
+              $(arg xml_path)" 
+        output="screen" /> 
+</launch>

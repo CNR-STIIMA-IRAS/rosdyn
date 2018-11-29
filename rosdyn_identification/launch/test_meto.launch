@@ -1,0 +1,63 @@
+<launch>
+    
+    <param name="use_sim_time" type="bool" value="false" />
+    <rosparam command="load" file="$(find itia_dynamics_parameters_identification)/cfg/meto_general_config.yaml" />
+    <rosparam command="load" file="$(find itia_dynamics_parameters_identification)/cfg/meto_gen_config.yaml" />    
+    <rosparam command="load" file="$(find itia_dynamics_parameters_identification)/cfg/meto_exec_config.yaml" /> 
+    <rosparam command="load" file="$(find fourbythree_description)/cfg/rigid_4by3_prototype3_additional_info.yaml" />
+    <rosparam command="load" file="$(find fourbythree_description)/cfg/4by3_prototype3_filter_info.yaml" />
+    
+    <node pkg="itia_dynamics_parameters_identification" type="meto_load_obstacles_node" name="meto_load_obstacles_node"  output="screen" />
+    
+    <rosparam command="load" file="$(find itia_fir_planner)/config/fir_planner_config.yaml" />
+    <node pkg="itia_fir_planner" type="itia_fir_interpolate_server" name="itia_fir_interpolate_server" output="screen"/>
+    
+    <node pkg="nodelet" 
+          type="nodelet" 
+          name="meto_binary_logger"  
+          args="manager"
+          output="screen"/>
+   
+    <node pkg="nodelet" 
+          type="nodelet" 
+          name="itia_dynamics_parameters_identification_manager"  
+          args="manager"
+          output="screen"/>
+    
+    <node pkg="rosservice" 
+          name="load_nodelet_meto_gen" 
+          type="rosservice" 
+          args="call --wait /itia_dynamics_parameters_identification_manager/load_nodelet 
+                'meto_gen_interface'
+                'itia/meto/MetoGenInterfaceNodelet'
+                ['']
+                ['']
+                ['']
+                ''" 
+          output="screen" />
+    
+    <node pkg="rosservice" 
+          name="load_nodelet_meto_exec" 
+          type="rosservice" 
+          args="call --wait /itia_dynamics_parameters_identification_manager/load_nodelet 
+                'meto_exec_interface'
+                'itia/meto/MetoExecInterfaceNodelet' 
+                ['']
+                ['']
+                ['']
+                ''" 
+          output="screen" />
+    
+    <node pkg="rosservice" 
+          name="load_nodelet_meto_par_estim" 
+          type="rosservice" 
+          args="call --wait /itia_dynamics_parameters_identification_manager/load_nodelet 
+                'meto_par_estim_interface'
+                'itia/meto/MetoParEstimInterfaceNodelet' 
+                ['']
+                ['']
+                ['']
+                ''" 
+          output="screen" />
+
+</launch>

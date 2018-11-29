@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package>
+  <name>rosdyn_identification_msgs</name>
+  <version>0.0.0</version>
+  <description>The rosdyn identification_msgs package</description>
+
+  <maintainer email="fermi@todo.todo">fermi</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>actionlib_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  
+  <run_depend>actionlib</run_depend>
+  <run_depend>actionlib_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+
+  <export>
+   <!-- <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib"/> -->
+  </export>
+</package>

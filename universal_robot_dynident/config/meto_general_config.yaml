@@ -1,0 +1,21 @@
+group_name: "ur10"
+rescale: false
+meto_cfg:
+  acceleration_scaling: 1.0
+  speed_scaling: 1.0
+  verbose: true
+  type: "arm"
+  group_name: "ur10"
+  urdf_param: "robot_description"
+  trajectory_namespace: "ident_trj"
+  controller_joint_names: ['joint_1','joint_2','joint_3','joint_4','joint_5','joint_6']
+
+    
+  opt_cfg:
+    stage1_duration: 10
+    region_stage2: 0
+    point_per_region: 5
+    trials: 3
+  filter:
+    frequency: 20
+    sample_period: 0.008

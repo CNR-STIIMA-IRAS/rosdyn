@@ -1,0 +1,12 @@
+#Goal
+string move_group_name
+string trj_namespace
+string stage_number
+float64 sim_time_start
+float64 sim_time_stop
+---
+#Result
+---
+#Feedback
+Header header
+sensor_msgs/JointState joint_state_sim

@@ -1,0 +1,49 @@
+<launch>
+    
+    <param name="use_sim_time" type="bool" value="false" />
+    <rosparam command="load" file="$(find universal_robot_dynident)/config/meto_general_config.yaml" />
+    <rosparam command="load" file="$(find universal_robot_dynident)/config/additional_info.yaml" />
+    <rosparam command="load" file="$(find universal_robot_dynident)/config/filter_info.yaml" />
+    
+    <node pkg="nodelet" 
+          type="nodelet" 
+          name="meto_binary_logger"  
+          args="manager"
+          output="screen"/>
+   
+    <node pkg="nodelet" 
+          type="nodelet" 
+          name="universal_robot_dynident_manager"  
+          args="manager"
+          output="screen"/>
+    
+    <node pkg="rosservice" 
+          name="load_nodelet_meto_gen" 
+          type="rosservice" 
+          args="call --wait /universal_robot_dynident_manager/load_nodelet 
+                'meto_gen_interface'
+                'rosdyn/MetoGenInterfaceNodelet'
+                ['']
+                ['']
+                ['']
+                ''" 
+          output="screen" />
+
+      <node pkg="moveit_planning_helper" 
+          name="execute_trj_service" 
+          type="execute_trj_service" 
+          output="screen" />
+          
+    <node pkg="rosservice" 
+          name="load_nodelet_meto_par_estim" 
+          type="rosservice" 
+          args="call --wait /universal_robot_dynident_manager/load_nodelet 
+                'meto_par_estim_interface'
+                'rosdyn/MetoParEstimInterfaceNodelet' 
+                ['']
+                ['']
+                ['']
+                ''" 
+          output="screen" />
+
+</launch>

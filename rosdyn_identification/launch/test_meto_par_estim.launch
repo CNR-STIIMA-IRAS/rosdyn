@@ -1,0 +1,21 @@
+<launch>
+  
+  <arg name="trj_namespace" default="prototype5_identification" />
+  <arg name="xml_name" default="prototype3.urdf" />
+  <arg name="xml_path" default="$(find fourbythree_description)/urdf" />
+  <arg name="add_info_namespace" default="/prototype3" />
+  <arg name="add_info_name" default="rigid_4by3_prototype3_additional_info.yaml" />
+  <arg name="add_info_path" default="$(find fourbythree_description)/cfg" />
+    
+  <node pkg="itia_dynamics_parameters_identification" 
+        name="test_meto_par_estim_interface_node" 
+        type="test_meto_par_estim_interface_node" 
+        args="$(arg trj_namespace) 
+              $(arg xml_name) 
+              $(arg xml_path)
+              $(arg add_info_namespace) 
+              $(arg add_info_name) 
+              $(arg add_info_path)" 
+        output="screen" /> 
+  
+</launch>

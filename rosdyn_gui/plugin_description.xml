@@ -1,0 +1,9 @@
+<library path="lib/librosdyn_gui">
+  <class name="rosdyn_gui/IdentificationGui"	
+         type="rosdyn_gui::IdentificationGui"
+         base_class_type="rviz::Panel">
+    <description>
+      A panel widget for robot parameters identification
+    </description>
+  </class>
+</library>

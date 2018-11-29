@@ -1,0 +1,54 @@
+cybersort:
+  joint_names: 
+  - ur10_shoulder_pan_joint
+  - ur10_shoulder_lift_joint
+  - ur10_elbow_joint
+  - ur10_wrist_1_joint
+  - ur10_wrist_2_joint
+  - ur10_wrist_3_joint
+  base_link: "ur10_base_link"
+  tool_link: "ur10_tool0"
+  gravity: [0, 0, -9.806]
+  
+  #joint_1:
+    #motor:
+      #type: "Ideal"
+    #friction:
+      #type: "Polynomial1"
+      #constants: [1.0e-6,5] # toll_approssimazione_segno, max_vel_for_extrapolation
+      #coefficients: [0, 0]  #attrito statico, attrito viscoso c1, 
+
+  #joint_2:
+    #motor:
+      #type: "Ideal"
+    #friction:
+      #type: "Polynomial2"
+      #coefficients: [0, 0, 0, 1.0e-6, 100] #attrito statico, attrito viscoso c1, attrito viscoso c2, toll_approssimazione_segno, max_vel_for_extrapolation
+      
+  #joint_3:
+    #motor:
+      #type: "Ideal"
+    #friction:
+      #type: "Polynomial1"
+      #coefficients: [0, 5, 1.0e-6, 100]
+      
+  #joint_4:
+    #motor:
+      #type: "Ideal"
+    #friction:
+      #type: "Polynomial1"
+      #coefficients: [0, 5, 1.0e-6, 100]
+      
+  #joint_5:
+    #motor:
+      #type: "Ideal"
+    #friction:
+      #type: "Polynomial1"
+      #coefficients: [0, 5, 1.0e-6, 100]
+      
+  #joint_6:
+    #motor:
+      #type: "Ideal"
+    #friction:
+      #type: "Polynomial1"
+      #coefficients: [0, 5, 1.0e-6, 100]

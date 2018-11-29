@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<package>
+  <name>rosdyn_identification</name>
+  <version>0.0.0</version>
+  <description>The rosdyn_identification package</description>
+
+  <maintainer email="maxwell@todo.todo">maxwell</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>actionlib</build_depend>   
+  <build_depend>cmake_modules</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>interactive_markers</build_depend>
+  <build_depend>rosdyn_core</build_depend>
+  <build_depend>rosdyn_identification_msgs</build_depend>
+  <build_depend>moveit_core</build_depend>
+  <build_depend>moveit_ros_planning</build_depend>
+  <build_depend>moveit_ros_planning_interface</build_depend>
+  <build_depend>nodelet</build_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>tinyxml</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  
+  <build_depend>eigen_matrix_utils</build_depend>
+  <build_depend>eigen_state_space_systems</build_depend>
+  <build_depend>moveit_planning_helper</build_depend>
+  
+  
+  <run_depend>actionlib</run_depend>   
+  <run_depend>control_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>geometric_shapes</run_depend>
+  <run_depend>interactive_markers</run_depend>
+  <run_depend>rosdyn_core</run_depend>
+  <run_depend>rosdyn_identification_msgs</run_depend>
+  <run_depend>moveit_core</run_depend>
+  <run_depend>moveit_ros_planning</run_depend>
+  <run_depend>moveit_ros_planning_interface</run_depend>
+  <run_depend>nodelet</run_depend>
+  <run_depend>pluginlib</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>tinyxml</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  
+  <run_depend>eigen_matrix_utils</run_depend>
+  <run_depend>eigen_state_space_systems</run_depend>
+  <run_depend>moveit_planning_helper</run_depend>
+  
+  
+  <export>
+    <nodelet plugin="${prefix}/rosdyn_plugins.xml" />
+  </export>
+</package>

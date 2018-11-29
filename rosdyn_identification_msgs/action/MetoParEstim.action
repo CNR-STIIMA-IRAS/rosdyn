@@ -1,0 +1,19 @@
+#Goal
+string trj_namespace
+string group_name
+# string add_info_name
+# string add_info_path
+---
+#Result
+int32 SUCCESSFUL = 0
+int32 GENERIC_ERROR = -1
+int32 status
+TorqueFitting identification
+TorqueFitting validation
+---
+#Feedback
+int32 TRJ_EXEC = 1
+int32 DYN_PAR_ESTIM = 2
+
+Header header
+int32 result
