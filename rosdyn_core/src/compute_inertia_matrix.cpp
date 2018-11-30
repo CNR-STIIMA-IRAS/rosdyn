@@ -2,6 +2,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <rosdyn_core/urdf_parser.h>
 #include <rosdyn_core//primitives.h>
+
 int main(int argc, char **argv){
   ros::init(argc, argv, "itia_inertia_matrix_test");
   ros::NodeHandle nh;
@@ -26,9 +27,9 @@ int main(int argc, char **argv){
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
   
-  boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
+  shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
   root_link->fromUrdf(model.root_link_);
-  boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, grav));
+  shared_ptr_namespace::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, grav));
   
   /*chain->setInputJointsName(js);
   
