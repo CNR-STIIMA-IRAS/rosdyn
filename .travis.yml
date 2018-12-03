@@ -19,4 +19,3 @@ install:
 
 script:
   - .industrial_ci/travis.sh 
-
