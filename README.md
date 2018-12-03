@@ -24,8 +24,8 @@ The software can be installed with the following [rosinstall file](rosdyn.rosins
 |-------------------|-------------------|
 | [![Build1][1]][5] | [![Build2][2]][5] | 
 
-[1]: https://travis-matrix-badges.herokuapp.com/repos/bjfish/grails-ci-build-matrix-example/branches/melodic-devel/1
-[2]: https://travis-matrix-badges.herokuapp.com/repos/bjfish/grails-ci-build-matrix-example/branches/melodic-devel/2
+[1]: https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn/branches/melodic-devel/1
+[2]: https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn/branches/melodic-devel/2
 [5]: https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn
 
 
