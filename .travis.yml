@@ -11,6 +11,7 @@ notifications:
       - iras@itia.cnr.it
 env:
   matrix:
+    - ROS_DISTRO="kinetic" UPSTREAM_WORKSPACE=file  $ROSINSTALL_FILENAME="rosdyn.rosinstall"
     - ROS_DISTRO="melodic" UPSTREAM_WORKSPACE=file  $ROSINSTALL_FILENAME="rosdyn.rosinstall"
 
 install:
