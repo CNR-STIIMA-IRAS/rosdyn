@@ -31,6 +31,7 @@ target_link_libraries(compute_inertia_matrix
   ${catkin_LIBRARIES}
 )
 
+
 # add_dependencies(itia_dyn_torque ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # target_link_libraries(itia_dyn_torque
 #   itia_dynamics_core
