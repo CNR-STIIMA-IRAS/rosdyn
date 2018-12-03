@@ -30,7 +30,7 @@ add_dependencies(compute_inertia_matrix ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 target_link_libraries(compute_inertia_matrix
   ${catkin_LIBRARIES}
 )
-# 
+#
 # add_executable(itia_dyn_torque src/itia_dyn_torque.cpp
 # )
 # add_dependencies(itia_dyn_torque ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
