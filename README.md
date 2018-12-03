@@ -1,8 +1,34 @@
 ![](Documentation/rosdyn_logo.png)
 
 
+ROSdyn implements a fully automated procedure able to calibrate the robot dynamics model. 
+
+It is integrated with MoveIt! to automatically compute, simulate, and execute identification trajectory. The result is stored in a URDF file.
+
+
+
+
+## Build/Installation 
+
+The software can be installed with the following [rosinstall file](rosdyn.rosinstall). 
+
+## List of packages
+
+> *rosdyn_core*: Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor.
+
+> *rosdyn_identification*: Nodelet-based library for trajectory generation and for model calibration.
+
+> *rosdyn_gui*: RViz front-end plugin
+
+> *rosdyn_identification_msgs*: Action definition for generating identification trajectory and estimating model.
+
+## Usage
+![](Documentation/screenshoot001.png)
+
+
 ## Work in progress
 
+ROSdyn is continuously evolving. Not all features are implemented. If find errors or you wish a new feature [please let us know](https://github.com/CNR-STIIMA-IRAS/rosdyn/issues).
 
 ## Acknowledgements
 
