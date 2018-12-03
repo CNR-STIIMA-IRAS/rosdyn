@@ -20,13 +20,7 @@ The software can be installed with the following [rosinstall file](rosdyn.rosins
 | [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=melodic-devel)](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn) | [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=melodic-devel)](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn) |
 
 
-| Build1            | Build2            | 
-|-------------------|-------------------|
-| [![Build1][1]][5] | [![Build2][2]][5] | 
-
-[1]: https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=melodic-devel/2
-[2]: https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=melodic-devel/2
-[5]: https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn
+[![Build Status](http://i.imgur.com/4oSnGEd.png)](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn) 
 
 
 ## List of packages
