@@ -15,7 +15,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 catkin_package(
   INCLUDE_DIRS include
 #   LIBRARIES itia_dynamics_core 
-  CATKIN_DEPENDS roscpp  std_msgs 
+  CATKIN_DEPENDS roscpp  std_msgs  urdf
   DEPENDS  
 )
 include_directories(
