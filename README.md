@@ -20,6 +20,15 @@ The software can be installed with the following [rosinstall file](rosdyn.rosins
 | [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=melodic-devel)](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn) | [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=melodic-devel)](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn) |
 
 
+| Build1            | Build2            | 
+|-------------------|-------------------|
+| [![Build1][1]][5] | [![Build2][2]][5] | 
+
+[1]: https://travis-matrix-badges.herokuapp.com/repos/bjfish/grails-ci-build-matrix-example/branches/melodic-devel/1
+[2]: https://travis-matrix-badges.herokuapp.com/repos/bjfish/grails-ci-build-matrix-example/branches/melodic-devel/2
+[5]: https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn
+
+
 ## List of packages
 
 > *rosdyn_core*: Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor.
