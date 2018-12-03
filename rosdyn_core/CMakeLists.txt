@@ -36,3 +36,4 @@ target_link_libraries(compute_inertia_matrix
 #   itia_dynamics_core
 #   ${catkin_LIBRARIES}
 # )
+

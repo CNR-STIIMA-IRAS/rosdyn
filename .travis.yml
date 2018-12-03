@@ -16,6 +16,5 @@ env:
     - ROS_DISTRO="melodic" ROS_REPO=ros
 
 script:
-  - cd ~/catkin_ws/src/industrial_ci
   - .industrial_ci/travis.sh 
 
