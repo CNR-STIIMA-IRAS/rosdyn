@@ -13,7 +13,7 @@ find_package(Eigen3 REQUIRED COMPONENTS Core Dense)
 
 
 # add_definitions ( -DROSVERSIONNAME=$ENV{ROS_DISTRO} )
-  
+
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   cmake_modules
@@ -29,7 +29,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
-  trajectory_msgs  
+  trajectory_msgs
   eigen_matrix_utils
   eigen_state_space_systems
   moveit_planning_helper
@@ -53,19 +53,17 @@ catkin_package(
                   roscpp
                   sensor_msgs
                   std_msgs
-                  trajectory_msgs  
+                  trajectory_msgs
                   eigen_matrix_utils
                   eigen_state_space_systems
                   moveit_planning_helper
-  DEPENDS 
+  DEPENDS
 )
 
 include_directories(include
                     ${catkin_INCLUDE_DIRS}
                     ${EIGEN_INCLUDE_DIRS}
 )
-
-
 
 add_library(${PROJECT_NAME}
             src/${PROJECT_NAME}/rosdyn_par_estim.cpp

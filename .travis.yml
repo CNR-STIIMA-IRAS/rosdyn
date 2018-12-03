@@ -9,10 +9,14 @@ notifications:
     on_failure: always
     recipients:
       - iras@itia.cnr.it
-env:
-  matrix:
-    - ROS_DISTRO="kinetic" UPSTREAM_WORKSPACE=file  $ROSINSTALL_FILENAME="rosdyn.rosinstall"
-    - ROS_DISTRO="melodic" UPSTREAM_WORKSPACE=file  $ROSINSTALL_FILENAME="rosdyn.rosinstall"
+matrix:
+  include:
+    - name: "Xenial kinetic"
+      dist: xenial
+      env: ROS_DISTRO=kinetic UPSTREAM_WORKSPACE=file  $ROSINSTALL_FILENAME="rosdyn.rosinstall"
+    - name: "Bionic Beaver"
+      dist: bionic
+      env: ROS_DISTRO="melodic" UPSTREAM_WORKSPACE=file  $ROSINSTALL_FILENAME="rosdyn.rosinstall"
 
 install:
   - git clone --depth=1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci
