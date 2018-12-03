@@ -12,6 +12,14 @@ It is integrated with MoveIt! to automatically compute, simulate, and execute id
 
 The software can be installed with the following [rosinstall file](rosdyn.rosinstall). 
 
+
+## Build Status
+
+| Kinetic | Melodic |
+| --------|-------- |
+| [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=master)](https://travis-ci.org/CNR-STIIMA-CNR/rosdyn) | [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn?branch=melodic-devel)](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn) |
+
+
 ## List of packages
 
 > *rosdyn_core*: Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor.
