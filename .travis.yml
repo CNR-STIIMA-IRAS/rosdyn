@@ -9,6 +9,7 @@ notifications:
     on_failure: always
     recipients:
       - iras@itia.cnr.it
+      
 matrix:
   include:
     - name: "Xenial kinetic"
