@@ -9,7 +9,7 @@ int main(int argc, char **argv){
   ros::NodeHandle nh;
   ros::Rate rate(1);
   
-  itia::dynamics::KinSolverKDL kin_solver("robot_description");
+  rosdyn::KinSolverKDL kin_solver("robot_description");
   
   std::string base_frame = "base_link";
   std::string tool_frame = "ee_link";                 //"ee_link";
@@ -30,9 +30,9 @@ int main(int argc, char **argv){
   
   
   ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::Level::Debug);
-  boost::shared_ptr<itia::dynamics::Link> root_link(new itia::dynamics::Link());  
+  boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
   root_link->fromUrdf(model.root_link_);
-  boost::shared_ptr<itia::dynamics::Chain> chain(new itia::dynamics::Chain(root_link, base_frame,tool_frame));
+  boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame));
   
   chain->setInputJointsName(js.name);
   
@@ -66,7 +66,7 @@ int main(int argc, char **argv){
   jac_eigen.resize(6, 6);
   jac_kdl.resize(6, 6);
   
-  boost::shared_ptr<itia::dynamics::Joint> jptr = root_link->findChildJoint(js.name.at(0));
+  boost::shared_ptr<rosdyn::Joint> jptr = root_link->findChildJoint(js.name.at(0));
   for (int idx = 0;idx<ntrial;idx++)
   {
     
@@ -80,7 +80,7 @@ int main(int argc, char **argv){
     t0 = ros::Time::now();
     cmotion = kin_solver.fkine(jmotion, tool_frame, base_frame);
     t_pose_kdl +=  (ros::Time::now()-t0).toSec() *1000;
-    pose_kdl = itia::dynamics::CMotionToAffine(cmotion, &twist);
+    pose_kdl = rosdyn::CMotionToAffine(cmotion, &twist);
     
     t0 = ros::Time::now();
     jac_eigen = chain->getJacobian(q);

@@ -28,9 +28,9 @@ int main(int argc, char **argv){
   
   
   ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::Level::Debug);
-  boost::shared_ptr<itia::dynamics::Link> root_link(new itia::dynamics::Link());  
+  boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
   root_link->fromUrdf(model.root_link_);
-  boost::shared_ptr<itia::dynamics::Chain> chain(new itia::dynamics::Chain(root_link, base_frame,tool_frame));
+  boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame));
   
   chain->setInputJointsName(js.name);
   

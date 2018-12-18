@@ -51,11 +51,11 @@ int main(int argc, char **argv){
   }
   
   
-  boost::shared_ptr<itia::dynamics::Link> root_link(new itia::dynamics::Link());  
+  boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
   if (!root_link)
     return 0;
   root_link->fromUrdf(model.root_link_);
-  boost::shared_ptr<itia::dynamics::Chain> chain(new itia::dynamics::Chain(root_link, base_frame,tool_frame, grav));
+  boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, grav));
   
   chain->setInputJointsName(js);
   
@@ -91,7 +91,7 @@ int main(int argc, char **argv){
     acc_filter.at(ijnt)=itia::control::createDiscreteStateSpareFromParam(nh,filter_name ,init);
   }
   // definisce vettore di componenti aggiuntivi (Attriti)
-  std::vector<itia::dynamics::ComponentPtr> components;
+  std::vector<rosdyn::ComponentPtr> components;
   try
   {
     for (unsigned int idx = 0;idx <js.size();idx++)
@@ -102,7 +102,7 @@ int main(int argc, char **argv){
         if (!component_type.compare("Ideal"))
         {
           ROS_INFO("JOINT '%s' has a spring component", js.at(idx).c_str());
-          components.push_back(itia::dynamics::ComponentPtr(new itia::dynamics::IdealSpring(js.at(idx), model_name) ));
+          components.push_back(rosdyn::ComponentPtr(new rosdyn::IdealSpring(js.at(idx), model_name) ));
         }
       }
       
@@ -111,12 +111,12 @@ int main(int argc, char **argv){
         if (!component_type.compare("Polynomial1"))
         {
           ROS_INFO("JOINT '%s' has a Polynomial1 component", js.at(idx).c_str());
-          components.push_back( itia::dynamics::ComponentPtr(new itia::dynamics::FirstOrderPolynomialFriction( js.at(idx), model_name ) ));
+          components.push_back( rosdyn::ComponentPtr(new rosdyn::FirstOrderPolynomialFriction( js.at(idx), model_name ) ));
         } 
         else if (!component_type.compare("Polynomial2"))
         {
           ROS_INFO("JOINT '%s' has a Polynomial2 component", js.at(idx).c_str());
-          components.push_back(itia::dynamics::ComponentPtr(new itia::dynamics::SecondOrderPolynomialFriction(js.at(idx), model_name) ));
+          components.push_back(rosdyn::ComponentPtr(new rosdyn::SecondOrderPolynomialFriction(js.at(idx), model_name) ));
         } 
       }      
     }

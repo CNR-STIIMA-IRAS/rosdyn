@@ -13,7 +13,7 @@ int main(int argc, char **argv){
   ros::NodeHandle nh;
   ros::Rate rate(1);
   
-  itia::dynamics::KinSolverKDL kin_solver("robot_description");
+  rosdyn::KinSolverKDL kin_solver("robot_description");
   
   std::string base_frame = "base_link";
 //   std::string tool_frame = "shoulder_link";                  //"ee_link"; "upper_arm_link"  "forearm_link"
@@ -46,9 +46,9 @@ int main(int argc, char **argv){
   grav << 0, 0, -9.806;
   
   ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::Level::Debug);
-  boost::shared_ptr<itia::dynamics::Link> root_link(new itia::dynamics::Link());  
+  boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
   root_link->fromUrdf(model.root_link_);
-  boost::shared_ptr<itia::dynamics::Chain> chain(new itia::dynamics::Chain(root_link, base_frame,tool_frame, grav));
+  boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, grav));
   
   
   chain->setInputJointsName(js_name);

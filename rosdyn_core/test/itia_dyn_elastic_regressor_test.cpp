@@ -32,22 +32,22 @@ int main(int argc, char **argv){
   
   ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::Level::Debug);
   
-  boost::shared_ptr<itia::dynamics::Link> root_link(new itia::dynamics::Link());  
+  boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
   root_link->fromUrdf(model.root_link_);
-  boost::shared_ptr<itia::dynamics::Chain> chain(new itia::dynamics::Chain(root_link, base_frame,tool_frame, grav));
+  boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, grav));
   
   chain->setInputJointsName(js_name);
   
-  std::vector<itia::dynamics::ComponentPtr> components;
+  std::vector<rosdyn::ComponentPtr> components;
   for (unsigned int idx = 0;idx <js_name.size();idx++)
   {
     std::string component_type;
     if (nh.getParam(model.getName()+"/"+js_name.at(idx)+"/spring/type", component_type))
       if (!component_type.compare("Ideal"))
-        components.push_back(itia::dynamics::ComponentPtr(new itia::dynamics::IdealSpring(js_name.at(idx), model.getName()) ));
+        components.push_back(rosdyn::ComponentPtr(new rosdyn::IdealSpring(js_name.at(idx), model.getName()) ));
     if (nh.getParam(model.getName()+"/"+js_name.at(idx)+"/friction/type", component_type))
       if (!component_type.compare("Polynomial2"))
-        components.push_back(itia::dynamics::ComponentPtr(new itia::dynamics::SecondOrderPolynomialFriction(js_name.at(idx), model.getName()) ));
+        components.push_back(rosdyn::ComponentPtr(new rosdyn::SecondOrderPolynomialFriction(js_name.at(idx), model.getName()) ));
   }
   
   unsigned int additional_parameters = 0;
