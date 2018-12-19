@@ -14,9 +14,8 @@ find_package(Boost REQUIRED COMPONENTS system)
 
 catkin_package(
   INCLUDE_DIRS include
-#   LIBRARIES itia_dynamics_core 
   CATKIN_DEPENDS roscpp  std_msgs  urdf
-  DEPENDS  
+  DEPENDS EIGEN3
 )
 include_directories(
   include
@@ -24,23 +23,21 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
-add_executable(compute_inertia_matrix src/compute_inertia_matrix.cpp)
-add_dependencies(compute_inertia_matrix ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(compute_inertia_matrix
-  ${catkin_LIBRARIES}
-)
-
-
 add_executable(rosdyn_speed_test test/rosdyn_speed_test.cpp)
 add_dependencies(rosdyn_speed_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rosdyn_speed_test
   ${catkin_LIBRARIES}
 )
-# 
-# add_executable(itia_dyn_torque src/itia_dyn_torque.cpp
-# )
-# add_dependencies(itia_dyn_torque ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# target_link_libraries(itia_dyn_torque
-#   itia_dynamics_core
-#   ${catkin_LIBRARIES}
-# )
+
+install(TARGETS rosdyn_speed_test
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
+

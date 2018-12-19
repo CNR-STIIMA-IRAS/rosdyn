@@ -11,6 +11,9 @@
     local-name: common/name_sorting
     uri: https://github.com/CNR-STIIMA-IRAS/name_sorting
 - git:
+    local-name: common/rosparam_utilities
+    uri: https://github.com/CNR-STIIMA-IRAS/rosparam_utilities.git
+- git:
     local-name: motion/moveit/moveit_planning_helper
     uri: https://github.com/CNR-STIIMA-IRAS/moveit_planning_helper
 - git:

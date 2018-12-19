@@ -5,12 +5,12 @@ ROSdyn implements a fully automated procedure able to calibrate the robot dynami
 
 It is integrated with MoveIt! to automatically compute, simulate, and execute identification trajectory. The result is stored in a URDF file.
 
-
-
-
 ## Build/Installation 
 
 The software can be installed with the following [rosinstall file](rosdyn.rosinstall). 
+
+Travis CI Kinetic Build: [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=melodic-devel)](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn)
+
 
 ## List of packages
 

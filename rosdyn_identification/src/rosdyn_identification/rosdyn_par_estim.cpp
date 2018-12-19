@@ -42,7 +42,7 @@ MetoParEstim::MetoParEstim( ros::NodeHandle& nh, const std::__cxx11::string& rob
   Eigen::Vector3d grav;
   grav << grav_stl.at(0), grav_stl.at(1), grav_stl.at(2);
   
-  boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
+  shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
   root_link->fromUrdf( m_model->root_link_ );
   
   m_chain.reset(new rosdyn::Chain(root_link, base_frame,tool_frame, grav));
