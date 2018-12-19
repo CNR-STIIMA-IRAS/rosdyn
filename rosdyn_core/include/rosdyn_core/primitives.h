@@ -577,7 +577,6 @@ namespace rosdyn
     m_input_to_chain_joint.resize(m_joints_number, m_joints_number);
     m_input_to_chain_joint.setIdentity();
     m_chain_to_input_joint = m_input_to_chain_joint;
-    
     m_T_bt.setIdentity();
     m_last_q.resize(m_joints_number);
     m_last_q.setZero();
@@ -589,7 +588,7 @@ namespace rosdyn
     m_last_DDDq.resize(m_joints_number);
     m_last_DDDq.setZero();
     
-    m_active_joints.resize(m_joints_number);
+    m_active_joints.resize(m_joints_number,1);
     
     m_wrenches_regressor.resize(m_links_number);
     
@@ -624,9 +623,11 @@ namespace rosdyn
     m_sorted_DDq.setZero();
     m_sorted_DDDq.setZero();
     m_joint_torques.setZero();
-    
     m_regressor_extended.resize(m_joints_number, m_joints_number*10);
     m_regressor_extended.setZero();
+    
+    m_jacobian.resize(6, m_joints_number);
+    m_jacobian.setZero();
     
     m_T_bl.resize(m_links_number);
     m_T_bl.at(0).setIdentity();
@@ -657,13 +658,14 @@ namespace rosdyn
     
     m_active_joints_number = joints_name.size();
     m_input_to_chain_joint.setZero();
-    m_active_joints.resize(joints_name.size());
+    m_active_joints.resize(joints_name.size(),0);
     
     //   m_regressor_extended.resize(m_active_joints_number, m_joints_number*10);
     m_regressor_extended.setZero();
     
     m_joint_inertia.resize(m_active_joints_number, m_active_joints_number);
     m_joint_inertia.setZero();
+    
     
     for (unsigned int idx = 0;idx<joints_name.size();idx++)
       if (m_joints_name.find(joints_name.at(idx)) != m_joints_name.end())

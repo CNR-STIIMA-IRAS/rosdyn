@@ -24,10 +24,16 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
-add_executable(compute_inertia_matrix src/compute_inertia_matrix.cpp
-)
+add_executable(compute_inertia_matrix src/compute_inertia_matrix.cpp)
 add_dependencies(compute_inertia_matrix ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(compute_inertia_matrix
+  ${catkin_LIBRARIES}
+)
+
+
+add_executable(rosdyn_speed_test test/rosdyn_speed_test.cpp)
+add_dependencies(rosdyn_speed_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rosdyn_speed_test
   ${catkin_LIBRARIES}
 )
 # 
