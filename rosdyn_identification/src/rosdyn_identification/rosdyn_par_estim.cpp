@@ -161,6 +161,7 @@ Eigen::MatrixXd MetoParEstim::getTrajectoryRegressor( const Eigen::MatrixXd& q,
   int npoint = q.rows();                                    
   
   int n_moveable_links = m_chain->getLinksNumber()-1;
+  
       
   Eigen::MatrixXd Phi_;
   Phi_.resize( npoint*n_joint_number, (10*n_moveable_links)+m_additional_parameters );
@@ -265,17 +266,15 @@ Eigen::MatrixXd MetoParEstim::getTrajectoryFullRegressor(const Eigen::MatrixXd& 
     return m_base_par;
   }
   
-  
-  bool MetoParEstim::saveParXml(const std::string&              xml_save_path,
-                                const std::string&              add_info_save_path,
-                                const std::string&              add_info_param_namespace,
-                                const Eigen::VectorXd&          dyn_par,
-                                const std::vector<std::string>& controlled_joints )
+  bool MetoParEstim::saveParXml()
   {
     //****************************************
     // Inertial Data
     //****************************************
-    std::string xml_new_ = xml_save_path.substr(0,xml_save_path.find(".urdf"))+"_par_calib.urdf"; 
+    std::string username=getenv("LOGNAME");
+    std::string path=std::string("/home/")+ username +"/.ros/";
+    std::string xml_new_ = path+m_robot_name+"_estimated.urdf"; 
+    Eigen::VectorXd& dyn_par = m_full_par;
     
     int numb_of_link_param_ = 10;
     std::vector<std::string> chain_links_names_ = m_chain->getLinksName();
@@ -382,7 +381,8 @@ Eigen::MatrixXd MetoParEstim::getTrajectoryFullRegressor(const Eigen::MatrixXd& 
     // save inertial data
     TiXmlDocument* xml_doc_ = urdf::exportURDF( robot_model_copy_ );
     ROS_INFO( "Saving URDF file: %s",  xml_new_.c_str() );
-    xml_doc_->SaveFile(xml_new_);
+    if (!xml_doc_->SaveFile(xml_new_))
+      ROS_ERROR("failed saving %s",xml_new_.c_str());
     
     
     //****************************************
@@ -392,6 +392,8 @@ Eigen::MatrixXd MetoParEstim::getTrajectoryFullRegressor(const Eigen::MatrixXd& 
     for (rosdyn::ComponentPtr& component: m_components)
     {
       Eigen::VectorXd par= dyn_par.block( iLink + iComponent, 0, component->getParametersNumber(),1 );
+      
+      ROS_FATAL_STREAM(component->getJointName() << ": " << par.transpose());
       iComponent+=component->getParametersNumber();
       if (!component->setParameters(par))
         ROS_ERROR("something wrong in component");
@@ -401,10 +403,10 @@ Eigen::MatrixXd MetoParEstim::getTrajectoryFullRegressor(const Eigen::MatrixXd& 
     };
         
     std::string string_to_save_yaml =   "rosparam dump "  
-                                        + add_info_save_path.substr( 0, add_info_save_path.find(".yaml") )
-                                        + "_par_calib.yaml" 
-                                        + " " 
-                                        + add_info_param_namespace;
+                                        + path + m_robot_name + 
+                                        + "_estimated.yaml" 
+                                        + " /" 
+                                        + m_robot_name;
                                         
     ROS_INFO("Executing command: %s", string_to_save_yaml.c_str());                                    
     if (system( string_to_save_yaml.c_str() )!=0)

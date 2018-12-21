@@ -18,7 +18,7 @@
 
 #include <eigen_matrix_utils/eigen_matrix_utils.h>
 #include <eigen_state_space_systems/eigen_common_filters.h>
-
+#include <std_srvs/Empty.h>
 
 /*! \file meto_par_estim_interface.h
     \brief A Documented file.
@@ -53,11 +53,15 @@ namespace rosdyn
     
     //! Temporary string that contains the binary file to be loaded
     std::string m_file_name;
+    std::string m_model_name;
     
     //! Main Nodelet thread for the dynamics parameters estimation.
     std::thread m_main_thread;
     
+    ros::ServiceServer m_save_model_server;
 
+    std::shared_ptr<rosdyn::MetoParEstim> m_estimator;
+    
     //! Action Server.
     /*!
       Action Server of the rosdyn_identification::MetoParEstimAction.
@@ -72,12 +76,13 @@ namespace rosdyn
     void main();
     
     
+    bool saveXmlCallback( std_srvs::EmptyRequest& req, std_srvs::EmptyResponse& res);
+
     //! Callback of the rosdyn_identification::MetoParEstimAction.
     /*!
       \param goal goal of the rosdyn_identification::MetoParEstimAction
     */ 
     void metoParEstimCB(  const rosdyn_identification_msgs::MetoParEstimGoalConstPtr& goal );
-    
     
     //! A destructor of the class \link MetoParEstimInterfaceNodelet \endlink.
     /*!

@@ -303,6 +303,8 @@ bool MetoGenInterfaceNodelet::firstStageRandomTrajectory(ros::Duration duration,
   
   while (ros::ok() && (trial<200) && (fail<5))
   {
+    if (trj.points.size()>0)
+      ROS_FATAL("trial %d, fails=%d, trj time=%f, goal=%f", trial,fail,trj.points.back().time_from_start.toSec(),duration.toSec());
     target_state.setToRandomPositions();
     if (checkCollision(target_state))
     {
@@ -325,7 +327,7 @@ bool MetoGenInterfaceNodelet::firstStageRandomTrajectory(ros::Duration duration,
       continue;
     }
     
-    fail=0;
+    //fail=0;
     if (trj.points.size()>0)
       trajectory_processing::append_trajectories(trj,my_plan.trajectory_.joint_trajectory);
     else 

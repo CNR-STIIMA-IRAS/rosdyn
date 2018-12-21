@@ -18,21 +18,13 @@
 
 namespace rosdyn_gui
 {
-  class ModelTab : public QWidget
-  {
-    Q_OBJECT
-    
-  public:
-    explicit ModelTab(ros::NodeHandle& nh, QWidget *parent = 0);
-    ros::NodeHandle m_nh;
-  };
   
-  class GenerationTab : public QWidget
+  class DynComponents : public QWidget
   {
     Q_OBJECT
     
   public:
-    explicit GenerationTab(ros::NodeHandle& nh, QWidget *parent = 0);
+    explicit DynComponents(ros::NodeHandle& nh, QWidget *parent = 0);
     
     QGroupBox* m_formGroupBox;
     QGridLayout* m_grid_layout;

@@ -7,6 +7,7 @@
 
 
 #include <std_srvs/SetBool.h>
+#include <std_srvs/Empty.h>
 #include <rosdyn_identification_msgs/MetoParEstimAction.h>
 #include <rosdyn_identification_msgs/MetoTrjGenAction.h>
 #include <moveit_planning_helper/ExecuteTrajectoryFromParamAction.h>
@@ -77,6 +78,7 @@ namespace rosdyn_gui
     std::shared_ptr<actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoTrjGenAction>> meto_gen_ac_;
     std::shared_ptr<actionlib::SimpleActionClient<moveit_planning_helper::ExecuteTrajectoryFromParamAction>> meto_exec_ac_;
     std::shared_ptr<actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoParEstimAction>> meto_estim_ac_;
+    ros::ServiceClient m_save_model_client;
     QLabel* trj_label;
     
     void updateTrajectoriesList();

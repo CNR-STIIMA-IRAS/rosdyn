@@ -162,11 +162,7 @@ namespace rosdyn
       \param dyn_par dynamics paramters vector.
       \param controlled_joints names of the controlled joints.
     */
-    bool                      saveParXml( const std::string&              xml_save_path,
-                                          const std::string&              add_info_save_path,
-                                          const std::string&              add_info_param_namespace,
-                                          const Eigen::VectorXd&          dyn_par,
-                                          const std::vector<std::string>& controlled_joints  );
+    bool                      saveParXml( );
     
     
     

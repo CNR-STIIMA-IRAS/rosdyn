@@ -76,7 +76,7 @@ Panel(parent)
   meto_gen_ac_.reset(new actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoTrjGenAction>("/meto_gen_trajectory", true));
   meto_estim_ac_.reset(new actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoParEstimAction>("/meto_param_estimation", true));
   meto_exec_ac_.reset(new actionlib::SimpleActionClient<moveit_planning_helper::ExecuteTrajectoryFromParamAction>("/execute_trajectories_from_param", true));
-  
+  m_save_model_client = m_nh.serviceClient<std_srvs::Empty>("meto_save_model");
 }
 
 IdentificationGui::~IdentificationGui()
@@ -135,6 +135,7 @@ void IdentificationGui::saveTrjCallback()
 {
 
 }
+
 void IdentificationGui::simulateTrjCallback()
 {
   moveit_planning_helper::ExecuteTrajectoryFromParamGoal goal;
@@ -158,6 +159,7 @@ void IdentificationGui::simulateTrjCallback()
   meto_exec_ac_->sendGoal(goal,boost::bind(&IdentificationGui::executionDoneCb,this,_1,_2));
   m_simulate_trajectories_btn->setText("Simulating...");
 }
+
 void IdentificationGui::executeTrjCallback()
 {
   moveit_planning_helper::ExecuteTrajectoryFromParamGoal goal;
@@ -200,7 +202,12 @@ void IdentificationGui::modelEstimationCallback()
 }
 void IdentificationGui::saveModelCallback()
 {
-
+  if (!m_save_model_client.exists())
+    m_save_model_btn->setText("Save server is down");
+  
+  std_srvs::Empty srv;
+  if (!m_save_model_client.call(srv))
+    m_save_model_btn->setText("Save server gives an error");
 }
 void IdentificationGui::setupCallback()
 {

@@ -48,6 +48,8 @@ namespace rosdyn
     
     m_meto_par_estim_as->start();
     
+    m_save_model_server = getNodeHandle().advertiseService("meto_save_model",&rosdyn::MetoParEstimInterfaceNodelet::saveXmlCallback,this);
+    
     m_main_thread  = std::thread(&rosdyn::MetoParEstimInterfaceNodelet::main, this);
     
   };
@@ -95,6 +97,8 @@ namespace rosdyn
       return;
     }
     
+    
+    
     std::vector<std::string> controller_joint_names_;
     if ( !getNodeHandle().getParam(std::string(m_namespace+"/controller_joint_names"), controller_joint_names_) )
     {
@@ -104,11 +108,10 @@ namespace rosdyn
       return;
     }
     
-    rosdyn::MetoParEstim metoParEstim( getNodeHandle(), 
-                                           robot_description);
+    m_estimator.reset(new rosdyn::MetoParEstim ( getNodeHandle(), robot_description));
     
-    
-    std::vector<std::string> joints_name = metoParEstim.getRobotJointName();
+    m_model_name = m_estimator->getRobotName();
+    std::vector<std::string> joints_name = m_estimator->getRobotJointName();
     unsigned int number_of_joint_from_xml_ = joints_name.size();
     
     struct passwd *pw = getpwuid(getuid());
@@ -256,7 +259,7 @@ namespace rosdyn
         filt_vel.setStateFromLastIO(     Dq.col(idxJnt).head(1),  Dq.col(idxJnt).head(1));
      
         Eigen::VectorXd init_acc(1);init_acc.setZero();
-        eigen_control_toolbox::FirstOrderLowPass filt_acc;
+        eigen_control_toolbox::FirstOrderHighPass filt_acc;
         filt_acc.importMatricesFromParam(      getNodeHandle(),m_namespace + "/filter");
         filt_acc.setStateFromLastIO(    init_acc,                Dq.col(idxJnt).head(1));
         
@@ -310,13 +313,13 @@ namespace rosdyn
     Eigen::MatrixXd efff_ident = efff_full.topRows(identification_part);
     
     ROS_DEBUG("Waits for parameters estimation...");
-    Eigen::MatrixXd PhiR  = metoParEstim.getTrajectoryRegressor(qf_ident, Dqf_ident, DDqf_ident);
-    Eigen::VectorXd PiR   = metoParEstim.getEstimatedParameters(efff_ident);
+    Eigen::MatrixXd PhiR  = m_estimator->getTrajectoryRegressor(qf_ident, Dqf_ident, DDqf_ident);
+    Eigen::VectorXd PiR   = m_estimator->getEstimatedParameters(efff_ident);
     
     ROS_DEBUG_STREAM("Parameters:\n"<<PiR);
     
-    Eigen::MatrixXd Phi  = metoParEstim.getTrajectoryFullRegressor(qf_ident, Dqf_ident, DDqf_ident);
-    Eigen::VectorXd Pi    = metoParEstim.getFullEstimatedParameters();
+    Eigen::MatrixXd Phi  = m_estimator->getTrajectoryFullRegressor(qf_ident, Dqf_ident, DDqf_ident);
+    Eigen::VectorXd Pi    = m_estimator->getFullEstimatedParameters();
     ROS_DEBUG_STREAM("Full Parameters:\n"<<Pi);
     Eigen::VectorXd Tau_ident   = PhiR * PiR;
     Eigen::VectorXd Tau_ident_full   = Phi * Pi;
@@ -332,7 +335,7 @@ namespace rosdyn
     Eigen::MatrixXd DDqf_vali  = DDqf_full.bottomRows(qf_full.rows()-identification_part);
     Eigen::MatrixXd efff_vali  = efff_full.bottomRows(qf_full.rows()-identification_part);
     
-    Eigen::MatrixXd PhiR_vali  = metoParEstim.getTrajectoryRegressor(qf_vali, Dqf_vali, DDqf_vali);
+    Eigen::MatrixXd PhiR_vali  = m_estimator->getTrajectoryRegressor(qf_vali, Dqf_vali, DDqf_vali);
     Eigen::VectorXd Tau_vali   = PhiR_vali * PiR;
     
     Eigen::Map<Eigen::MatrixXd> map_tau_vali(Tau_vali.data(), efff_vali.cols(),efff_vali.rows());
@@ -363,19 +366,6 @@ namespace rosdyn
     
     m_meto_par_estim_as->publishFeedback(m_feedback_);
    ros::Duration(0.5).sleep();
-   /* 
-    if ( !metoParEstim.saveParXml(std::string(xml_path_+"/"+xml_file_name_), 
-                                  std::string(add_info_path_+"/"+add_info_name_),
-                                  add_info_namespace_,
-                                  Pi,
-                                  controller_joint_names_ ) )
-    {
-      ROS_ERROR("Impossible to save the estimated parametrs into XML file.");
-      m_result_.status = rosdyn_identification_msgs::MetoParEstimResult::GENERIC_ERROR;
-      m_meto_par_estim_as->setAborted(m_result_);
-      return;
-    }
-    */
    
     ROS_INFO("Estimation complete!");
     m_result_.status = rosdyn_identification_msgs::MetoParEstimResult::SUCCESSFUL;
@@ -400,5 +390,15 @@ namespace rosdyn
     return;
   };
 
+
+bool MetoParEstimInterfaceNodelet::saveXmlCallback(std_srvs::EmptyRequest& req, std_srvs::EmptyResponse& res)
+{
+  if (!m_estimator)
+    return false;
+  
+  return m_estimator->saveParXml();
+  
+  
+}
 
 }
