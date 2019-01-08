@@ -14,7 +14,28 @@ Travis CI Kinetic Build: [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/
 
 ## List of packages
 
-> *rosdyn_core*: Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor.
+> *rosdyn_core*: Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor. The following list shows the computation time for a 6DOF robot on a laptop Asus PU551J with Ubuntu 16.04 (Release build,  average on 10000 trials).
+
+>> ** computation time in microseconds: **
+
+>> pose                                            =  0.75970 [us] 
+
+>> pose + jacobian                                       =  1.06562 [us]
+
+>> pose + jacobian + velocity twists for all links                   =  1.25589 [us]
+
+>> pose + jacobian + velocity twists for all links + linear aceleration twists for all links        =  1.25351 [us]
+
+>> pose + jacobian + velocity twists for all links +  non linear acceleration twists for all links    =  1.51663 [us]
+
+>> pose + jacobian + velocity twists for all links +  acceleration twists for all links               =  1.83826 [us]
+
+>>pose + jacobian + velocity twists for all links +  acceleration twists for all links               + jerk twists for all links                       =  2.68916 [us]
+
+>>pose + jacobian + velocity twists for all links +  acceleration twists for all links               + joint torque                                    =  3.76733 [us]
+
+>>pose + jacobian +  joint inertia matrix                                  = 10.06761 [us]
+
 
 > *rosdyn_identification*: Nodelet-based library for trajectory generation and for model calibration.
 
@@ -22,7 +43,133 @@ Travis CI Kinetic Build: [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/
 
 > *rosdyn_identification_msgs*: Action definition for generating identification trajectory and estimating model.
 
-## Usage
+## Required parameters
+
+The RosDyn identification package requires the following parameters. Most of them can be changed with the GUI by using the "Advance settings button.
+
+```yaml
+group_name: "ur10"  # moveit move group name
+rescale: false # avoid online rescaling of trajectory
+meto_cfg:
+  acceleration_scaling: 1.0 # maximum acceleration scaling during test
+
+  speed_scaling: 1.0 # maximum velocity scaling during test
+
+  verbose: true # print additional information on console
+
+  urdf_param: "robot_description" # name of the robot_description parameter
+
+  urdf_name: "cybersort" # name of the robot inside the robot description
+
+  trajectory_namespace: "ident_trj" # name of the identification trajectory
+  
+  controller_joint_names:  # list of controlled joint of the move group (the joints which provide effort information, typically the motorized ones)
+  - ur10_shoulder_pan_joint
+  - ur10_shoulder_lift_joint
+  - ur10_elbow_joint
+  - ur10_wrist_1_joint
+  - ur10_wrist_2_joint
+  - ur10_wrist_3_joint
+
+    
+  opt_cfg:
+  
+    stage1_duration: 10 # duration of stage 1 trajectory
+    
+    region_stage2: 0 # number of region in stage 2 trajectory
+
+    point_per_region: 5 # number of point inside a region
+
+    trials: 3 # number of trajectories computed for obtainng the best one
+    
+  filter:
+
+    frequency: 50 # filter cutting frequency in [Hz]: position, velocity and effort are low-pass filtered. Acceleration is computed by high-pass filtering the velocity.
+
+    sample_period: 0.008 # sampling period of the logged signal
+
+
+cybersort: # name of the robot inside the robot description
+
+  joint_names: # moveable joints of the chain (both motorized or passive)
+  - ur10_shoulder_pan_joint
+  - ur10_shoulder_lift_joint
+  - ur10_elbow_joint
+  - ur10_wrist_1_joint
+  - ur10_wrist_2_joint
+  - ur10_wrist_3_joint
+  - 
+  base_link: "ur10_base_link" # first link of the chain 
+  tool_link: "ur10_tool0" # last link of the chain
+  
+  gravity: [0, 0, -9.806] # gravity acceleration
+  
+
+  ur10_shoulder_pan_joint : 
+  
+    # ur10_shoulder_pan_joint has a Polynomial1 friction, with a term depending on the velocity sign (coloumb) and a term linearly depending on velocity. The sign is approximeted with a straight line with the velocity is less (in modulus) then min_velocity. Velocity is satured if greater than max_velocity.
+    
+    friction: 
+      type: "Polynomial1"
+      constants: 
+        max_velocity: 10
+        min_velocity: 1.0e-6
+      coefficients:
+        viscous: 0
+        coloumb: 0
+        
+  ur10_shoulder_lift_joint:
+  
+      # ur10_shoulder_lift_joint has a Polynomial2 friction, with a term depending on the velocity sign (coloumb), a term linearly depending on velocity, and a term depending of the square of the velocity multiplied by the velocity sign. The sign is approximeted with a straight line with the velocity is less (in modulus) then min_velocity. Velocity is satured if greater than max_velocity.
+      
+    friction:
+      type: "Polynomial2"
+      constants: 
+        max_velocity: 10
+        min_velocity: 1.0e-10
+      coefficients:
+        first_order_viscous: 0
+        second_order_viscous: 0
+        coloumb: 0
+        
+  ur10_elbow_joint:
+  
+  # ur10_elbow_joint has no friction
+  
+    friction:
+      type: "Ideal"
+  ur10_wrist_1_joint:
+    friction:
+      type: "Polynomial1"
+      constants: 
+        max_velocity: 10
+        min_velocity: 1.0e-10
+      coefficients:
+        viscous: 0
+        coloumb: 0
+        
+  ur10_wrist_2_joint:
+    friction:
+      type: "Polynomial1"
+      constants: 
+        max_velocity: 10
+        min_velocity: 1.0e-10
+      coefficients:
+        viscous: 0
+        coloumb: 0
+        
+  ur10_wrist_3_joint:
+    friction:
+      type: "Polynomial1"
+      constants: 
+        max_velocity: 10
+        min_velocity: 1.0e-10
+      coefficients:
+        viscous: 0
+        coloumb: 0    
+```
+
+
 
 __ coming soon! __
 

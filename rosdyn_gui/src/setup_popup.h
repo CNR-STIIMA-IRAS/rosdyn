@@ -18,14 +18,7 @@
 
 namespace rosdyn_gui
 {
-  class ModelTab : public QWidget
-  {
-    Q_OBJECT
-    
-  public:
-    explicit ModelTab(ros::NodeHandle& nh, QWidget *parent = 0);
-    ros::NodeHandle m_nh;
-  };
+ 
   
   class GenerationTab : public QWidget
   {
@@ -44,6 +37,9 @@ namespace rosdyn_gui
     void changedPointStage2(int number);
     void changeTrialNumber(int number);
     void saveNewPar();
+    void changeFrequency(double value);
+    void changeSamplingPeriod(double value);
+    
   protected:
     QPushButton* m_ok_btn;
     QPushButton* m_cancel_btn;
@@ -51,7 +47,8 @@ namespace rosdyn_gui
     int m_regione_stage2;
     int m_point_per_region;
     int m_trials;
-    
+    double m_frequency;
+    double m_sampling_period;
   };
   
   class TabDialog : public QDialog

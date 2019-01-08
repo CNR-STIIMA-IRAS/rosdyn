@@ -22,6 +22,7 @@
 #include <QComboBox>
 #include <QDialog>
 #include <setup_popup.h>
+#include <dyn_components.h>
 
 // class QPushButton;
 namespace rosdyn_gui

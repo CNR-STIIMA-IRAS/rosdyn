@@ -1,5 +1,5 @@
-#ifndef rosdyn_gui_setup_popup_201811200841
-#define rosdyn_gui_setup_popup_201811200841
+#ifndef rosdyn_gui_dynamic_component_201811200841
+#define rosdyn_gui_dynamic_component_201811200841
 
 #include <ros/ros.h>
 #include <QVBoxLayout>
@@ -19,46 +19,53 @@
 namespace rosdyn_gui
 {
   
-  class DynComponents : public QWidget
+  class FrictionWidgets : public QWidget
   {
     Q_OBJECT
     
   public:
-    explicit DynComponents(ros::NodeHandle& nh, QWidget *parent = 0);
+    explicit FrictionWidgets(ros::NodeHandle& nh, const std::string& joint_name, QWidget *parent = 0);
     
-    QGroupBox* m_formGroupBox;
-    QGridLayout* m_grid_layout;
+    int checkedFriction();
+    std::string jointName(){return m_joint_name;};
+    void saveParam();
+    void loadParam();
+  protected Q_SLOTS:
+  protected:
+    std::string m_joint_name;
+    std::string m_robot_name;
     ros::NodeHandle m_nh;
+    std::vector<QRadioButton*> m_friction_model;
+//     QSpinBox* m_vel_threshold;
+//     QSpinBox* m_max_threshold;
+    QVBoxLayout* m_vbox;
+    std::string m_type;
+    int m_max_velocity;
+    double m_min_velocity;
+    std::vector<double> m_coefficients;
+  };  
+  
+  class ModelTab : public QWidget
+  {
+    Q_OBJECT
+    
+  public:
+    explicit ModelTab(ros::NodeHandle& nh, QWidget *parent = 0);
     
   protected Q_SLOTS:
-    void changedDuration(double value);
-    void changedStage2(int number);
-    void changedPointStage2(int number);
-    void changeTrialNumber(int number);
     void saveNewPar();
   protected:
-    QPushButton* m_ok_btn;
-    QPushButton* m_cancel_btn;
-    double m_stage_duration;
-    int m_regione_stage2;
-    int m_point_per_region;
-    int m_trials;
     
-  };
-  
-  class TabDialog : public QDialog
-  {
-    Q_OBJECT
-    
-  public:
-    explicit TabDialog( ros::NodeHandle& nh, QWidget *parent = 0);
-    
-  private:
-    QTabWidget* m_tabWidget;
     ros::NodeHandle m_nh;
+    QVBoxLayout* m_vbox;
+    std::vector<FrictionWidgets*> m_components;
+    QSpinBox* m_vel_threshold;
+    QSpinBox* m_max_threshold;
+    QPushButton* m_ok_btn;
+    
   };
-  
 
+  
 }
 
 

@@ -102,8 +102,7 @@ void IdentificationGui::generateTrjCallback()
   std::string type;
   if (!m_nh.getParam("meto_cfg/type",type))
   {
-    ROS_ERROR("meto_cfg/group_name is not specified");
-    return;
+    type="arm";
   }
   std::string trajectory_namespace;
   if (!m_nh.getParam("meto_cfg/trajectory_namespace",trajectory_namespace))

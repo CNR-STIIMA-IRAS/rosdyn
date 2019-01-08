@@ -1,5 +1,5 @@
 #include <setup_popup.h>
-
+#include <dyn_components.h>
 
 namespace rosdyn_gui
 {
@@ -7,16 +7,13 @@ namespace rosdyn_gui
 TabDialog::TabDialog( ros::NodeHandle& nh, QWidget* parent): QDialog(parent), m_nh(nh)
 {
   m_tabWidget = new QTabWidget(this);
-  m_tabWidget ->addTab(new GenerationTab(nh,this),tr("Generation"));
-  m_tabWidget ->addTab(new ModelTab(nh,this),tr("Model"));
+  m_tabWidget ->addTab(new GenerationTab(nh,this),tr("General"));
+  m_tabWidget ->addTab(new ModelTab(nh,this),tr("Friction"));
   m_tabWidget->adjustSize();
 
 }
 
 
-ModelTab::ModelTab( ros::NodeHandle& nh, QWidget* parent): QWidget(parent ), m_nh(nh)
-{
-}
 
 GenerationTab::GenerationTab( ros::NodeHandle& nh,QWidget* parent): QWidget(parent ), m_nh(nh)
 {
@@ -25,6 +22,14 @@ GenerationTab::GenerationTab( ros::NodeHandle& nh,QWidget* parent): QWidget(pare
   m_grid_layout->addWidget( new QLabel(tr("Number of seeds (Stage 2)")),  1, 0, 1, 1);
   m_grid_layout->addWidget( new QLabel(tr("Points per seed  (Stage 2)")), 2, 0, 1, 1);
   m_grid_layout->addWidget( new QLabel(tr("Number of trial")),            3, 0, 1, 1);
+  m_grid_layout->addWidget( new QLabel(tr("Filtering frequency")),        4, 0, 1, 1);
+  m_grid_layout->addWidget( new QLabel(tr("Sampling period")),            5, 0, 1, 1);
+  
+  m_ok_btn = new QPushButton();
+  m_ok_btn->setText("Store");
+  connect(m_ok_btn, SIGNAL(clicked()), this, SLOT(saveNewPar()));
+  m_grid_layout->addWidget( m_ok_btn,6, 0, 1, 2);
+  
   
   QDoubleSpinBox* duration_stage_1= new QDoubleSpinBox();
   
@@ -85,20 +90,34 @@ GenerationTab::GenerationTab( ros::NodeHandle& nh,QWidget* parent): QWidget(pare
   }
   connect(n_trial, SIGNAL(valueChanged(int)),this,SLOT(changeTrialNumber(int)));
   
-  m_ok_btn = new QPushButton();
-  m_ok_btn->setText("Ok");
-  connect(m_ok_btn, SIGNAL(clicked()), this, SLOT(saveNewPar()));
-  m_grid_layout->addWidget( m_ok_btn,4, 0, 1, 1);
-
-  m_cancel_btn = new QPushButton();
-  m_cancel_btn->setText("Cancel");
-  //connect(m_cancel_btn, SIGNAL(clicked()), this, SLOT(generateTrjCallback()));
-  m_grid_layout->addWidget( m_cancel_btn,4, 1, 1, 1);
+  QDoubleSpinBox* filtering_freq= new QDoubleSpinBox();
+  m_grid_layout->addWidget( filtering_freq,4, 1, 1, 1);
+  if (m_nh.getParam("meto_cfg/filter/frequency",m_frequency))
+  {
+    filtering_freq->setValue(m_frequency);
+  }
+  else 
+  {
+    m_frequency=10;
+    filtering_freq->setValue(m_frequency);
+    m_nh.setParam("meto_cfg/filter/frequency",m_frequency);
+  }
+  connect(filtering_freq, SIGNAL(valueChanged(double)),this,SLOT(changeFrequency(double)));
   
-  //   m_layout->addRow(new QLabel(tr("Duration of Stage 1")), new QLineEdit);
-//   m_layout->addRow(new QLabel(tr("Number of seeds of Stage 2")), new QLineEdit);
-//   m_formGroupBox->setLayout(m_layout);
-//   adjustSize();
+  QDoubleSpinBox* sampling_period= new QDoubleSpinBox();
+  sampling_period->setDecimals(4);
+  m_grid_layout->addWidget( sampling_period,5, 1, 1, 1);
+  if (m_nh.getParam("meto_cfg/filter/sample_period",m_sampling_period))
+  {
+    sampling_period->setValue(m_sampling_period);
+  }
+  else 
+  {
+    m_sampling_period=10;
+    sampling_period->setValue(m_sampling_period);
+    m_nh.setParam("meto_cfg/filter/sample_period",m_sampling_period);
+  }
+  connect(sampling_period, SIGNAL(valueChanged(double)),this,SLOT(changeSamplingPeriod(double)));
 }
 
 
@@ -108,12 +127,27 @@ void GenerationTab::saveNewPar()
   m_nh.setParam("meto_cfg/opt_cfg/region_stage2",m_regione_stage2);
   m_nh.setParam("meto_cfg/opt_cfg/point_per_region",m_point_per_region);
   m_nh.setParam("meto_cfg/opt_cfg/trials",m_trials);
+  m_nh.setParam("meto_cfg/filter/frequency",m_frequency);
+  m_nh.setParam("meto_cfg/filter/sample_period",m_sampling_period);
 }
+
+
+void GenerationTab::changeFrequency(double value)
+{
+  m_frequency=value;
+}
+
+void GenerationTab::changeSamplingPeriod(double value)
+{
+  m_sampling_period=value;
+}
+
 
 void GenerationTab::changedDuration(double value)
 {
   m_stage_duration=value;
 }
+
 void GenerationTab::changedStage2(int number)
 {
   m_regione_stage2=number;

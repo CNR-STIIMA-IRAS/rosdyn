@@ -40,6 +40,7 @@ ${Qt5Core_INCLUDE_DIRS})
 set(SRC_FILES
   src/setup_popup.cpp
   src/rosdyn_gui.cpp
+  src/dyn_components.cpp
 )
 
 add_library(${PROJECT_NAME} ${SRC_FILES})
