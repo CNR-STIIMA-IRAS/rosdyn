@@ -166,12 +166,69 @@ cybersort: # name of the robot inside the robot description
         min_velocity: 1.0e-10
       coefficients:
         viscous: 0
-        coloumb: 0    
+        coloumb: 0   
+        
+
+# logging parameter 
+start_log: true # flag to automatically start logging joint_states during trajectory execution.
+
+binary_logger:
+  num_worker_threads: 10
+  
+  # manager_name: name of the nodlet manager (need to be equal to the name in the launch file)
+  manager_name: 'binary_logger'
+
+  # Type of the topic that need to be logged (supported JointState, Imu, PoseStamped, WrenchStamped, Float64MultiArray)
+  topic_type: 
+    - 'JointState'
+
+
+  JointState:
+    # List of the topic to be acquired 
+    topic_names:
+      - '/ur10/joint_states'  # put the joint_states topic with position, velocity and effort information
+      
+    # Maximum acquisition time (to be specified for each topic)
+    duration:
+      - 400 #[s]
+  
+    # Message decimation (to be specified for each topic)
+    decimation:
+      - 1 
+  
 ```
 
+## Usage
 
+In order to use RosDyn identification tools, you need to do the following preliminary steps:
 
-__ coming soon! __
+> Create a moveit package (see <a href="http://docs.ros.org/kinetic/api/moveit_tutorials/html/doc/setup_assistant/setup_assistant_tutorial.html">tutorial</a>)
+
+> Define the list of parameters in **required parameters** section
+
+> in RViz: 
+
+>> click on *Panels* tag, then *add new panel*, select *IdentificationGui*
+
+>> check on *Add* in the Display widgets, addd a *Trajectory* visualization
+
+>> In the *Trajectory* visualization, select as Trajectory topic */rosdyn/simulated_trajectory*
+
+>> be sure that the MoveIt! scene contains all the ostacles!
+
+Now you are ready to generate a trajectory by clicking of *1) Generate Trajectory*, it will required seconds or minutes depending on the desired trajectory duration
+
+You can visualize the obtained trajectory by clicking on *2) Simulate Trajectory*. With the *Trajectory* visualization you can rerun the simulation or check a spefic part of the trajectory
+
+You can reiterated the trajectory generation if you are not satisfied of the obtained results.
+
+Once you are ready, click on *3) Execute trajectory* to execute the trajectory on real robot. Survey the robotic cell!! Tip: if your robot allows to slow down the trajectory execution, execute the trajectory once with the reduced velocity and once with the normal velocity.
+
+Now you are ready to estimate the model by clicking the *4) Estimate model*, a pop-up window show the model estimation accuracy (TBD).
+
+You can save the model by clicking *Save Model*. A urdf file and a yaml file will be created in /home/$USER/.ros folder.
+
+With the *Advanced settings*, you can change the trajectory generation parameters, as well as the filtering bandwidth and the Friction model.
 
 ![](Documentation/screenshoot001.png)
 
