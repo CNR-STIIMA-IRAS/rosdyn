@@ -1185,7 +1185,7 @@ namespace rosdyn
 
 
   
-  boost::shared_ptr<Chain> createChain(const urdf::Model& urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::VectorXd& gravity)
+  inline boost::shared_ptr<Chain> createChain(const urdf::Model& urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::VectorXd& gravity)
   {
     
     boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  

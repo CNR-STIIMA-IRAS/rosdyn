@@ -78,6 +78,16 @@ public:
   };
   
   virtual Eigen::VectorXd getTorque(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq) = 0;
+  virtual Eigen::VectorXd getAdditiveTorque(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq)
+  {
+    return getTorque(q,Dq,DDq);
+  };
+  virtual Eigen::VectorXd getNonAdditiveTorque(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq, const Eigen::Ref<Eigen::VectorXd>& additive_torque)
+  {
+    Eigen::VectorXd t(m_joints_number);
+    t.setZero();
+    return t;
+  };
   virtual Eigen::MatrixXd getRegressor(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq) = 0;
   unsigned int getParametersNumber(){return m_parameters_map.size();};
   Eigen::VectorXd getNominalParameters(){return m_nominal_parameters;};
