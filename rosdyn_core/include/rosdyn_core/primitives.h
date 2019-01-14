@@ -195,9 +195,9 @@ namespace rosdyn
     void computeFrames();
     
   public:
-    Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_link, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d gravity = Eigen::Vector3d::Zero());
-    Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d gravity = Eigen::Vector3d::Zero());
-    Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d gravity = Eigen::Vector3d::Zero());
+    Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_link, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
+    Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
+    Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
     void setInputJointsName(const std::vector<std::string> joints_name);
     unsigned int getLinksNumber() {return m_links_number;};
     unsigned int getJointsNumber() {return m_joints_number;};
@@ -524,10 +524,11 @@ namespace rosdyn
     return ptr;
   }
   
+  
   inline Chain::Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_link, 
                const std::string& base_link_name, 
                const std::string& ee_link_name, 
-               Eigen::Vector3d gravity)
+               const Eigen::Vector3d& gravity)
   {
     m_is_screws_computed = 
     m_is_jac_computed = 
@@ -642,17 +643,17 @@ namespace rosdyn
     
   };
   
-  inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d gravity)
+  inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
   {
     shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());
     root_link->fromUrdf(model.root_link_);
     Chain(root_link, base_link_name,ee_link_name, gravity);
   }
   
-  inline Chain::Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d gravity)
+  inline Chain::Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
   {
     urdf::Model model;
-    model.initParam("robot_description");
+    model.initParam(robot_description);
     shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());
     root_link->fromUrdf(model.root_link_);
     Chain(root_link, base_link_name,ee_link_name, gravity);
@@ -1185,10 +1186,10 @@ namespace rosdyn
 
 
   
-  boost::shared_ptr<Chain> createChain(const urdf::Model& urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::VectorXd& gravity)
+  inline boost::shared_ptr<Chain> createChain(const urdf::Model& urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
   {
     
-    boost::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
+    shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
     root_link->fromUrdf(urdf_model.root_link_);
     boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, gravity));
     return chain;
