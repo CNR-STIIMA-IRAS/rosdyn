@@ -14,7 +14,8 @@ Travis CI Kinetic Build: [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/
 
 ## List of packages
 
-*rosdyn_core*: Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor. 
+### **rosdyn_core**:
+Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor. 
 
 An example of usage can be found [here](rosdyn_core/test/rosdyn_speed_test.cpp)
 
@@ -41,11 +42,14 @@ The following list shows the computation times for a 6DOF robot on a laptop Asus
 >pose + jacobian +  joint inertia matrix                                  = 10.06761 [us]
 
 
-> *rosdyn_identification*: Nodelet-based library for trajectory generation and for model calibration.
+### **rosdyn_identification**
+Nodelet-based library for trajectory generation and for model calibration.
 
-> *rosdyn_gui*: RViz front-end plugin
+### **rosdyn_gui**
+RViz front-end plugin
 
-> *rosdyn_identification_msgs*: Action definition for generating identification trajectory and estimating model.
+### **rosdyn_identification_msgs**
+Action definition for generating identification trajectory and estimating model.
 
 ## Required parameters
 
