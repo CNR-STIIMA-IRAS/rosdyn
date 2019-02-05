@@ -18,7 +18,6 @@
 # include <rosdyn_core/friction_polynomial2.h>
 # include <rosdyn_core/friction_polynomial1.h>
 # include <rosdyn_core/frame_distance.h>
-
 # include <Eigen/Geometry>
 # include<Eigen/StdVector>
 
