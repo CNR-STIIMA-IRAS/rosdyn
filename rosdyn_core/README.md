@@ -11,7 +11,7 @@ See the instruction of the [main page](../README.md)
 ## List of packages
 
 ### **rosdyn_core**:
-Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor. 
+Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows computing model regressor. 
 
 An example of usage can be found [here](rosdyn_core/test/rosdyn_speed_test.cpp)
 

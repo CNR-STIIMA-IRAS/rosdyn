@@ -14,8 +14,9 @@ Travis CI Kinetic Build: [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/
 
 ## List of packages
 
-### **rosdyn_core**:
-Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allows to compute model regressor. 
+### **rosdyn_core** [see README](rosdyn_core/README.md):
+Dynamics header library based on Eigen. With respect to KDL, it has two advantages: it is faster and it allow computing model regressor. 
+
 
 An example of usage can be found [here](rosdyn_core/test/rosdyn_speed_test.cpp)
 
