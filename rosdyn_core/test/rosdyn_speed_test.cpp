@@ -29,25 +29,35 @@ int main(int argc, char **argv){
   grav << 0, 0, -9.806;
   
   boost::shared_ptr<rosdyn::Chain> chain = rosdyn::createChain(model, base_frame,tool_frame,grav);
-  chain->setInputJointsName(js.name);
+//  chain->setInputJointsName(js.name);
   
-  Eigen::VectorXd q(6);
+  unsigned int n_joints=chain->getActiveJointsNumber();
+  Eigen::VectorXd q(n_joints);
   q.setZero();
-  Eigen::VectorXd Dq(6);
+  Eigen::VectorXd Dq(n_joints);
   Dq.setZero();
-  Eigen::VectorXd DDq(6);
+  Eigen::VectorXd DDq(n_joints);
   DDq.setZero();
-  Eigen::VectorXd DDDq(6);
+  Eigen::VectorXd DDDq(n_joints);
   DDDq.setZero();
-  Eigen::VectorXd tau(6);
+  Eigen::VectorXd tau(n_joints);
   tau.setZero();
   
   
  
-  Eigen::Affine3d pose_eigen;
+  Eigen::Affine3d T_base_tool;
+
+  Eigen::Vector6d twist_of_tool_in_base;
+  Eigen::Vector6d nonlinacc_twist_of_tool_in_base;
+  Eigen::Vector6d linacc_twist_of_tool_in_base;
+  Eigen::Vector6d acc_twist_of_tool_in_base;
+  Eigen::Vector6d jerk_twist_of_tool_in_base;
+
   std::vector< Eigen::Vector6d,Eigen::aligned_allocator<Eigen::Vector6d> > twists, nonlinacc_twists, linacc_twists, acc_twists, jerk_twists;
-  Eigen::Matrix6Xd jac_eigen;
-  jac_eigen.resize(6, chain->getActiveJointsNumber());
+
+
+  Eigen::Matrix6Xd jacobian_of_tool_in_base;
+  jacobian_of_tool_in_base.resize(6, chain->getActiveJointsNumber());
   Eigen::MatrixXd joint_inertia;
   
   double t_null=0;
@@ -75,7 +85,7 @@ int main(int argc, char **argv){
     t0 = ros::Time::now();
     t_null +=  (ros::Time::now()-t0).toSec() * 1e6;t0 = ros::Time::now();
     
-    pose_eigen = chain->getTransformation(q);
+    T_base_tool = chain->getTransformation(q);
     t_pose_eigen +=  (ros::Time::now()-t0).toSec() *1e6;
 
     q.setRandom();
@@ -83,7 +93,7 @@ int main(int argc, char **argv){
     DDq.setRandom();
     DDDq.setRandom();
     t0 = ros::Time::now();
-    jac_eigen = chain->getJacobian(q);
+    jacobian_of_tool_in_base = chain->getJacobian(q);
     t_jac_eigen +=  (ros::Time::now()-t0).toSec() *1e6;
   
     q.setRandom();
@@ -141,8 +151,15 @@ int main(int argc, char **argv){
     t0 = ros::Time::now();
     joint_inertia = chain->getJointInertia(q);
     t_inertia_eigen +=  (ros::Time::now()-t0).toSec() * 1e6;
+
+    twist_of_tool_in_base=chain->getTwistTool(q,Dq);
+    linacc_twist_of_tool_in_base = chain->getDTwistLinearPartTool(q, DDq);
+    nonlinacc_twist_of_tool_in_base = chain->getDTwistNonLinearPartTool(q, Dq);
+    acc_twist_of_tool_in_base = chain->getDTwistTool(q, Dq, DDq);
+    jerk_twist_of_tool_in_base = chain->getDDTwistTool(q, Dq, DDq, DDDq);
+
     
-    
+
   }
   ROS_INFO("average on %d trials: \nnote:\ncompute torque implies computing acceleration,\ncompute acceleration implies computing velocity,\ncompute velocity implies computing pose",ntrial);
   ROS_INFO("computation time No operation                                    = %8.5f [us]", t_null / ntrial);

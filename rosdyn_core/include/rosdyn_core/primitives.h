@@ -128,7 +128,8 @@ namespace rosdyn
     
     std::vector<std::string> m_links_name;
     std::map<std::string, unsigned int> m_joints_name;
-    
+    std::vector<std::string> m_moveable_joints_name;
+
     Eigen::Matrix6Xd m_jacobian;
     
     Eigen::Affine3d m_T_bt;                               // base <- tool
@@ -199,6 +200,7 @@ namespace rosdyn
     Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
     Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
     void setInputJointsName(const std::vector<std::string> joints_name);
+    std::vector<std::string> getMoveableJointNames(){return m_moveable_joints_name;}
     unsigned int getLinksNumber() {return m_links_number;}
     unsigned int getJointsNumber() {return m_joints_number;}
     unsigned int getActiveJointsNumber() {return m_active_joints_number;}
@@ -582,8 +584,11 @@ namespace rosdyn
       m_links_name.push_back( m_links.at(idx)->getName() );
     
     for (unsigned int idx = 0;idx<m_joints.size();idx++)
+    {
       m_joints_name.insert( std::pair<std::string, unsigned int>(m_joints.at(idx)->getName(), idx) );
-    
+      if (!m_joints.at(idx)->isFixed())
+        m_moveable_joints_name.push_back(m_joints.at(idx)->getName());
+    }
     m_active_joints_number = m_joints_number = m_joints.size();
     m_links_number  = m_links.size();
     m_joint_inertia_extended.resize(m_joints_number, m_joints_number);
@@ -648,7 +653,9 @@ namespace rosdyn
     m_T_bl.resize(m_links_number);
     m_T_bl.at(0).setIdentity();
     computeFrames();
-    
+
+    setInputJointsName(m_moveable_joints_name);
+
   };
   
   inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
@@ -1200,6 +1207,7 @@ namespace rosdyn
     shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
     root_link->fromUrdf(urdf_model.root_link_);
     boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, gravity));
+
     return chain;
   };
   
