@@ -15,29 +15,6 @@ Dynamics header library based on Eigen. With respect to KDL, it has two advantag
 
 An example of usage can be found [here](rosdyn_core/test/rosdyn_speed_test.cpp)
 
-The following list shows the computation times for a 6DOF robot on a laptop Asus PU551J with Ubuntu 16.04 (Release build,  average on 10000 trials).
-
-** computation time in microseconds: **
-
-> pose                                            =  0.75970 [us] 
-
-> pose + jacobian                                       =  1.06562 [us]
-
-> pose + jacobian + velocity twists for all links                   =  1.25589 [us]
-
-> pose + jacobian + velocity twists for all links + linear aceleration twists for all links        =  1.25351 [us]
-
-> pose + jacobian + velocity twists for all links +  non linear acceleration twists for all links    =  1.51663 [us]
-
-> pose + jacobian + velocity twists for all links +  acceleration twists for all links               =  1.83826 [us]
-
->pose + jacobian + velocity twists for all links +  acceleration twists for all links               + jerk twists for all links                       =  2.68916 [us]
-
->pose + jacobian + velocity twists for all links +  acceleration twists for all links               + joint torque                                    =  3.76733 [us]
-
->pose + jacobian +  joint inertia matrix                                  = 10.06761 [us]
-
-
 
 ## Usage
 
