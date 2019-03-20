@@ -210,6 +210,7 @@ namespace rosdyn
      * Kinematics methods
      */
     Eigen::Affine3d getTransformation(const Eigen::VectorXd& q);
+    std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d>> getTransformations(const Eigen::VectorXd& q);
     Eigen::Matrix6Xd getJacobian(const Eigen::VectorXd& q);
     std::vector<Eigen::Vector6d,Eigen::aligned_allocator<Eigen::Vector6d>> getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
     Eigen::Vector6d getTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq){return getTwist(q,Dq).back();}
@@ -589,6 +590,7 @@ namespace rosdyn
       if (!m_joints.at(idx)->isFixed())
         m_moveable_joints_name.push_back(m_joints.at(idx)->getName());
     }
+
     m_active_joints_number = m_joints_number = m_joints.size();
     m_links_number  = m_links.size();
     m_joint_inertia_extended.resize(m_joints_number, m_joints_number);
@@ -654,8 +656,9 @@ namespace rosdyn
     m_T_bl.at(0).setIdentity();
     computeFrames();
 
+    for (const std::string& s: m_moveable_joints_name)
+      ROS_FATAL("%s",s.c_str());
     setInputJointsName(m_moveable_joints_name);
-
   };
   
   inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
@@ -771,6 +774,12 @@ namespace rosdyn
     return m_T_bt;
   }
   
+  inline std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d>> Chain::getTransformations(const Eigen::VectorXd& q)
+  {
+    getTransformation(q);
+    return m_T_bl;
+  }
+
   inline Eigen::Matrix6Xd Chain::getJacobian(const Eigen::VectorXd& q)
   {
     getTransformation(q);

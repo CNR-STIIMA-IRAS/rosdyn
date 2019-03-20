@@ -66,6 +66,10 @@ Main methods:
 Eigen::Affine3d T_base_tool;
 T_base_tool = chain->getTransformation(q);
 
+// get the transforms for all the links
+std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d>> T_base_all_links;
+T_base_all_links = chain->getTransformations(q);
+
 // jacobian of tool_frame in base_frame
 Eigen::Matrix6Xd jacobian_of_tool_in_base;
 jacobian_of_tool_in_base.resize(6, chain->getActiveJointsNumber());
