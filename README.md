@@ -54,7 +54,7 @@ Action definition for generating identification trajectory and estimating model.
 
 ## Required parameters
 
-The RosDyn identification package requires the following parameters. Most of them can be changed with the GUI by using the "Advance settings button.
+The RosDyn identification package requires the following parameters. Most of them can be changed with the GUI by using the *Advanced settings button*.
 
 ```yaml
 group_name: "ur10"  # moveit move group name
@@ -252,7 +252,7 @@ Now you are ready to estimate the model by clicking the *4) Estimate model*, a p
 
 You can save the model by clicking *Save Model*. A urdf file and a yaml file will be created in /home/$USER/.ros folder.
 
-_NOTE_: *4) Estimate model* usee **all the trajectories** called *ident_trj* inside /home/$USER/.ros folder (or the trajectory namespace you selected). If you do not want to use some trajectory you have to manually remove them.
+_NOTE_: *4) Estimate model* uses **all the trajectories** called *ident_trj* inside /home/$USER/.ros folder (or the trajectory namespace you selected). If you do not want to use some trajectory you have to manually remove them.
 
 With the *Advanced settings*, you can change the trajectory generation parameters, as well as the filtering bandwidth and the Friction model.
 
