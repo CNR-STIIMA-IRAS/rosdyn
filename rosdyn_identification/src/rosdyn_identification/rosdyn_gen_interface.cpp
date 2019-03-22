@@ -50,10 +50,7 @@ void MetoGenInterfaceNodelet::metoTrjGenCB(const rosdyn_identification_msgs::Met
   std::string urdf_param_ = "";
   if ( !getNodeHandle().getParam( std::string(std::string(m_namespace)+"/urdf_param").c_str(), urdf_param_ ) )
   {
-    ROS_ERROR("Impossible to find %s\n", std::string(std::string(m_namespace)+"/urdf_param").c_str() );
-    m_result_.result = rosdyn_identification_msgs::MetoTrjGenResult::GENERIC_ERROR;
-    m_meto_trj_opt_as->setAborted(m_result_);
-    return;
+    ROS_INFO("Impossible to find %s\n", std::string(std::string(m_namespace)+"/urdf_param. Use robot_description as default value").c_str() );
   }
   std::string robot_description;
   if (!getNodeHandle().getParam(urdf_param_,robot_description))
@@ -64,15 +61,7 @@ void MetoGenInterfaceNodelet::metoTrjGenCB(const rosdyn_identification_msgs::Met
     return;
   }
   
-  std::vector<std::string> joint_names_;    
-  if ( !getNodeHandle().getParam( std::string(std::string(m_namespace)+"/controller_joint_names").c_str(), joint_names_ ) )
-  {
-    ROS_ERROR("Impossible to find %s\n", std::string(std::string(m_namespace)+"/controller_joint_names").c_str() );
-    m_result_.result = rosdyn_identification_msgs::MetoTrjGenResult::GENERIC_ERROR;
-    m_meto_trj_opt_as->setAborted(m_result_);
-    return;
-  }
-  
+
   m_max_speed = 0.0;
   m_max_acc = 0.0;
   if ( !getNodeHandle().getParam( std::string(std::string(m_namespace)+"/speed_scaling").c_str(), m_max_speed ) )

@@ -68,8 +68,6 @@ meto_cfg:
 
   urdf_param: "robot_description" # name of the robot_description parameter
 
-  urdf_name: "cybersort" # name of the robot inside the robot description
-
   trajectory_namespace: "ident_trj" # name of the identification trajectory
   
   controller_joint_names:  # list of controlled joint of the move group (the joints which provide effort information, typically the motorized ones)
@@ -80,7 +78,14 @@ meto_cfg:
   - ur10_wrist_2_joint
   - ur10_wrist_3_joint
 
-    
+   
+  # stage 1
+  # trajectory that explore the entire workspace.
+  # It should be longer than 30 seconds
+
+  # stage 2:
+  # trajectories that perform small movements inside a region to identify friction and grativational part.
+  
   opt_cfg:
   
     stage1_duration: 10 # duration of stage 1 trajectory
@@ -114,6 +119,16 @@ cybersort: # name of the robot inside the robot description
   gravity: [0, 0, -9.806] # gravity acceleration
   
 
+  # Joint friction types:
+  # Ideal:        0.0
+  # Polynomial1:  coloumb*sign(velocity)+viscous*velocity
+  # Polynomial2:  coloumb*sign(velocity)+first_order_viscous*velocity+second_order_viscous*sign(velocity)*velocity^2
+  #
+  # sign(velocity) =  1                      if velocity>min_velocity
+  #                  -1                      if velocity<-min_velocity
+  #                   velocity/min_velocity  otherwise
+  #
+  # velocity if saturated betwen  [-max_velocity, max_velocity]
   ur10_shoulder_pan_joint : 
   
     # ur10_shoulder_pan_joint has a Polynomial1 friction, with a term depending on the velocity sign (coloumb) and a term linearly depending on velocity. The sign is approximeted with a straight line with the velocity is less (in modulus) then min_velocity. Velocity is satured if greater than max_velocity.
