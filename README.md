@@ -252,6 +252,8 @@ Now you are ready to estimate the model by clicking the *4) Estimate model*, a p
 
 You can save the model by clicking *Save Model*. A urdf file and a yaml file will be created in /home/$USER/.ros folder.
 
+_NOTE_: *4) Estimate model* usee **all the trajectories** called *ident_trj* inside /home/$USER/.ros folder (or the trajectory namespace you selected). If you do not want to use some trajectory you have to manually remove them.
+
 With the *Advanced settings*, you can change the trajectory generation parameters, as well as the filtering bandwidth and the Friction model.
 
 ![](Documentation/screenshoot001.png)
