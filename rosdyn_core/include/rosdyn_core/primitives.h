@@ -72,6 +72,7 @@ namespace rosdyn
     void computedTpc();
     void computeJacobian();
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Joint();
     void fromUrdf(const shared_ptr_namespace::shared_ptr<urdf::Joint>& urdf_joint, const shared_ptr_namespace::shared_ptr<rosdyn::Link>& parent_link, const shared_ptr_namespace::shared_ptr<urdf::Link>& child_link);
     shared_ptr_namespace::shared_ptr<rosdyn::Joint> pointer();
@@ -99,7 +100,7 @@ namespace rosdyn
     
     
   public:
-    
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Link() {};
     void fromUrdf(const shared_ptr_namespace::shared_ptr<urdf::Link>& urdf_link, 
                   const shared_ptr_namespace::shared_ptr<rosdyn::Joint>& parent_joint = 0);
@@ -196,6 +197,7 @@ namespace rosdyn
     void computeFrames();
     
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_link, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
     Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
     Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
