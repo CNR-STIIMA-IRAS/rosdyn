@@ -656,8 +656,6 @@ namespace rosdyn
     m_T_bl.at(0).setIdentity();
     computeFrames();
 
-    for (const std::string& s: m_moveable_joints_name)
-      ROS_FATAL("%s",s.c_str());
     setInputJointsName(m_moveable_joints_name);
   };
   
