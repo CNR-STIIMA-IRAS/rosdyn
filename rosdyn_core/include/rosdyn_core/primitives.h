@@ -20,6 +20,7 @@
 # include <rosdyn_core/frame_distance.h>
 # include <Eigen/Geometry>
 # include<Eigen/StdVector>
+# include <eigen_matrix_utils/eiquadprog.hpp>
 
 #if ROS_VERSION_MINIMUM(1, 14, 1)
 # include <memory>
@@ -35,6 +36,8 @@ namespace rosdyn
 {
   class Link;
   class Chain;    
+
+  typedef boost::shared_ptr<Chain> ChainPtr;
   
   class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
   {
@@ -44,7 +47,10 @@ namespace rosdyn
       REVOLUTE, PRISMATIC, FIXED
     } m_type;
     
-    
+    double m_q_max;
+    double m_q_min;
+    double m_Dq_max;
+    double m_tau_max;
     
     Eigen::Affine3d m_T_pj;           // transformation parent <- joint
     Eigen::Affine3d m_last_T_pc;      // transformation parent <- child
@@ -82,6 +88,11 @@ namespace rosdyn
     const Eigen::Affine3d& getTransformation(   const double& q = 0);
     const Eigen::Vector6d& getScrew_of_child_in_parent();                      
     
+    double getQMax(){return m_q_max;}
+    double getQMin(){return m_q_min;}
+    double getDQMax(){return m_Dq_max;}
+    double getTauMax(){return m_tau_max;}
+
     const bool isFixed() {return (m_type == FIXED);};
   };
   
@@ -146,7 +157,22 @@ namespace rosdyn
     
     Eigen::VectorXd m_last_DDDq;
     Eigen::VectorXd m_sorted_DDDq;
-    
+
+    Eigen::VectorXd m_q_max;
+    Eigen::VectorXd m_q_min;
+    Eigen::VectorXd m_Dq_max;
+    Eigen::VectorXd m_tau_max;
+
+    // for QP local ik solver
+    Eigen::MatrixXd m_CE;
+    Eigen::VectorXd m_ce0;
+    Eigen::MatrixXd m_CI;
+    Eigen::VectorXd m_ci0;
+    Eigen::MatrixXd m_H;
+    Eigen::VectorXd m_f;
+    Eigen::VectorXd m_joint_error;
+    Eigen::VectorXd m_cart_error_in_b;
+
     
     Eigen::VectorXd m_joint_torques;
     Eigen::VectorXd m_active_joint_torques;
@@ -207,7 +233,11 @@ namespace rosdyn
     unsigned int getJointsNumber() {return m_joints_number;}
     unsigned int getActiveJointsNumber() {return m_active_joints_number;}
     std::vector<std::string> getLinksName() {return m_links_name;}
-    
+
+    Eigen::VectorXd getQMax(){return m_q_max;}
+    Eigen::VectorXd getQMin(){return m_q_min;}
+    Eigen::VectorXd getDQMax(){return m_Dq_max;}
+    Eigen::VectorXd getTauMax(){return m_tau_max;}
     /*
      * Kinematics methods
      */
@@ -228,6 +258,8 @@ namespace rosdyn
     Eigen::Vector6d getDDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq){return getDDTwistNonLinearPart(q,Dq,DDq).back();}
     std::vector<Eigen::Vector6d,Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq);
     Eigen::Vector6d getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq){return getDDTwist(q,Dq,DDq,DDDq).back();}
+
+    bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const ros::Duration& max_time=ros::Duration(0.005), const double& toll=1e-5);
 
     /*
      * Dynamics methods
@@ -295,7 +327,7 @@ namespace rosdyn
     if (m_axis_in_j.norm()>0)
       m_axis_in_j /= m_axis_in_j.norm();
     
-    
+
     m_skew_axis_in_j = skew(m_axis_in_j);
     m_square_skew_axis_in_j = m_skew_axis_in_j*m_skew_axis_in_j;
     m_identity.setIdentity();
@@ -307,8 +339,7 @@ namespace rosdyn
     m_skew_axis_in_p = m_T_pj.linear()*m_skew_axis_in_j;
     m_square_skew_axis_in_p =m_T_pj.linear() *m_square_skew_axis_in_j;
     m_last_T_pc = m_T_pj;
-    
-    
+
     if (urdf_joint->type == urdf::Joint::REVOLUTE)
       m_type = rosdyn::Joint::REVOLUTE;
     else if (urdf_joint->type == urdf::Joint::CONTINUOUS)
@@ -320,6 +351,21 @@ namespace rosdyn
     else
       m_type = rosdyn::Joint::FIXED;
     
+    if ((urdf_joint->type == urdf::Joint::PRISMATIC) || (urdf_joint->type == urdf::Joint::REVOLUTE))
+    {
+      m_q_max   = urdf_joint->limits->upper;
+      m_q_min   = urdf_joint->limits->lower;
+      m_Dq_max  = urdf_joint->limits->velocity;
+      m_tau_max = urdf_joint->limits->effort;
+    }
+    else if (urdf_joint->type == urdf::Joint::CONTINUOUS)
+    {
+      m_q_max   = 1e10;
+      m_q_min   = -1e10;
+      m_Dq_max  = urdf_joint->limits->velocity;
+      m_tau_max = urdf_joint->limits->effort;
+    }
+
     m_child_link.reset(new rosdyn::Link() );
     m_child_link->fromUrdf(child_link, pointer());
     computedTpc();
@@ -367,7 +413,7 @@ namespace rosdyn
     if (urdf_link->inertial != NULL)
     {
       m_mass = urdf_link->inertial->mass;
-      
+
       inertia(0, 0) = urdf_link->inertial->ixx;
       inertia(0, 1) = urdf_link->inertial->ixy;
       inertia(0, 2) = urdf_link->inertial->ixz;
@@ -659,7 +705,21 @@ namespace rosdyn
     computeFrames();
 
     setInputJointsName(m_moveable_joints_name);
-  };
+
+    // for QP local IK
+    m_CE.resize(6,0);
+    m_ce0.resize(0);
+    m_CE.setZero();
+    m_ce0.setZero();
+
+    m_CI.resize(6,12);
+    m_ci0.resize(12);
+    m_CI.setZero();
+    m_ci0.setZero();
+    m_CI.block(0,0,6,6).setIdentity();
+    m_CI.block(0,6,6,6)=-m_CI.block(0,0,6,6);
+
+  }
   
   inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
   {
@@ -725,7 +785,24 @@ namespace rosdyn
     Eigen::Matrix4d eye4;
     eye4.setIdentity();
     
-    
+    m_q_max.resize(m_active_joints_number);
+    m_q_min.resize(m_active_joints_number);
+    m_Dq_max.resize(m_active_joints_number);
+    m_tau_max.resize(m_active_joints_number);
+
+    for (unsigned int idx=0;idx<m_active_joints_number;idx++)
+    {
+      auto& jnt=m_joints.at(m_active_joints.at(idx));
+      m_q_max(idx)=jnt->getQMax();
+      m_q_min(idx)=jnt->getQMin();
+      m_Dq_max(idx)=jnt->getDQMax();
+      m_tau_max(idx)=jnt->getTauMax();
+
+    }
+    ROS_DEBUG_STREAM("limits:\n q max= " << m_q_max.transpose()
+                     << "\nq min = " << m_q_min.transpose()
+                     << "\nDq max = " << m_Dq_max.transpose()
+                     << "\ntau max = " << m_tau_max.transpose());
   }
   
   inline void Chain::computeFrames()
@@ -1206,9 +1283,42 @@ namespace rosdyn
       nominal_par.block(10*(nl-1),0,10,1)= m_links.at(nl)->getNominalParameters();
     }
     return nominal_par;
-  };
+  }
+
+  inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const ros::Duration &max_time, const double &toll)
+  {
+    ros::Time tini=ros::Time::now();
+
+    sol=seed;
+
+    while ((ros::Time::now()-tini)<max_time)
+    {
+      rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+
+      if (m_cart_error_in_b.norm()<toll)
+      {
+        return true;
+      }
+      getJacobian(sol);
+      m_H=m_jacobian.transpose()*m_jacobian;
+      m_f=-m_jacobian.transpose()*m_cart_error_in_b;
+
+      m_ci0.head(6)=sol-m_q_min;
+      m_ci0.tail(6)=m_q_max-sol;
 
 
+      Eigen::solve_quadprog(m_H,
+                            m_f,
+                            m_CE,
+                            m_ce0,
+                            m_CI,
+                            m_ci0,
+                            m_joint_error );
+      sol+=m_joint_error;
+    }
+    return false;
+
+  }
   
   inline boost::shared_ptr<Chain> createChain(const urdf::Model& urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
   {
@@ -1218,8 +1328,9 @@ namespace rosdyn
     boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, gravity));
 
     return chain;
-  };
+  }
   
+
 }
 
 # endif
