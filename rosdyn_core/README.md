@@ -79,11 +79,11 @@ jacobian_of_tool_in_base = chain->getJacobian(q);
 Eigen::Affine3d T_base_tool; // desired transformation
 Eigen::VectorXd seed; // initial seed
 Eigen::VectorXd sol;  // solution
-if (computeLocalIk(sol, T_b_t, seed))
+if (chian->computeLocalIk(sol, T_base_tool, seed))
   ROS_INFO("ok");
 else
   ROS_ERROR("no solution found");
-  
+
 
 // joint torque tau = joint_inertia_matrix*DDq+ tau_non_linear
 Eigen::VectorXd tau(n_joints);
