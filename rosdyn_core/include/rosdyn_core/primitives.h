@@ -194,6 +194,7 @@ namespace rosdyn
     bool m_is_nonlinjerk_computed;
     bool m_is_wrench_computed;
     bool m_is_regressor_computed;
+    bool m_is_chain_ok=true;
     
     std::vector<Eigen::Vector6d,Eigen::aligned_allocator<Eigen::Vector6d>> m_screws_of_c_in_b;
     
@@ -233,6 +234,7 @@ namespace rosdyn
     unsigned int getJointsNumber() {return m_joints_number;}
     unsigned int getActiveJointsNumber() {return m_active_joints_number;}
     std::vector<std::string> getLinksName() {return m_links_name;}
+    const bool& isOk(){return m_is_chain_ok;}
 
     Eigen::VectorXd getQMax(){return m_q_max;}
     Eigen::VectorXd getQMin(){return m_q_min;}
@@ -259,7 +261,7 @@ namespace rosdyn
     std::vector<Eigen::Vector6d,Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq);
     Eigen::Vector6d getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq){return getDDTwist(q,Dq,DDq,DDDq).back();}
 
-    bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const ros::Duration& max_time=ros::Duration(0.005), const double& toll=1e-5);
+    bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
 
     /*
      * Dynamics methods
@@ -607,12 +609,14 @@ namespace rosdyn
     if (!base_link)
     {
       ROS_ERROR("Base link not found");
+      m_is_chain_ok=false;
       return;
     }
     shared_ptr_namespace::shared_ptr<rosdyn::Link> ee_link = base_link->findChild(ee_link_name);
     if (!ee_link)
     {
       ROS_ERROR("Tool link not found");
+      m_is_chain_ok=false;
       return;
     }
     
@@ -1285,7 +1289,7 @@ namespace rosdyn
     return nominal_par;
   }
 
-  inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const ros::Duration &max_time, const double &toll)
+  inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
   {
     ros::Time tini=ros::Time::now();
 
@@ -1300,8 +1304,8 @@ namespace rosdyn
         return true;
       }
       getJacobian(sol);
-      m_H=m_jacobian.transpose()*m_jacobian;
-      m_f=-m_jacobian.transpose()*m_cart_error_in_b;
+      m_H=  m_jacobian.transpose() * m_jacobian;
+      m_f= -m_jacobian.transpose() * m_cart_error_in_b;
 
       m_ci0.head(6)=sol-m_q_min;
       m_ci0.tail(6)=m_q_max-sol;
@@ -1326,7 +1330,8 @@ namespace rosdyn
     shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
     root_link->fromUrdf(urdf_model.root_link_);
     boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, gravity));
-
+    if (!chain->isOk())
+      chain.reset();
     return chain;
   }
   
