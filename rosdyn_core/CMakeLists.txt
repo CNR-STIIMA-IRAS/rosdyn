@@ -23,6 +23,7 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
+
 add_executable(rosdyn_speed_test test/rosdyn_speed_test.cpp)
 add_dependencies(rosdyn_speed_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rosdyn_speed_test

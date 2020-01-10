@@ -173,6 +173,8 @@ namespace rosdyn
       // read data as a block:
       int number_of_sample = length / sizeof(double) / ( 1+3*number_of_joint_from_xml_ );
       
+      std::cout << number_of_joint_from_xml_ << std::endl;
+
       Eigen::MatrixXd singleFileData( (1+3*number_of_joint_from_xml_), number_of_sample );
       singleFileData.setZero();
       
@@ -187,7 +189,12 @@ namespace rosdyn
         m_result_.status = rosdyn_identification_msgs::MetoParEstimResult::GENERIC_ERROR;
         m_meto_par_estim_as->setAborted(m_result_);
         return;
-      }  
+      }else{
+        ROS_INFO("length: %d", length);
+        ROS_INFO("rows(): %zu", singleFileData.rows());
+        ROS_INFO("cols(): %zu", singleFileData.cols());
+        ROS_INFO("sizeof(double): %zu", sizeof(double));
+      }
       
       is.read ( (char*)singleFileData.data(), length );
       is.close();
@@ -251,21 +258,21 @@ namespace rosdyn
         eff.col(idxJnt) = fileData.row( idxJnt + 1 + number_of_joint_from_xml_ * 2 ).transpose();
                 
         eigen_control_toolbox::FirstOrderLowPass filt_pos;   
-        filt_pos.importMatricesFromParam(      getNodeHandle(),m_namespace + "/filter");
+        filt_pos.importMatricesFromParam(      getNodeHandle(),m_namespace + "/position_filter");
         filt_pos.setStateFromLastIO(      q.col(idxJnt).head(1),   q.col(idxJnt).head(1));
 
         eigen_control_toolbox::FirstOrderLowPass filt_vel;
-        filt_vel.importMatricesFromParam(      getNodeHandle(),m_namespace + "/filter");
+        filt_vel.importMatricesFromParam(      getNodeHandle(),m_namespace + "/velocity_filter");
         filt_vel.setStateFromLastIO(     Dq.col(idxJnt).head(1),  Dq.col(idxJnt).head(1));
      
         Eigen::VectorXd init_acc(1);init_acc.setZero();
         eigen_control_toolbox::FirstOrderHighPass filt_acc;
-        filt_acc.importMatricesFromParam(      getNodeHandle(),m_namespace + "/filter");
+        filt_acc.importMatricesFromParam(      getNodeHandle(),m_namespace + "/velocity_filter");
         filt_acc.setStateFromLastIO(    init_acc,                Dq.col(idxJnt).head(1));
         
         eigen_control_toolbox::FirstOrderLowPass filt_eff;
         filt_eff.setStateFromLastIO( eff.col(idxJnt).head(1), eff.col(idxJnt).head(1));
-        filt_eff.importMatricesFromParam(      getNodeHandle(),m_namespace + "/filter");
+        filt_eff.importMatricesFromParam(      getNodeHandle(),m_namespace + "/effort_filter");
         filt_eff.setStateFromLastIO( eff.col(idxJnt).head(1), eff.col(idxJnt).head(1));
         
         for (unsigned int iStep=0; iStep<q.rows(); iStep++)
@@ -292,6 +299,7 @@ namespace rosdyn
       st_row_ += qf.rows();
     }
     
+
     std::mt19937 eng{ std::random_device{}() };
     Eigen::VectorXi indices = Eigen::VectorXi::LinSpaced(qf_full.rows(), 0, qf_full.rows());
     

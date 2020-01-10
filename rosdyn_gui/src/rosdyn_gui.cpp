@@ -60,7 +60,7 @@ Panel(parent)
     m_simulate_trajectories_btn->setEnabled(false);
     m_list_trjs_combobox->setEnabled(false);
     trj_label->setEnabled(false);
-    m_parameter_estimation_btn->setEnabled(false);
+    m_parameter_estimation_btn->setEnabled(true);
   }
   m_save_model_btn = new QPushButton();
   m_save_model_btn->setText("Save Model");
