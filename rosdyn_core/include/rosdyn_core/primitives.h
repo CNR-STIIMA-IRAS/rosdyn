@@ -174,7 +174,16 @@ namespace rosdyn
     Eigen::VectorXd m_joint_error;
     Eigen::VectorXd m_cart_error_in_b;
 
-    
+    Eigen::MatrixXd m_CE_red;
+    Eigen::VectorXd m_ce0_red;
+    Eigen::MatrixXd m_CI_red;
+    Eigen::VectorXd m_ci0_red;
+    Eigen::MatrixXd m_H_red;
+    Eigen::VectorXd m_f_red;
+    Eigen::VectorXd m_joint_error_red;
+    Eigen::VectorXd m_cart_error_in_b_red;
+
+
     Eigen::VectorXd m_joint_torques;
     Eigen::VectorXd m_active_joint_torques;
     Eigen::MatrixXd m_regressor_extended;
@@ -263,6 +272,7 @@ namespace rosdyn
     Eigen::Vector6d getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq){return getDDTwist(q,Dq,DDq,DDDq).back();}
 
     bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
+    bool computePositionLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
 
     /*
      * Dynamics methods
@@ -712,17 +722,29 @@ namespace rosdyn
     setInputJointsName(m_moveable_joints_name);
 
     // for QP local IK
-    m_CE.resize(6,0);
+    m_CE.resize(m_active_joints_number,0);
     m_ce0.resize(0);
     m_CE.setZero();
     m_ce0.setZero();
 
-    m_CI.resize(6,12);
-    m_ci0.resize(12);
+    m_CI.resize(m_active_joints_number,2*m_active_joints_number);
+    m_ci0.resize(2*m_active_joints_number);
     m_CI.setZero();
     m_ci0.setZero();
-    m_CI.block(0,0,6,6).setIdentity();
-    m_CI.block(0,6,6,6)=-m_CI.block(0,0,6,6);
+    m_CI.block(0,0,m_active_joints_number,m_active_joints_number).setIdentity();
+    m_CI.block(0,m_active_joints_number,m_active_joints_number,m_active_joints_number)=-m_CI.block(0,0,m_active_joints_number,m_active_joints_number);
+
+    m_CE_red.resize(m_active_joints_number-1,0);
+    m_ce0_red.resize(0);
+    m_CE_red.setZero();
+    m_ce0_red.setZero();
+
+    m_CI_red.resize(m_active_joints_number-1,2*(m_active_joints_number-1));
+    m_ci0_red.resize(2*(m_active_joints_number-1));
+    m_CI_red.setZero();
+    m_ci0_red.setZero();
+    m_CI_red.block(0,0,(m_active_joints_number-1),m_active_joints_number-1).setIdentity();
+    m_CI_red.block(0,m_active_joints_number-1,m_active_joints_number-1,m_active_joints_number-1)=-m_CI_red.block(0,0,m_active_joints_number-1,m_active_joints_number-1);
 
   }
   
@@ -1290,7 +1312,7 @@ namespace rosdyn
     return nominal_par;
   }
 
-  inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
+  inline bool Chain::computePositionLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
   {
     ros::Time tini=ros::Time::now();
 
@@ -1300,16 +1322,77 @@ namespace rosdyn
     {
       rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
 
-      if (m_cart_error_in_b.norm()<toll)
+      if (m_cart_error_in_b.head(3).norm()<toll)
       {
         return true;
       }
       getJacobian(sol);
+
+
+      Eigen::MatrixXd jac_red;
+      jac_red = m_jacobian.topRows(3);
+      jac_red = jac_red.leftCols(4);
+
+
+      m_H=  jac_red.transpose() * jac_red;
+      m_f= -jac_red.transpose() * m_cart_error_in_b.head(3);
+
+
+
+
+      m_ci0_red.head(m_active_joints_number-1)=sol.head(m_active_joints_number-1)-m_q_min.head(m_active_joints_number-1);
+      m_ci0_red.tail(m_active_joints_number-1)=m_q_max.head(m_active_joints_number-1)-sol.head(m_active_joints_number-1);
+
+
+
+
+      Eigen::solve_quadprog(m_H,
+                            m_f,
+                            m_CE_red,
+                            m_ce0_red,
+                            m_CI_red,
+                            m_ci0_red,
+                            m_joint_error_red );
+
+
+      sol.head(m_active_joints_number-1)+=m_joint_error_red;
+
+    }
+    return false;
+
+  }
+
+
+  inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
+  {
+    ros::Time tini=ros::Time::now();
+
+
+    sol=seed;
+
+    while ((ros::Time::now()-tini)<max_time)
+    {
+
+      rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+
+
+      if (m_cart_error_in_b.norm()<toll)
+      {
+        return true;
+      }
+
+
+      getJacobian(sol);
+
       m_H=  m_jacobian.transpose() * m_jacobian;
       m_f= -m_jacobian.transpose() * m_cart_error_in_b;
 
-      m_ci0.head(6)=sol-m_q_min;
-      m_ci0.tail(6)=m_q_max-sol;
+
+
+      m_ci0.head(m_active_joints_number)=sol-m_q_min;
+      m_ci0.tail(m_active_joints_number)=m_q_max-sol;
+
+
 
 
       Eigen::solve_quadprog(m_H,
@@ -1319,7 +1402,9 @@ namespace rosdyn
                             m_CI,
                             m_ci0,
                             m_joint_error );
+
       sol+=m_joint_error;
+
     }
     return false;
 
@@ -1330,6 +1415,17 @@ namespace rosdyn
     
     shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  
     root_link->fromUrdf(urdf_model.root_link_);
+    boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, gravity));
+    if (!chain->isOk())
+      chain.reset();
+    return chain;
+  }
+
+  inline boost::shared_ptr<Chain> createChain(const urdf::ModelSharedPtr urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
+  {
+
+    shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());
+    root_link->fromUrdf(urdf_model->root_link_);
     boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame,tool_frame, gravity));
     if (!chain->isOk())
       chain.reset();
