@@ -59,7 +59,7 @@
 #include <iostream>
 #include <initializer_list>
 #include <Eigen/Dense>
-#include <glog/logging.h>
+//#include <glog/logging.h>
 
 namespace plotty {
 
