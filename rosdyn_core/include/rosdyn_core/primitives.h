@@ -126,7 +126,10 @@ namespace rosdyn
     const Eigen::Matrix66d& getSpatialInertia() {return m_Inertia_cc;};
     const std::vector< Eigen::Matrix<double, 6, 6>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>> >& getSpatialInertiaTerms() {return m_Inertia_cc_single_term;};
     const double& getMass() {return m_mass;};
+    void setMass(double mass_){m_mass = mass_;}
     const Eigen::Vector3d& getCog() {return m_cog_in_c;};
+    void setCog(const Eigen::Vector3d& cog_) {m_cog_in_c = cog_;};
+
     Eigen::VectorXd getNominalParameters();
   };
   
@@ -273,6 +276,7 @@ namespace rosdyn
 
     bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
     bool computePositionLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
+    bool computeYZLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
 
     /*
      * Dynamics methods
@@ -1312,20 +1316,30 @@ namespace rosdyn
     return nominal_par;
   }
 
-  inline bool Chain::computePositionLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
+
+  inline bool Chain::computeYZLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
   {
     ros::Time tini=ros::Time::now();
 
     sol=seed;
 
+//    std::cout << T_b_t << std::endl;
+//    Eigen::Affine3d o = getTransformation(sol);
+//    std::cout <<  o << std::endl;
+
+
+
+
     while ((ros::Time::now()-tini)<max_time)
     {
       rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+
 
       if (m_cart_error_in_b.head(3).norm()<toll)
       {
         return true;
       }
+
       getJacobian(sol);
 
 
@@ -1337,13 +1351,8 @@ namespace rosdyn
       m_H=  jac_red.transpose() * jac_red;
       m_f= -jac_red.transpose() * m_cart_error_in_b.head(3);
 
-
-
-
       m_ci0_red.head(m_active_joints_number-1)=sol.head(m_active_joints_number-1)-m_q_min.head(m_active_joints_number-1);
       m_ci0_red.tail(m_active_joints_number-1)=m_q_max.head(m_active_joints_number-1)-sol.head(m_active_joints_number-1);
-
-
 
 
       Eigen::solve_quadprog(m_H,
@@ -1354,6 +1363,61 @@ namespace rosdyn
                             m_ci0_red,
                             m_joint_error_red );
 
+      sol.head(m_active_joints_number-1)+=m_joint_error_red;
+
+    }
+    return false;
+
+  }
+
+
+
+
+  inline bool Chain::computePositionLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
+  {
+    ros::Time tini=ros::Time::now();
+
+    sol=seed;
+
+//    std::cout << T_b_t << std::endl;
+//    Eigen::Affine3d o = getTransformation(sol);
+//    std::cout <<  o << std::endl;
+
+
+
+
+    while ((ros::Time::now()-tini)<max_time)
+    {
+      rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+
+
+      if (m_cart_error_in_b.head(3).norm()<toll)
+      {
+        return true;
+      }
+
+      getJacobian(sol);
+
+
+      Eigen::MatrixXd jac_red;
+      jac_red = m_jacobian.topRows(3);
+      jac_red = jac_red.leftCols(4);
+
+
+      m_H=  jac_red.transpose() * jac_red;
+      m_f= -jac_red.transpose() * m_cart_error_in_b.head(3);
+
+      m_ci0_red.head(m_active_joints_number-1)=sol.head(m_active_joints_number-1)-m_q_min.head(m_active_joints_number-1);
+      m_ci0_red.tail(m_active_joints_number-1)=m_q_max.head(m_active_joints_number-1)-sol.head(m_active_joints_number-1);
+
+
+      Eigen::solve_quadprog(m_H,
+                            m_f,
+                            m_CE_red,
+                            m_ce0_red,
+                            m_CI_red,
+                            m_ci0_red,
+                            m_joint_error_red );
 
       sol.head(m_active_joints_number-1)+=m_joint_error_red;
 
