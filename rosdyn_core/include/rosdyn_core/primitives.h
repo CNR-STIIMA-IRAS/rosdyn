@@ -249,6 +249,8 @@ namespace rosdyn
     std::vector<std::string> getLinksName() {return m_links_name;}
     const bool& isOk(){return m_is_chain_ok;}
 
+    shared_ptr_namespace::shared_ptr<rosdyn::Link> getLinkFromName(std::string _name);
+
     Eigen::VectorXd getQMax(){return m_q_max;}
     Eigen::VectorXd getQMin(){return m_q_min;}
     Eigen::VectorXd getDQMax(){return m_Dq_max;}
@@ -768,7 +770,16 @@ namespace rosdyn
     Chain(root_link, base_link_name,ee_link_name, gravity);
   }
   
-  
+  inline shared_ptr_namespace::shared_ptr<rosdyn::Link> Chain::getLinkFromName(std::string _name){
+    for (unsigned int it = 0 ; it < m_links.size(); it++){
+      if(std::strcmp(m_links.at(it)->getName().c_str(), _name.c_str()) == 0){
+        return m_links.at(it);
+      }
+    }
+    return NULL;
+  }
+
+
   inline void Chain::setInputJointsName(const std::vector< std::string > joints_name)
   {
     m_input_to_chain_joint.resize(m_joints_number, joints_name.size());
