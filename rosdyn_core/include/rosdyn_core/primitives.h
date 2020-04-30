@@ -711,17 +711,17 @@ namespace rosdyn
     setInputJointsName(m_moveable_joints_name);
 
     // for QP local IK
-    m_CE.resize(6,0);
+    m_CE.resize(m_joints_number,0);
     m_ce0.resize(0);
     m_CE.setZero();
     m_ce0.setZero();
 
-    m_CI.resize(6,12);
-    m_ci0.resize(12);
+    m_CI.resize(m_joints_number,2*m_joints_number);
+    m_ci0.resize(2*m_joints_number);
     m_CI.setZero();
     m_ci0.setZero();
-    m_CI.block(0,0,6,6).setIdentity();
-    m_CI.block(0,6,6,6)=-m_CI.block(0,0,6,6);
+    m_CI.block(0,0,m_joints_number,m_joints_number).setIdentity();
+    m_CI.block(0,m_joints_number,m_joints_number,m_joints_number)=-m_CI.block(0,0,m_joints_number,m_joints_number);
 
   }
   
@@ -1289,6 +1289,11 @@ namespace rosdyn
     return nominal_par;
   }
 
+  /*
+   * minimize (J*dq-cartesian_error_in_b)'*(J*dq-cartesian_error_in_b)
+   * q_min <= sol+dq <= q_max
+   *
+   */
   inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
   {
     ros::Time tini=ros::Time::now();
@@ -1307,8 +1312,8 @@ namespace rosdyn
       m_H=  m_jacobian.transpose() * m_jacobian;
       m_f= -m_jacobian.transpose() * m_cart_error_in_b;
 
-      m_ci0.head(6)=sol-m_q_min;
-      m_ci0.tail(6)=m_q_max-sol;
+      m_ci0.head(m_joints_number)=sol-m_q_min;
+      m_ci0.tail(m_joints_number)=m_q_max-sol;
 
 
       Eigen::solve_quadprog(m_H,
