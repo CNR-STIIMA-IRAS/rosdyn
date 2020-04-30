@@ -261,7 +261,35 @@ namespace rosdyn
     std::vector<Eigen::Vector6d,Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq);
     Eigen::Vector6d getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq){return getDDTwist(q,Dq,DDq,DDDq).back();}
 
+    /* Iterative solve the IK problem.
+     * Each iteration the solution is updated by a term dq
+     *
+     * solution+=dq
+     *
+     * the value dq is chosen solving the problem:
+     * minimize (J*dq-cartesian_error_in_b)'*(J*dq-cartesian_error_in_b)
+     *
+     * considering the constraints:
+     * q_min <= solution+dq <= q_max
+     *
+     */
     bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
+
+    /* Iterative solve the weighted IK problem.
+     * the weight term can be used to switch off some components:
+     * for example: selecting W=[1;1;1;0;0;0], only the translation terms are consider for the IK solution.
+     * Each iteration the solution is updated by a term dq
+     *
+     * solution+=dq
+     *
+     * the value dq is chosen solving the problem:
+     * minimize (J*dq-cartesian_error_in_b)'*W*(J*dq-cartesian_error_in_b)
+     *
+     * considering the constraints:
+     * q_min <= solution+dq <= q_max
+     *
+     */
+    bool computeWeigthedLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, Eigen::Vector6d weight, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
 
     /*
      * Dynamics methods
@@ -1329,6 +1357,41 @@ namespace rosdyn
 
   }
   
+
+  inline bool Chain::computeWeigthedLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, Eigen::Vector6d weight, const Eigen::VectorXd& seed, const double& toll, const ros::Duration& max_time)
+  {
+    ros::Time tini=ros::Time::now();
+
+    sol=seed;
+
+    while ((ros::Time::now()-tini)<max_time)
+    {
+      rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+
+      if (m_cart_error_in_b.norm()<toll)
+      {
+        return true;
+      }
+      getJacobian(sol);
+      m_H=  m_jacobian.transpose() * weight.asDiagonal() * m_jacobian;
+      m_f= -m_jacobian.transpose() * weight.asDiagonal() * m_cart_error_in_b;
+
+      m_ci0.head(m_joints_number)=sol-m_q_min;
+      m_ci0.tail(m_joints_number)=m_q_max-sol;
+
+
+      Eigen::solve_quadprog(m_H,
+                            m_f,
+                            m_CE,
+                            m_ce0,
+                            m_CI,
+                            m_ci0,
+                            m_joint_error );
+      sol+=m_joint_error;
+    }
+    return false;
+  }
+
   inline boost::shared_ptr<Chain> createChain(const urdf::Model& urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
   {
     
