@@ -23,6 +23,7 @@
 #include <QDialog>
 #include <setup_popup.h>
 #include <dyn_components.h>
+#include <results_popup.h>
 
 // class QPushButton;
 namespace rosdyn_gui
@@ -75,7 +76,8 @@ namespace rosdyn_gui
     QPushButton* m_save_model_btn;
     QPushButton* m_setup_btn;
     TabDialog* m_setup_popup;
-    
+    ResultsTabDialog* m_results_popup;
+
     std::shared_ptr<actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoTrjGenAction>> meto_gen_ac_;
     std::shared_ptr<actionlib::SimpleActionClient<moveit_planning_helper::ExecuteTrajectoryFromParamAction>> meto_exec_ac_;
     std::shared_ptr<actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoParEstimAction>> meto_estim_ac_;

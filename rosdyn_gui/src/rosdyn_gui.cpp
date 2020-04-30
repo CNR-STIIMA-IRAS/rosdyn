@@ -1,6 +1,7 @@
 #include <rosdyn_gui.h>
 
 #include <pluginlib/class_list_macros.h>
+
 PLUGINLIB_EXPORT_CLASS(rosdyn_gui::IdentificationGui,rviz::Panel )
 
 
@@ -266,8 +267,12 @@ void IdentificationGui::executionDoneCb(const actionlib::SimpleClientGoalState& 
 void IdentificationGui::estimationDoneCb(const actionlib::SimpleClientGoalState& state, const rosdyn_identification_msgs::MetoParEstimResultConstPtr& result)
 {
   m_save_model_btn->setEnabled(true);
+  m_results_popup = new ResultsTabDialog(m_nh,result,this);
+  m_results_popup->setWindowModality(Qt::NonModal);
+  m_results_popup->adjustSize();
+  m_results_popup->exec();
   m_parameter_estimation_btn->setText("4) Estimate Model");
-  
+
 }
 
 }

@@ -41,6 +41,7 @@ set(SRC_FILES
   src/setup_popup.cpp
   src/rosdyn_gui.cpp
   src/dyn_components.cpp
+  src/results_popup.cpp
 )
 
 add_library(${PROJECT_NAME} ${SRC_FILES})
