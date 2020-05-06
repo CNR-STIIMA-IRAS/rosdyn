@@ -1368,7 +1368,7 @@ namespace rosdyn
     {
       rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
 
-      if (weight.asDiagonal()*m_cart_error_in_b.norm()<toll)
+      if ((weight.cwiseProduct(m_cart_error_in_b)).norm()<toll)
       {
         return true;
       }
