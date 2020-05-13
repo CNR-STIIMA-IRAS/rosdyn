@@ -267,6 +267,7 @@ void IdentificationGui::executionDoneCb(const actionlib::SimpleClientGoalState& 
 void IdentificationGui::estimationDoneCb(const actionlib::SimpleClientGoalState& state, const rosdyn_identification_msgs::MetoParEstimResultConstPtr& result)
 {
   m_save_model_btn->setEnabled(true);
+  ROS_INFO_STREAM("result\n" << *result);
 //  m_results_popup = new ResultsTabDialog(m_nh,result,this);
 //  m_results_popup->setWindowModality(Qt::NonModal);
 //  m_results_popup->adjustSize();
