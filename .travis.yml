@@ -68,7 +68,7 @@ before_script:
   - wstool init
   - echo $ROSINSTALL_FILE
   - if [[ -f $ROSINSTALL_FILE ]] ; then wstool merge $ROSINSTALL_FILE ; fi
-  - wstool up -v
+  - wstool up -v --continue-on-error
   # package depdencies: install using rosdep.
   - cd ~/catkin_ws
   - source devel/setup.bash
