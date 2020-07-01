@@ -57,7 +57,7 @@ install:
   - source devel/setup.bash
   # Add the package under integration to the workspace using a symlink.
   - cd ~/catkin_ws/src
-  - echo "CI_SOURCE_PATH="$CI_SOURCE_PATH
+  - echo $CI_SOURCE_PATH
   - ln -s $CI_SOURCE_PATH .
 
 # Install all dependencies, using wstool first and rosdep second.
@@ -66,7 +66,7 @@ before_script:
   # source dependencies: install using wstool.
   - cd ~/catkin_ws/src
   - wstool init
-  - echo "ROSINSTALL_FILE="$ROSINSTALL_FILE
+  - echo $ROSINSTALL_FILE
   - if [[ -f $ROSINSTALL_FILE ]] ; then wstool merge $ROSINSTALL_FILE ; fi
   - wstool up -v
   # package depdencies: install using rosdep.
