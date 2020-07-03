@@ -66,8 +66,8 @@
   <exec_depend>std_srvs</exec_depend>
   
   <depend>moveit_planning_helper</depend>
-  
-  moveit_planning_helper
+  <depend>roslint</depend>
+
   
   <export>
     <rviz plugin="${prefix}/plugin_description.xml"/>

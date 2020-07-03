@@ -33,6 +33,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_matrix_utils
   eigen_state_space_systems
   moveit_planning_helper
+  roslint
 )
 
 
@@ -57,6 +58,7 @@ catkin_package(
                   eigen_matrix_utils
                   eigen_state_space_systems
                   moveit_planning_helper
+                  roslint
   DEPENDS
 )
 
@@ -77,4 +79,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${Eigen_LIBRARIES}
 )
 
+set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-build/include_what_you_use,-runtime/references,-build/c++11")
+roslint_cpp()
 

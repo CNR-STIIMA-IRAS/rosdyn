@@ -3,10 +3,10 @@ project(rosdyn_core)
 
 add_compile_options(-std=c++11 -funroll-loops -Wall -Ofast)
 set(CMAKE_BUILD_TYPE Release)
-# set(CMAKE_BUILD_TYPE Debug)
+
 
 find_package(catkin REQUIRED COMPONENTS
-  std_msgs roscpp urdf eigen_matrix_utils
+  std_msgs roscpp urdf eigen_matrix_utils roslint
 )
 
 find_package(Eigen3 REQUIRED COMPONENTS)
@@ -14,7 +14,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp  std_msgs  urdf eigen_matrix_utils
+  CATKIN_DEPENDS roscpp  std_msgs  urdf eigen_matrix_utils roslint
   DEPENDS EIGEN3
 )
 include_directories(
@@ -41,4 +41,5 @@ install(DIRECTORY include/${PROJECT_NAME}/
   PATTERN ".svn" EXCLUDE
 )
 
-
+set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-build/include_what_you_use,-runtime/references")
+roslint_cpp()

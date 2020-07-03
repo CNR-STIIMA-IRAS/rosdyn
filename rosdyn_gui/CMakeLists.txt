@@ -1,7 +1,18 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(rosdyn_gui)
-add_compile_options(-std=c++11)
+cmake_minimum_required(VERSION 3.1)
 
+
+
+project(rosdyn_gui)
+
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+
+add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   rosdyn_identification_msgs
   roscpp
@@ -9,9 +20,10 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   std_srvs 
   moveit_planning_helper
+  roslint
 )
 catkin_package(
-  CATKIN_DEPENDS rosdyn_identification_msgs roscpp std_msgs std_srvs moveit_planning_helper
+  CATKIN_DEPENDS rosdyn_identification_msgs roscpp std_msgs std_srvs moveit_planning_helper roslint
 )
 
 link_directories(${catkin_LIBRARY_DIRS})
@@ -43,6 +55,9 @@ set(SRC_FILES
   src/dyn_components.cpp
   src/results_popup.cpp
 )
+
+
+roslint_cpp()
 
 add_library(${PROJECT_NAME} ${SRC_FILES})
 

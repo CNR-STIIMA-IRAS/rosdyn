@@ -25,9 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once  // NOLINT(build/header_guard)
-#include <string>
-#include <vector>
+#ifndef __ITIA_KIN_DERIVATIVES__
+#define __ITIA_KIN_DERIVATIVES__
 
 # include <urdf/model.h>
 # include <ros/console.h>
@@ -40,20 +39,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace rosdyn
 {
+  
+  inline Eigen::Affine3d urdfPoseToAffine(urdf::Pose pose)
+  {
+    Eigen::Affine3d affine;
+    affine = Eigen::Quaterniond(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z);
+    affine.translation() << pose.position.x, pose.position.y, pose.position.z;
+    return affine;  
+  }
+  
+  inline Eigen::Vector3d urdfVectorToEigen(urdf::Vector3 vector)
+  {
+    Eigen::Vector3d eigen_vector;
+    eigen_vector  << vector.x, vector.y, vector.z;
+    return eigen_vector;
+  }
 
-inline Eigen::Affine3d urdfPoseToAffine(urdf::Pose pose)
-{
-  Eigen::Affine3d affine;
-  affine = Eigen::Quaterniond(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z);
-  affine.translation() << pose.position.x, pose.position.y, pose.position.z;
-  return affine;
 }
 
-inline Eigen::Vector3d urdfVectorToEigen(urdf::Vector3 vector)
-{
-  Eigen::Vector3d eigen_vector;
-  eigen_vector  << vector.x, vector.y, vector.z;
-  return eigen_vector;
-}
-
-}  // namespace rosdyn
+# endif

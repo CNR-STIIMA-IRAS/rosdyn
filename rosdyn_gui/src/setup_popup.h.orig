@@ -25,35 +25,73 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once  // NOLINT(build/header_guard)
-#include <string>
-#include <vector>
+#ifndef rosdyn_gui_setup_popup_201811200841
+#define rosdyn_gui_setup_popup_201811200841
 
-# include <urdf/model.h>
-# include <ros/console.h>
-# include <Eigen/Geometry>
-# include <Eigen/StdVector>
-# include <boost/enable_shared_from_this.hpp>
-# include <boost/shared_ptr.hpp>
-# include <rosdyn_core/spacevect_algebra.h>
+#include <ros/ros.h>
+#include <QVBoxLayout>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QGroupBox>
+#include <QComboBox>
+#include <QDialog>
+#include <QTabWidget>
+#include <QLabel>
+#include <QLineEdit>
+#include <QFormLayout>
+#include <QGroupBox>
+#include <QDoubleSpinBox>
+#include <QSpinBox>
 
-
-namespace rosdyn
+namespace rosdyn_gui
 {
+ 
+  
+  class GenerationTab : public QWidget
+  {
+    Q_OBJECT
+    
+  public:
+    explicit GenerationTab(ros::NodeHandle& nh, QWidget *parent = 0);
+    
+    QGroupBox* m_formGroupBox;
+    QGridLayout* m_grid_layout;
+    ros::NodeHandle m_nh;
+    
+  protected Q_SLOTS:
+    void changedDuration(double value);
+    void changedStage2(int number);
+    void changedPointStage2(int number);
+    void changeTrialNumber(int number);
+    void saveNewPar();
+    void changeFrequency(double value);
+    void changeSamplingPeriod(double value);
+    
+  protected:
+    QPushButton* m_ok_btn;
+    QPushButton* m_cancel_btn;
+    double m_stage_duration;
+    int m_regione_stage2;
+    int m_point_per_region;
+    int m_trials;
+    double m_frequency;
+    double m_sampling_period;
+  };
+  
+  class TabDialog : public QDialog
+  {
+    Q_OBJECT
+    
+  public:
+    explicit TabDialog( ros::NodeHandle& nh, QWidget *parent = 0);
+    
+  private:
+    QTabWidget* m_tabWidget;
+    ros::NodeHandle m_nh;
+  };
+  
 
-inline Eigen::Affine3d urdfPoseToAffine(urdf::Pose pose)
-{
-  Eigen::Affine3d affine;
-  affine = Eigen::Quaterniond(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z);
-  affine.translation() << pose.position.x, pose.position.y, pose.position.z;
-  return affine;
 }
 
-inline Eigen::Vector3d urdfVectorToEigen(urdf::Vector3 vector)
-{
-  Eigen::Vector3d eigen_vector;
-  eigen_vector  << vector.x, vector.y, vector.z;
-  return eigen_vector;
-}
 
-}  // namespace rosdyn
+#endif
