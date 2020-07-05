@@ -278,6 +278,7 @@ namespace rosdyn
 
     bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
     bool computePositionLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
+    bool computePositionGlobalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
     bool computeYZLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
 
     /*
@@ -1436,6 +1437,85 @@ namespace rosdyn
     return false;
 
   }
+
+
+  inline bool Chain::computePositionGlobalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
+  {
+    ros::Time tini=ros::Time::now();
+
+    sol=seed;
+
+//    std::cout << T_b_t << std::endl;
+//    Eigen::Affine3d o = getTransformation(sol);
+//    std::cout <<  o << std::endl;
+
+
+    Eigen::VectorXd real_sol;
+    real_sol = sol;
+    double best_error = 1000000000; // alto
+
+
+    auto& jn=m_joints.at(m_active_joints.at(0));
+
+    for(int jj = 0; jj < 200; jj++){
+
+
+
+        for (unsigned int idx=0;idx<m_active_joints_number;idx++){
+            auto& jnt=m_joints.at(m_active_joints.at(idx));
+            sol(idx) = (jnt->getQMin() + ((double)std::rand()/RAND_MAX)*(jnt->getQMax() - jnt->getQMin())); // assegno valore randomico nel
+        }
+
+        while ((ros::Time::now()-tini)<max_time)
+        {
+          rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+
+
+          if (m_cart_error_in_b.head(3).norm()<toll)
+          {
+            /*return true;*/
+//              break;
+          }
+
+          getJacobian(sol);
+
+
+          Eigen::MatrixXd jac_red;
+          jac_red = m_jacobian.topRows(3);
+          jac_red = jac_red.leftCols(4);
+
+
+          m_H=  jac_red.transpose() * jac_red;
+          m_f= -jac_red.transpose() * m_cart_error_in_b.head(3);
+
+          m_ci0_red.head(m_active_joints_number-1)=sol.head(m_active_joints_number-1)-m_q_min.head(m_active_joints_number-1);
+          m_ci0_red.tail(m_active_joints_number-1)=m_q_max.head(m_active_joints_number-1)-sol.head(m_active_joints_number-1);
+
+
+          Eigen::solve_quadprog(m_H,
+                                m_f,
+                                m_CE_red,
+                                m_ce0_red,
+                                m_CI_red,
+                                m_ci0_red,
+                                m_joint_error_red );
+
+          sol.head(m_active_joints_number-1)+=m_joint_error_red;
+
+        }
+        rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+        if(m_cart_error_in_b.head(3).norm() < best_error){
+            best_error = m_cart_error_in_b.head(3).norm();
+            real_sol = sol;
+        }
+    }
+    sol = real_sol;
+    return true;
+
+  }
+
+
+
 
 
   inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
