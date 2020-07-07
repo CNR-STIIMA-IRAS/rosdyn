@@ -1375,7 +1375,7 @@ inline Eigen::MatrixXd Chain::getRegressor(const Eigen::VectorXd& q,
                                                   spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose()),
                                                   m_links.at(nl)->getSpatialInertiaTerms().at(iPar) *
                                                   spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose())),
-                                                              m_T_bl.at(nl).linear());
+                                              m_T_bl.at(nl).linear());
     }
 
 

@@ -10,7 +10,7 @@ notifications:
   email:
     on_failure: always
     recipients:
-      - iras@itia.cnr.it
+      - iras@stiima.cnr.it
 
 matrix:
   include:

@@ -61,7 +61,7 @@ namespace rosdyn_gui
 
 class IdentificationGui: public rviz::Panel
 {
-Q_OBJECT
+  Q_OBJECT
 public:
   explicit IdentificationGui(QWidget* parent = 0);
   virtual ~IdentificationGui();

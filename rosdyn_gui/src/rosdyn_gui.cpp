@@ -103,16 +103,16 @@ IdentificationGui::IdentificationGui(QWidget* parent):
   m_grid_layout->addWidget(m_setup_btn, 3, 1, 1, 1);
 
   meto_gen_ac_.reset(
-        new actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoTrjGenAction>(
-          "/meto_gen_trajectory",
-          true));
+    new actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoTrjGenAction>(
+      "/meto_gen_trajectory",
+      true));
   meto_estim_ac_.reset(
-        new actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoParEstimAction>("/meto_param_estimation",
-                                                                                          true));
+    new actionlib::SimpleActionClient<rosdyn_identification_msgs::MetoParEstimAction>("/meto_param_estimation",
+        true));
   meto_exec_ac_.reset(
-        new actionlib::SimpleActionClient<moveit_planning_helper::ExecuteTrajectoryFromParamAction>(
-          "/execute_trajectories_from_param",
-          true));
+    new actionlib::SimpleActionClient<moveit_planning_helper::ExecuteTrajectoryFromParamAction>(
+      "/execute_trajectories_from_param",
+      true));
   m_save_model_client = m_nh.serviceClient<std_srvs::Empty>("meto_save_model");
 }
 
@@ -274,7 +274,7 @@ void IdentificationGui::newTrajectory(QString select_trj)
 }
 
 void IdentificationGui::generationDoneCb(const actionlib::SimpleClientGoalState& state,
-                                         const rosdyn_identification_msgs::MetoTrjGenResultConstPtr& result)
+    const rosdyn_identification_msgs::MetoTrjGenResultConstPtr& result)
 {
   m_generate_trajectories_btn->setText("1) Generate Trajectory");
   updateTrajectoriesList();
@@ -294,7 +294,7 @@ void IdentificationGui::executionDoneCb(const actionlib::SimpleClientGoalState& 
 }
 
 void IdentificationGui::estimationDoneCb(const actionlib::SimpleClientGoalState& state,
-                                         const rosdyn_identification_msgs::MetoParEstimResultConstPtr& result)
+    const rosdyn_identification_msgs::MetoParEstimResultConstPtr& result)
 {
   m_save_model_btn->setEnabled(true);
   ROS_INFO_STREAM("result\n" << *result);

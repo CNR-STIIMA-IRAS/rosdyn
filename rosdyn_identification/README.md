@@ -126,8 +126,8 @@ To add new obstacles or change the floor in the scene a rough method is to use t
 ## Developer Contact
 
 **Authors:**   
-- Enrico Villagrossi (enrico.villagrossi@itia.cnr.it)  
-- Manuel Beschi (manuel.beschi@itia.cnr.it)  
+- Enrico Villagrossi (enrico.villagrossi@stiima.cnr.it)  
+- Manuel Beschi (<mailto:manuel.beschi@stiima.cnr.it>)  
  
 _Software License Agreement (BSD License)_    
 _Copyright (c) 2017, National Research Council of Italy, Institute of Industrial Technologies and Automation_    
