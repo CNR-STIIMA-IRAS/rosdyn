@@ -38,16 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rosdyn_core/primitives.h>
 #include <rosdyn_core/spacevect_algebra.h>
 
-#if ROS_VERSION_MINIMUM(1, 14, 1)
-# include <memory>
-namespace shared_ptr_namespace = std;
-#else
-# include <boost/concept_check.hpp>
-# include <boost/graph/graph_concepts.hpp>
-# include <boost/enable_shared_from_this.hpp>
-namespace shared_ptr_namespace = boost;
-#endif
-
 /*! \file meto_par_estim.h
     \brief A Documented file.
 
@@ -96,10 +86,10 @@ protected:
   Eigen::JacobiSVD<Eigen::MatrixXd>         m_svd_null;
 
   //! Additional components.
-  std::vector<rosdyn::ComponentPtr> m_components;
+  std::vector<rosdyn::ComponentPtr>         m_components;
 
   //! Chain described into the URDF file.
-  shared_ptr_namespace::shared_ptr<rosdyn::Chain>  m_chain;
+  rosdyn::ChainPtr                          m_chain;
 
   //! Number of the additional paramters (usually friction parameters).
   unsigned int                              m_additional_parameters;
@@ -132,7 +122,7 @@ public:
   MetoParEstim(ros::NodeHandle& nh, const std::string& robot_description, const bool& verbose = false);
 
 
-  shared_ptr_namespace::shared_ptr<rosdyn::Chain> getChain()
+  rosdyn::ChainPtr getChain()
   {
     return m_chain;
   }
