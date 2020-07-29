@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 # include <urdf/model.h>
+# include <urdf_model/model.h>
 # include <ros/console.h>
 
 # include <rosdyn_core/urdf_parser.h>
@@ -62,7 +63,7 @@ namespace rosdyn
 class Link;
 class Chain;
 
-typedef boost::shared_ptr<Chain> ChainPtr;
+typedef shared_ptr_namespace::shared_ptr<Chain> ChainPtr;
 
 class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
 {
@@ -1510,11 +1511,11 @@ inline bool Chain::computeWeigthedLocalIk(Eigen::VectorXd& sol, const Eigen::Aff
   return false;
 }
 
-inline boost::shared_ptr<Chain> createChain(const urdf::Model& urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
+inline shared_ptr_namespace::shared_ptr<Chain> createChain(const urdf::ModelInterface& urdf_model_interface, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
 {
   shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());
-  root_link->fromUrdf(urdf_model.root_link_);
-  boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame, tool_frame, gravity));
+  root_link->fromUrdf(urdf_model_interface.root_link_);
+  shared_ptr_namespace::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame, tool_frame, gravity));
   if (!chain->isOk())
     chain.reset();
   return chain;

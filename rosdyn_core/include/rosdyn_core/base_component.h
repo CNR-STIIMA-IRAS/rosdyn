@@ -29,7 +29,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
+#if ROS_VERSION_MINIMUM(1, 14, 1)
+# include <memory>
+namespace shared_ptr_namespace = std;
+#else
+# include <boost/concept_check.hpp>
 # include <boost/graph/graph_concepts.hpp>
+# include <boost/enable_shared_from_this.hpp>
+namespace shared_ptr_namespace = boost;
+#endif
 # include <Eigen/Core>
 # include <ros/ros.h>
 
@@ -167,6 +175,6 @@ public:
 };
 
 
-typedef  boost::shared_ptr<rosdyn::ComponentBase> ComponentPtr;
+typedef  shared_ptr_namespace::shared_ptr<rosdyn::ComponentBase> ComponentPtr;
 }  // namespace rosdyn
 

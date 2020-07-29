@@ -31,10 +31,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Eigen/Core>
 #include <pluginlib/class_list_macros.h>
 #include <rosdyn_identification/rosdyn_gen_interface.h>
-
+#include <boost/bind.hpp>
 
 PLUGINLIB_EXPORT_CLASS(rosdyn::MetoGenInterfaceNodelet, nodelet::Nodelet)
-
 
 namespace rosdyn
 {

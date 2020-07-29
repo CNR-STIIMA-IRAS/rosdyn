@@ -35,9 +35,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <numeric>      // std::accumulate
 #include <dirent.h>
 #include <random>
+#include <boost/bind.hpp>
 #include <sensor_msgs/JointState.h>
 #include <pluginlib/class_list_macros.h>
 #include <rosdyn_identification/rosdyn_par_estim_interface.h>
+
 
 PLUGINLIB_EXPORT_CLASS(rosdyn::MetoParEstimInterfaceNodelet, nodelet::Nodelet)
 

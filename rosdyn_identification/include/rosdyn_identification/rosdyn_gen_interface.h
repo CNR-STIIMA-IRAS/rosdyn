@@ -33,8 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <thread>
 #include <fstream>
 #include <iostream>
-#include <boost/bind.hpp>
-
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <actionlib/server/simple_action_server.h>

@@ -32,6 +32,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <urdf_parser/urdf_parser.h>
 #include <rosdyn_identification/rosdyn_par_estim.h>
 
+
+#if ROS_VERSION_MINIMUM(1, 14, 1)
+# include <memory>
+namespace shared_ptr_namespace = std;
+#else
+# include <boost/concept_check.hpp>
+# include <boost/graph/graph_concepts.hpp>
+# include <boost/enable_shared_from_this.hpp>
+namespace shared_ptr_namespace = boost;
+#endif
+
+
 namespace rosdyn
 {
 MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::__cxx11::string& robot_description, const bool& verbose):
