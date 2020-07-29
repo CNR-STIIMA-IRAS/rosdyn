@@ -2,3 +2,5 @@
 kdev4/
 *~
 *.txt.user
+*.txt.user.*
+.vscode/
