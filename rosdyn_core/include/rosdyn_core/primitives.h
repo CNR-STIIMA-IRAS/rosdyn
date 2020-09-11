@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 # include <urdf/model.h>
+# include <urdf_model/model.h>
 # include <ros/console.h>
 
 # include <rosdyn_core/urdf_parser.h>
@@ -57,12 +58,21 @@ namespace shared_ptr_namespace = std;
 namespace shared_ptr_namespace = boost;
 #endif
 
+namespace urdf
+{
+  typedef shared_ptr_namespace::shared_ptr< urdf::Joint     > JointPtr;
+  typedef shared_ptr_namespace::shared_ptr< urdf::Link      > LinkPtr;
+}
+
 namespace rosdyn
 {
+class Joint;
 class Link;
 class Chain;
 
-typedef boost::shared_ptr<Chain> ChainPtr;
+typedef shared_ptr_namespace::shared_ptr< rosdyn::Joint   > JointPtr;
+typedef shared_ptr_namespace::shared_ptr< rosdyn::Link    > LinkPtr;
+typedef shared_ptr_namespace::shared_ptr< rosdyn::Chain   > ChainPtr;
 
 class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
 {
@@ -97,27 +107,27 @@ protected:
   double m_last_q;  // last value of q
 
   std::string m_name;
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> m_parent_link;
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> m_child_link;
+  rosdyn::LinkPtr m_parent_link;
+  rosdyn::LinkPtr m_child_link;
 
   void computedTpc();
   void computeJacobian();
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Joint();
-  void fromUrdf(const shared_ptr_namespace::shared_ptr<urdf::Joint>& urdf_joint, const shared_ptr_namespace::shared_ptr<rosdyn::Link>& parent_link, const shared_ptr_namespace::shared_ptr<urdf::Link>& child_link);
-  shared_ptr_namespace::shared_ptr<rosdyn::Joint> pointer();
+  void fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::LinkPtr& parent_link, const urdf::LinkPtr& child_link);
+  rosdyn::JointPtr pointer();
   std::string getName()
   {
     return m_name;
   }
 
-  shared_ptr_namespace::shared_ptr <rosdyn::Link> getChildLink()
+  rosdyn::LinkPtr getChildLink()
   {
     return m_child_link;
   }
 
-  shared_ptr_namespace::shared_ptr <rosdyn::Link> getParentLink()
+  rosdyn::LinkPtr getParentLink()
   {
     return m_parent_link;
   }
@@ -151,9 +161,9 @@ public:
 class Link: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Link>
 {
 protected:
-  shared_ptr_namespace::shared_ptr<rosdyn::Joint> m_parent_joint;
-  std::vector<shared_ptr_namespace::shared_ptr<rosdyn::Joint>> m_child_joints;
-  std::vector<shared_ptr_namespace::shared_ptr<rosdyn::Link>> m_child_links;
+  rosdyn::JointPtr m_parent_joint;
+  std::vector<rosdyn::JointPtr> m_child_joints;
+  std::vector<rosdyn::LinkPtr> m_child_links;
   std::string m_name;
 
   double m_mass;
@@ -166,27 +176,27 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Link() {}
 
-  void fromUrdf(const shared_ptr_namespace::shared_ptr<urdf::Link>& urdf_link,
-                const shared_ptr_namespace::shared_ptr<rosdyn::Joint>& parent_joint = 0);
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> pointer();
+  void fromUrdf(const urdf::LinkPtr& urdf_link,
+                const rosdyn::JointPtr& parent_joint = 0);
+  rosdyn::LinkPtr pointer();
 
   std::string getName()
   {
     return m_name;
   }
 
-  shared_ptr_namespace::shared_ptr<rosdyn::Joint> getParentJoint()
+  rosdyn::JointPtr getParentJoint()
   {
     return m_parent_joint;
   }
 
-  std::vector<shared_ptr_namespace::shared_ptr<rosdyn::Joint>> getChildrenJoints()
+  std::vector<rosdyn::JointPtr> getChildrenJoints()
   {
     return m_child_joints;
   }
 
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> findChild(const std::string& name);
-  shared_ptr_namespace::shared_ptr<rosdyn::Joint> findChildJoint(const std::string& name);
+  rosdyn::LinkPtr findChild(const std::string& name);
+  rosdyn::JointPtr findChildJoint(const std::string& name);
   const Eigen::Matrix66d& getSpatialInertia()
   {
     return m_Inertia_cc;
@@ -213,8 +223,8 @@ public:
 class Chain
 {
 protected:
-  std::vector<shared_ptr_namespace::shared_ptr<rosdyn::Link>> m_links;
-  std::vector<shared_ptr_namespace::shared_ptr<rosdyn::Joint>> m_joints;
+  std::vector<rosdyn::LinkPtr> m_links;
+  std::vector<rosdyn::JointPtr> m_joints;
   unsigned int m_joints_number;
   unsigned int m_active_joints_number;
   unsigned int m_links_number;
@@ -306,7 +316,7 @@ protected:
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_link, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
+  Chain(const rosdyn::LinkPtr& root_link, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
   Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
   Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
   void setInputJointsName(const std::vector<std::string> joints_name);
@@ -481,7 +491,7 @@ inline void Joint::computedTpc()
 }
 
 
-inline void Joint::fromUrdf(const shared_ptr_namespace::shared_ptr< urdf::Joint >& urdf_joint, const shared_ptr_namespace::shared_ptr< Link >& parent_link, const shared_ptr_namespace::shared_ptr< urdf::Link >& child_link)
+inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::LinkPtr& parent_link, const urdf::LinkPtr &child_link)
 {
   m_parent_link = parent_link;
 
@@ -537,7 +547,7 @@ inline void Joint::fromUrdf(const shared_ptr_namespace::shared_ptr< urdf::Joint 
   computeJacobian();
 }
 
-inline shared_ptr_namespace::shared_ptr<rosdyn::Joint> Joint::pointer()
+inline rosdyn::JointPtr Joint::pointer()
 {
   return shared_from_this();
 }
@@ -559,14 +569,14 @@ inline const Eigen::Vector6d& Joint::getScrew_of_child_in_parent()
 }
 
 
-inline void Link::fromUrdf(const shared_ptr_namespace::shared_ptr<urdf::Link>& urdf_link, const shared_ptr_namespace::shared_ptr<rosdyn::Joint>& parent_joint)
+inline void Link::fromUrdf(const urdf::LinkPtr& urdf_link, const rosdyn::JointPtr& parent_joint)
 {
   m_parent_joint = parent_joint;
   m_name = urdf_link->name;
 
   for (unsigned int idx = 0; idx < urdf_link->child_joints.size(); idx++)
   {
-    m_child_joints.push_back(shared_ptr_namespace::shared_ptr<rosdyn::Joint>(new rosdyn::Joint()));
+    m_child_joints.push_back(rosdyn::JointPtr(new rosdyn::Joint()));
     m_child_joints.back()->fromUrdf(urdf_link->child_joints.at(idx), pointer(), urdf_link->child_links.at(idx));
     m_child_links.push_back(m_child_joints.at(idx)->getChildLink());
   }
@@ -702,14 +712,14 @@ inline Eigen::VectorXd Link::getNominalParameters()
   return nominal_parameters;
 }
 
-inline shared_ptr_namespace::shared_ptr<rosdyn::Link> Link::pointer()
+inline rosdyn::LinkPtr Link::pointer()
 {
   return shared_from_this();
 }
 
-inline shared_ptr_namespace::shared_ptr<rosdyn::Link> Link::findChild(const std::string& name)
+inline rosdyn::LinkPtr Link::findChild(const std::string& name)
 {
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> ptr;
+  rosdyn::LinkPtr ptr;
   if (!m_name.compare(name))
     return pointer();
   if (m_child_links.size() == 0)
@@ -725,9 +735,9 @@ inline shared_ptr_namespace::shared_ptr<rosdyn::Link> Link::findChild(const std:
   return ptr;
 }
 
-inline shared_ptr_namespace::shared_ptr< Joint > Link::findChildJoint(const std::string& name)
+inline rosdyn::JointPtr Link::findChildJoint(const std::string& name)
 {
-  shared_ptr_namespace::shared_ptr<rosdyn::Joint> ptr;
+  rosdyn::JointPtr ptr;
   if (m_child_joints.size() == 0)
     return ptr;
   for (unsigned int idx = 0; idx < m_child_joints.size(); idx++)
@@ -742,7 +752,7 @@ inline shared_ptr_namespace::shared_ptr< Joint > Link::findChildJoint(const std:
 }
 
 
-inline Chain::Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_link,
+inline Chain::Chain(const rosdyn::LinkPtr& root_link,
                     const std::string& base_link_name,
                     const std::string& ee_link_name,
                     const Eigen::Vector3d& gravity)
@@ -761,14 +771,14 @@ inline Chain::Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_l
                         false;
 
   m_gravity = gravity;
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> base_link = root_link->findChild(base_link_name);
+  rosdyn::LinkPtr base_link = root_link->findChild(base_link_name);
   if (!base_link)
   {
     ROS_ERROR("Base link not found");
     m_is_chain_ok = false;
     return;
   }
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> ee_link = base_link->findChild(ee_link_name);
+  rosdyn::LinkPtr ee_link = base_link->findChild(ee_link_name);
   if (!ee_link)
   {
     ROS_ERROR("Tool link not found");
@@ -776,7 +786,7 @@ inline Chain::Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_l
     return;
   }
 
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> act_link(ee_link);
+  rosdyn::LinkPtr act_link(ee_link);
   while (1)
   {
     m_links.insert(m_links.begin(), act_link);
@@ -882,7 +892,7 @@ inline Chain::Chain(const shared_ptr_namespace::shared_ptr<rosdyn::Link>& root_l
 
 inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
 {
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());
+  rosdyn::LinkPtr root_link(new rosdyn::Link());
   root_link->fromUrdf(model.root_link_);
   Chain(root_link, base_link_name, ee_link_name, gravity);
 }
@@ -891,7 +901,7 @@ inline Chain::Chain(const std::string& robot_description, const std::string& bas
 {
   urdf::Model model;
   model.initParam(robot_description);
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());
+  rosdyn::LinkPtr root_link(new rosdyn::Link());
   root_link->fromUrdf(model.root_link_);
   Chain(root_link, base_link_name, ee_link_name, gravity);
 }
@@ -1510,11 +1520,11 @@ inline bool Chain::computeWeigthedLocalIk(Eigen::VectorXd& sol, const Eigen::Aff
   return false;
 }
 
-inline boost::shared_ptr<Chain> createChain(const urdf::Model& urdf_model, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
+inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_interface, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
 {
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());
-  root_link->fromUrdf(urdf_model.root_link_);
-  boost::shared_ptr<rosdyn::Chain> chain(new rosdyn::Chain(root_link, base_frame, tool_frame, gravity));
+  rosdyn::LinkPtr root_link(new rosdyn::Link());
+  root_link->fromUrdf(urdf_model_interface.root_link_);
+  rosdyn::ChainPtr chain(new rosdyn::Chain(root_link, base_frame, tool_frame, gravity));
   if (!chain->isOk())
     chain.reset();
   return chain;

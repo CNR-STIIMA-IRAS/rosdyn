@@ -86,10 +86,10 @@ protected:
   Eigen::JacobiSVD<Eigen::MatrixXd>         m_svd_null;
 
   //! Additional components.
-  std::vector<rosdyn::ComponentPtr> m_components;
+  std::vector<rosdyn::ComponentPtr>         m_components;
 
   //! Chain described into the URDF file.
-  boost::shared_ptr<rosdyn::Chain>  m_chain;
+  rosdyn::ChainPtr                          m_chain;
 
   //! Number of the additional paramters (usually friction parameters).
   unsigned int                              m_additional_parameters;
@@ -122,7 +122,7 @@ public:
   MetoParEstim(ros::NodeHandle& nh, const std::string& robot_description, const bool& verbose = false);
 
 
-  boost::shared_ptr<rosdyn::Chain> getChain()
+  rosdyn::ChainPtr getChain()
   {
     return m_chain;
   }

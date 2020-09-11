@@ -36,7 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 
 #include <nodelet/nodelet.h>
-#include <boost/graph/graph_concepts.hpp>
 
 #include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>

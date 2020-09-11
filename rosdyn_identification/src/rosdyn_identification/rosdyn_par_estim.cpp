@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <urdf_parser/urdf_parser.h>
 #include <rosdyn_identification/rosdyn_par_estim.h>
 
+
 namespace rosdyn
 {
 MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::__cxx11::string& robot_description, const bool& verbose):
@@ -69,7 +70,7 @@ MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::__cxx11::string& robo
   Eigen::Vector3d grav;
   grav << grav_stl.at(0), grav_stl.at(1), grav_stl.at(2);
 
-  shared_ptr_namespace::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());
+  rosdyn::LinkPtr root_link(new rosdyn::Link());
   root_link->fromUrdf(m_model->root_link_);
 
   m_chain.reset(new rosdyn::Chain(root_link, base_frame, tool_frame, grav));
