@@ -238,5 +238,26 @@ inline void computeSpatialInertiaMatrix(const Eigen::Ref<Eigen::Matrix3d>& inert
   spatial_inertia.block(3, 3, 3, 3) = inertia + mass * (cog_skew * cog_skew.transpose());
 }
 
+
+/*
+ * Spatial integration:
+ * obtaining the new pose T_b_ap given the actual pose T_b_a, the twist of a in b, and the time interval dt
+ *
+ * origin of the frame o_b_ap = o_b_a+v_of_a_in_b * dt
+ * rotational matrix R_b_ap = R_b_a * R_ap_a
+ * R_ap_a = angleaxis( norm(w_a_in_a*dt), verso(w_a_in_a) )
+ * w_a_in_a = Rba'*w_a_in_b
+ */
+inline void Eigen::Affine3d spatialIntegration(const Eigen::Ref<Eigen::Affine3d>& T_b_a, const Eigen::Ref<Eigen::Vector6d>& twist_of_a_in_b, const double& dt)
+{
+  Eigen::Affine3d T_b_ap=T_b_a;
+  T_b_ap.tranlation()+=twist_of_a_in_b.head(3)*dt;
+
+  Eigen::Vector3d w_a_in_a=T_b_a.linear().transpose()*twist_of_a_in_b.tail(3);
+  double amplitude=w_a_in_a.norm();
+  Eigen::AngleAxisd R_ap_in_a=Eigen::AngleAxisd(amplitude*dt,w_a_in_a/amplitude);
+  T_b_ap.linear()=T_b_a.linear()*R_ap_in_a;
+}
+
 }  // namespace rosdyn
 
