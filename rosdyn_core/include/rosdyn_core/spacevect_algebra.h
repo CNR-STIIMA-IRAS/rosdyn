@@ -248,15 +248,16 @@ inline void computeSpatialInertiaMatrix(const Eigen::Ref<Eigen::Matrix3d>& inert
  * R_ap_a = angleaxis( norm(w_a_in_a*dt), verso(w_a_in_a) )
  * w_a_in_a = Rba'*w_a_in_b
  */
-inline Eigen::Affine3d spatialIntegration(const Eigen::Ref<Eigen::Affine3d>& T_b_a, const Eigen::Ref<Eigen::Vector6d>& twist_of_a_in_b, const double& dt)
+inline Eigen::Affine3d spatialIntegration(const Eigen::Affine3d& T_b_a, const Eigen::Ref<Eigen::Vector6d>& twist_of_a_in_b, const double& dt)
 {
   Eigen::Affine3d T_b_ap=T_b_a;
-  T_b_ap.tranlation()+=twist_of_a_in_b.head(3)*dt;
+  T_b_ap.translation()+=twist_of_a_in_b.head(3)*dt;
 
   Eigen::Vector3d w_a_in_a=T_b_a.linear().transpose()*twist_of_a_in_b.tail(3);
   double amplitude=w_a_in_a.norm();
   Eigen::AngleAxisd R_ap_in_a=Eigen::AngleAxisd(amplitude*dt,w_a_in_a/amplitude);
   T_b_ap.linear()=T_b_a.linear()*R_ap_in_a;
+  return T_b_ap;
 }
 
 }  // namespace rosdyn
