@@ -39,7 +39,8 @@ namespace rosdyn
   class Chain;    
 
   typedef boost::shared_ptr<Chain> ChainPtr;
-  
+  typedef Eigen::Matrix<bool, Eigen::Dynamic, 1> VectorXb;
+
   class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
   {
   protected:
@@ -277,7 +278,7 @@ namespace rosdyn
     Eigen::Vector6d getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq){return getDDTwist(q,Dq,DDq,DDDq).back();}
 
     bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
-    bool computePositionLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
+    bool computePositionWeightedGlobalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const std::vector<bool>& dof_excluded, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
     bool computePositionGlobalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
     bool computeYZLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll=1e-4, const ros::Duration& max_time=ros::Duration(0.005));
 
@@ -1385,7 +1386,7 @@ namespace rosdyn
 
 
 
-  inline bool Chain::computePositionLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
+  inline bool Chain::computePositionWeightedGlobalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T_b_t, const std::vector<bool>& dof_excluded, const Eigen::VectorXd &seed, const double &toll, const ros::Duration &max_time)
   {
     ros::Time tini=ros::Time::now();
 
@@ -1394,47 +1395,117 @@ namespace rosdyn
 //    std::cout << T_b_t << std::endl;
 //    Eigen::Affine3d o = getTransformation(sol);
 //    std::cout <<  o << std::endl;
+    uint8_t m_solution_joint = std::count(dof_excluded.begin(), dof_excluded.end(), true);
+
+    Eigen::MatrixXd id = Eigen::MatrixXd::Identity(m_active_joints_number, m_active_joints_number);
+
+    Eigen::MatrixXd reducer = Eigen::MatrixXd::Zero(m_active_joints_number, m_solution_joint);
+
+    uint8_t c = 0;
+    for (std::vector<bool>::const_iterator it= dof_excluded.begin(); it!=dof_excluded.end(); ++it){
+      if(*it){
+        std::cout <<it - dof_excluded.begin() <<std::endl;
+        reducer.col(c) = id.col(it - dof_excluded.begin());
+        c++;
+      }
+    }
+
+    getJacobian(sol);
+
+    Eigen::MatrixXd jac_r = m_jacobian.topRows(3);
+    jac_r = jac_r * reducer;
 
 
 
+    Eigen::MatrixXd m_CE_weight;
+    Eigen::VectorXd m_ce0_weight;
+    Eigen::MatrixXd m_CI_weight;
+    Eigen::VectorXd m_ci0_weight;
 
-    while ((ros::Time::now()-tini)<max_time)
-    {
-      rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+    m_CE_weight.resize(m_solution_joint,0);
+    m_ce0_weight.resize(0);
+    m_CE_weight.setZero();
+    m_ce0_weight.setZero();
+
+    m_CI_weight.resize(m_solution_joint,2*m_solution_joint);
+    m_ci0_weight.resize(2*m_solution_joint);
+    m_CI_weight.setZero();
+    m_ci0_weight.setZero();
+    m_CI_weight.block(0,0,(m_solution_joint),m_solution_joint).setIdentity();
+    m_CI_weight.block(0,m_solution_joint,m_solution_joint,m_solution_joint)=-m_CI_weight.block(0,0,m_solution_joint,m_solution_joint);
 
 
-      if (m_cart_error_in_b.head(3).norm()<toll)
-      {
-        return true;
+    Eigen::VectorXd m_joint_error_weight;
+
+    double best_error = 1000000000; // alto
+
+    Eigen::VectorXd real_sol;
+    real_sol = sol;
+
+    auto& jn=m_joints.at(m_active_joints.at(0));
+
+    for(int jj = 0; jj < 1000; jj++){
+
+      for (unsigned int idx=0;idx<m_active_joints_number;idx++){
+          auto& jnt=m_joints.at(m_active_joints.at(idx));
+          if(dof_excluded.at(idx)){
+            sol(idx) = (jnt->getQMin() + ((double)std::rand()/RAND_MAX)*(jnt->getQMax() - jnt->getQMin()));
+          }else {
+            sol(idx) = sol(idx);
+          }// assegno valore randomico nel
       }
 
-      getJacobian(sol);
+      while ((ros::Time::now()-tini)<max_time)
+      {
+        rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
 
 
-      Eigen::MatrixXd jac_red;
-      jac_red = m_jacobian.topRows(3);
-      jac_red = jac_red.leftCols(4);
+        if (m_cart_error_in_b.head(3).norm()<toll)
+        {
+//          return true;
+        }
+
+        getJacobian(sol);
 
 
-      m_H=  jac_red.transpose() * jac_red;
-      m_f= -jac_red.transpose() * m_cart_error_in_b.head(3);
-
-      m_ci0_red.head(m_active_joints_number-1)=sol.head(m_active_joints_number-1)-m_q_min.head(m_active_joints_number-1);
-      m_ci0_red.tail(m_active_joints_number-1)=m_q_max.head(m_active_joints_number-1)-sol.head(m_active_joints_number-1);
+        Eigen::MatrixXd jac_red;
+        jac_red = m_jacobian.topRows(3);
+        jac_red = jac_red * reducer;
 
 
-      Eigen::solve_quadprog(m_H,
-                            m_f,
-                            m_CE_red,
-                            m_ce0_red,
-                            m_CI_red,
-                            m_ci0_red,
-                            m_joint_error_red );
+        m_H=  jac_red.transpose() * jac_red;
+        m_f= -jac_red.transpose() * m_cart_error_in_b.head(3);
 
-      sol.head(m_active_joints_number-1)+=m_joint_error_red;
 
+        m_ci0_weight.head(m_solution_joint)=(sol.transpose()*reducer-m_q_min.transpose()*reducer).transpose();
+        m_ci0_weight.tail(m_solution_joint)=(m_q_max.transpose()*reducer-sol.transpose()*reducer).transpose();
+
+
+
+
+        Eigen::solve_quadprog(m_H,
+                              m_f,
+                              m_CE_weight,
+                              m_ce0_weight,
+                              m_CI_weight,
+                              m_ci0_weight,
+                              m_joint_error_weight );
+
+
+        sol+=(reducer * m_joint_error_weight);
+
+//        std::cout << (reducer * m_joint_error_weight) << std::endl;
+
+      }
+      rosdyn::getFrameDistance(T_b_t,getTransformation(sol),m_cart_error_in_b);
+      if(m_cart_error_in_b.head(3).norm() < best_error){
+          best_error = m_cart_error_in_b.head(3).norm();
+          real_sol = sol;
+      }
     }
-    return false;
+    sol = real_sol;
+
+    return true;
 
   }
 
@@ -1457,7 +1528,7 @@ namespace rosdyn
 
     auto& jn=m_joints.at(m_active_joints.at(0));
 
-    for(int jj = 0; jj < 200; jj++){
+    for(int jj = 0; jj < 1000; jj++){
 
 
 
