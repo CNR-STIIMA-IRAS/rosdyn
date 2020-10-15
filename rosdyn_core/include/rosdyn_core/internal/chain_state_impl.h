@@ -44,6 +44,7 @@ ChainState::ChainState(const ChainState& cpy)
   
 }
 
+inline
 ChainState& ChainState::operator=(const ChainState& rhs)
 {
   this->kin_         = rhs.kin_   ;
@@ -55,7 +56,7 @@ ChainState& ChainState::operator=(const ChainState& rhs)
   return *this;
 }
 
-
+inline
 ChainState& ChainState::updateTransformation( )
 {
   Tbt_      = kin_->getChain()->getTransformation(this->q());
