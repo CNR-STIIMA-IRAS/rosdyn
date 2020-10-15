@@ -463,6 +463,8 @@ inline Joint::Joint()
   m_identity.setIdentity();
   m_screw_of_c_in_p.setZero();
 
+  m_type = FIXED;
+  
   computedTpc();
 }
 

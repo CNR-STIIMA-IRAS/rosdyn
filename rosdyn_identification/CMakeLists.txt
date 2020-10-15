@@ -1,13 +1,12 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.1)
 project(rosdyn_identification)
 
-add_compile_options(-std=c++11)
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O4")
-# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-#add_compile_options(-DUBUNTU1404)
-
+add_compile_options(-Wall -O4)
 
 find_package(Eigen3 REQUIRED COMPONENTS Core Dense)
 

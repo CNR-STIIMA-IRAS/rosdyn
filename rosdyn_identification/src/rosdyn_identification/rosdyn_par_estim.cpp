@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace rosdyn
 {
-MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::__cxx11::string& robot_description, const bool& verbose):
+MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::string& robot_description, const bool& verbose):
   m_nh(nh),
   m_verbose(verbose)
 {
@@ -171,7 +171,7 @@ MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::__cxx11::string& robo
 }
 
 
-MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::__cxx11::string& robot_description, Eigen::MatrixXd& T, const bool& verbose):
+MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::string& robot_description, Eigen::MatrixXd& T, const bool& verbose):
   MetoParEstim(nh, robot_description, verbose)
 {
   m_T_base_to_full = T;

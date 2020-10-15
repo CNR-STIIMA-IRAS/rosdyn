@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include <rosdyn_core/primitives.h>
+#include <rosdyn_core/chain_state.h>
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <rosdyn_core/urdf_parser.h>
@@ -201,5 +202,7 @@ int main(int argc, char **argv)
   ROS_INFO("computation time joint torque                                    = %8.5f [us]", t_torque_eigen / ntrial);
   ROS_INFO("computation time joint inertia                                   = %8.5f [us]", t_inertia_eigen / ntrial);
 
+  rosdyn::ChainInterfacePtr chain_interface(new rosdyn::ChainInterface() );
+  rosdyn::ChainState st(chain_interface);
   return 0;
 }
