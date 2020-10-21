@@ -1,0 +1,33 @@
+<launch>
+
+<group ns="file_and_screen_different_appenders" >
+<rosparam>
+  appenders: [file, screen]
+  levels: [trace, info]
+  file_name: "ciao"
+</rosparam>
+</group>
+
+<group ns="file_and_screen_same_appender" >
+<rosparam >
+  appenders: [file, screen]
+  levels: [debug, debug]
+  file_name: "ciao"
+</rosparam>
+</group>
+
+<group ns="only_file_streamer">
+<rosparam>
+  appenders: [file]
+  levels: [debug]
+  file_name: "ciao"
+</rosparam>
+</group>
+
+
+<test test-name="cnr_logger_test" pkg="cnr_logger" type="cnr_logger_test" >
+
+</test>
+
+
+</launch>

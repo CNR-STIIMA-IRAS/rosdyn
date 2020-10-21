@@ -1,8 +1,8 @@
-#ifndef ROSDYN_CORE__CHAIN_INTERFACE_IMPL__H
-#define ROSDYN_CORE__CHAIN_INTERFACE_IMPL__H
+#ifndef ROSDYN_UTILITIES__CHAIN_INTERFACE_IMPL__H
+#define ROSDYN_UTILITIES__CHAIN_INTERFACE_IMPL__H
 
 #include <sstream>
-#include <rosdyn_core/chain_interface.h>
+#include <rosdyn_utilities/chain_interface.h>
 
 
 #define SP std::fixed  << std::setprecision(5)
@@ -10,6 +10,7 @@
 
 namespace rosdyn
 {
+
 
 inline
 rosdyn::ChainPtr  ChainInterface::getChain  ( const std::string& from, const std::string& to)
@@ -20,64 +21,32 @@ rosdyn::ChainPtr  ChainInterface::getChain  ( const std::string& from, const std
   return chain;
 }
 
-inline
-void get_joint_names(ros::NodeHandle* nh, std::vector<std::string>& names)
-{
-  std::vector<std::string> alternative_keys =
-    {"controlled_resources", "controlled_resource", "controlled_joints", "controlled_joint", "joint_names", "joint_name"};
-
-  names.clear();
-  for(auto const & key : alternative_keys)
-  {
-    if(!nh->getParam(key, names))
-    {
-      std::string joint_name;
-      if(nh->getParam(key, joint_name))
-      {
-        names.push_back(joint_name);
-      }
-    }
-  }
-  return;
-}
 
 inline
-bool ChainInterface::init(ros::NodeHandle& parent_nh, ros::NodeHandle& nh, std::stringstream& report)
+bool ChainInterface::init(ros::NodeHandle& nh, 
+                          const std::vector<std::string>& joint_names_to_handle,
+                          const std::string& base_link,
+                          const std::string& tool_link,
+                          std::stringstream& report)
 {
-
   try
   {
-    get_joint_names(&nh,m_joint_names);
-    if(m_joint_names.size()==1 && m_joint_names.front() == "all")
-    {
-      get_joint_names(&parent_nh, m_joint_names);
-    }
-
-    if(m_joint_names.size()==0)
-    {
-      report << "Neither '"<< nh.getNamespace() << "/controlled_joint(s)' nor '"
-                          << nh.getNamespace() << "'controlled_resources(s)' are specified. Abort";
-      return false;
-    }
-
-    m_nAx = m_joint_names.size();
-
     std::string robot_description_param;
     std::string robot_description;
     if (!nh.getParam("robot_description_param", robot_description_param ) )
     {
-      if (!parent_nh.getParam("robot_description_param", robot_description_param ) )
-      {
-        report <<  nh.getNamespace() + "/robot_description_param/ is not in rosparam server. Superimposed defualt value '/robot_description'" ;
-        robot_description_param = "/robot_description";
-      }
+      report <<  nh.getNamespace() + "/robot_description_param/ is not in rosparam server. Superimposed defualt value '/robot_description'" ;
+      robot_description_param = "/robot_description";
     }
     if (!nh.getParam(robot_description_param, robot_description))
     {
       report << "Parameter '/robot_description' does not exist";
       return false;
     }
+
     m_model = urdf::parseURDF(robot_description);
+    m_joint_names = joint_names_to_handle;
+    m_nAx = m_joint_names.size();
 
     m_upper_limit    .resize(m_nAx); m_upper_limit  .setZero();
     m_lower_limit    .resize(m_nAx); m_lower_limit  .setZero();
@@ -90,8 +59,7 @@ bool ChainInterface::init(ros::NodeHandle& parent_nh, ros::NodeHandle& nh, std::
           auto joint_model = m_model->getJoint(m_joint_names.at(iAx));
           if(!joint_model)
           {
-            report << "Controller '" + nh.getNamespace() + "' failed in init. " + std::string("")
-              + "The controlled joint named '" + m_joint_names.at(iAx) + "' is not managed by hardware_interface"; 
+            report << "The joint named '" + m_joint_names.at(iAx) + "' is not in the URDF model"; 
             return false;
           }
           m_upper_limit(iAx) = joint_model->limits->upper;
@@ -145,31 +113,13 @@ bool ChainInterface::init(ros::NodeHandle& parent_nh, ros::NodeHandle& nh, std::
       }
       catch (...)
       {
-        report << "Controller '" + nh.getNamespace() + "' failed in init. " + std::string("")
-                  + "The controlled joint named '" + m_joint_names.at(iAx) + "' is not managed by hardware_interface";
+        report << "Unknown excpetion in getting data from joint ''" + m_joint_names.at(iAx) + "'.";
         return false;
       }
     }
 
-    if (!nh.getParam("base_link", m_base_link ) )
-    {
-      if (!parent_nh.getParam("base_link", m_base_link ) )
-      {
-        report << "'Neither '" + nh.getNamespace() + "/base_link' " +
-                    "nor '"      + parent_nh.getNamespace() + "/base_link' are not in rosparam server.";
-        return false;
-      }
-    }
-
-    if (!nh.getParam("tool_link", m_tool_link ) )
-    {
-      if (!parent_nh.getParam("tool_link", m_tool_link ) )
-      {
-        report << "'Neither '" + nh.getNamespace() + "/tool_link' " +
-                           "nor '"      + parent_nh.getNamespace() + "/tool_link' are not in rosparam server.";
-        return false;
-      }
-    }
+    m_base_link = base_link;
+    m_tool_link = tool_link;
 
     Eigen::Vector3d gravity;
     gravity << 0, 0, -9.806;
@@ -365,4 +315,4 @@ bool ChainInterface::saturatePosition(Eigen::Ref<Eigen::VectorXd> q_next, std::s
 #undef TP
 #undef SP
 
-#endif  // ROSDYN_CORE__CHAIN_INTERFACE_IMPL__H
+#endif  // ROSDYN_UTILITIES__CHAIN_INTERFACE_IMPL__H

@@ -1,5 +1,5 @@
-#ifndef ROSDYN_CORE__CHAIN_INTERFACE__H
-#define ROSDYN_CORE__CHAIN_INTERFACE__H
+#ifndef ROSDYN_UTILITIES__CHAIN_INTERFACE__H
+#define ROSDYN_UTILITIES__CHAIN_INTERFACE__H
 
 #include <sstream>
 #include <memory>
@@ -59,18 +59,21 @@ public:
     return it == m_joint_names.end() ? -1 : std::distance(m_joint_names.begin(), it);
   }
 
-  const std::string&          linkNames (size_t i) const { return m_link_names.at(i);}
-  const std::vector<std::string>&    linkNames ( ) const { return m_link_names;}
-  const std::string&                 baseLink  ( ) const { return m_base_link; }
-  const std::string&                 baseFrame ( ) const { return baseLink();  }
-  const std::string&                 toolLink  ( ) const { return m_tool_link; }
-  const std::string&                 toolFrame ( ) const { return toolLink();  }
+  const std::string&                linkNames (size_t i) const { return m_link_names.at(i);}
+  const std::vector<std::string>&   linkNames ( ) const { return m_link_names;}
+  const std::string&                baseLink  ( ) const { return m_base_link; }
+  const std::string&                baseFrame ( ) const { return baseLink();  }
+  const std::string&                toolLink  ( ) const { return m_tool_link; }
+  const std::string&                toolFrame ( ) const { return toolLink();  }
   
-  rosdyn::ChainPtr       getChain  ( )                { return m_chain;     }
-  rosdyn::ChainPtr       getChain  ( const std::string& from, const std::string& to);
+  rosdyn::ChainPtr getChain( )                { return m_chain;     }
+  rosdyn::ChainPtr getChain( const std::string& from, const std::string& to);
 
-  bool init(ros::NodeHandle& parent_nh, ros::NodeHandle& nh, std::stringstream& report);
-
+  bool init(ros::NodeHandle& nh, 
+            const std::vector<std::string>& joint_names_to_handle, 
+            const std::string& base_link,
+            const std::string& tool_link,
+            std::stringstream& report);
 
   bool saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_target,
                      const Eigen::Ref<const Eigen::VectorXd> qd_actual,
@@ -101,9 +104,9 @@ typedef const std::shared_ptr<ChainInterface const> ChainInterfaceConstPtr;
 
 }  // namespace rosdyn
 
-#include <rosdyn_core/internal/chain_interface_impl.h>
+#include <rosdyn_utilities/internal/chain_interface_impl.h>
 
-#endif  // ROSDYN_CORE__CHAIN_INTERFACE__H
+#endif  // ROSDYN_UTILITIES__CHAIN_INTERFACE__H
 
 
 
