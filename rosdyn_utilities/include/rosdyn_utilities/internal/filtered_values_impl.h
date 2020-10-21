@@ -172,7 +172,7 @@ double* FilteredValue<N>::data(const size_t iAx)
   }
   return values_.data() + iAx;
 }
-  
+
 
 
 
