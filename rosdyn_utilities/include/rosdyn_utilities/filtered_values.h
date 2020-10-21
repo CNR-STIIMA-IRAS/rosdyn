@@ -64,8 +64,8 @@ public:
   const double& value(const size_t iAx) const;
   double&       value(const size_t iAx);
   
-  const double* data(const size_t iAx) const;
-  double* data(const size_t iAx);
+  const double* data(const size_t iAx = 0) const;
+  double* data(const size_t iAx = 0);
   
   const Eigen::Matrix<double,N,1>& raw() const;
   Eigen::Matrix<double,N,1>& raw();
@@ -104,9 +104,7 @@ public:
   typedef  std::shared_ptr<FilteredValue> Ptr;
   typedef  std::shared_ptr<FilteredValue const> ConstPtr;
 
-  FilteredValue(): filter_active_(false), natural_frequency_(0.0), sampling_time_(0.0)
-  {
-  }
+  FilteredValue();
   virtual ~FilteredValue() = default;
   FilteredValue(const FilteredValue&);
   FilteredValue& operator=(const FilteredValue&);
@@ -117,26 +115,7 @@ public:
                       , const Eigen::VectorXd& saturation
                       , const double natural_frequency
                       , const double sampling_time
-                      , const Eigen::VectorXd& init_value )
-  {
-    values_ = init_value;
-    banded_values_ = values_;
-    raw_values_ = values_;
-    dead_band_ = dead_band;
-    saturation_ = saturation;
-    natural_frequency_ = natural_frequency;
-    sampling_time_ = sampling_time;
-    filter_active_ = true;
-    
-    for(int i = 0; i < init_value.rows(); i++)
-    {
-      Eigen::VectorXd u(1); u(0) = init_value(i);
-      std::shared_ptr<eigen_control_toolbox::FirstOrderLowPass> filt(
-        new eigen_control_toolbox::FirstOrderLowPass( natural_frequency_,sampling_time_) );
-      lpf_.push_back(filt);
-      lpf_.back()->setStateFromIO(u,u);
-    }
-  }
+                      , const Eigen::VectorXd& init_value );
 
 
   void deactivateFilter(  );
@@ -149,25 +128,24 @@ public:
 
   Eigen::VectorXd& update(const Eigen::VectorXd& new_values);
   
-  const double* data(const size_t iAx) const;
-  double* data(const size_t iAx);
+  const double* data(const size_t iAx = 0) const;
+  double* data(const size_t iAx = 0);
   
   const Eigen::VectorXd& raw() const;
   Eigen::VectorXd& raw();
 
-  virtual void resize(size_t nAx)
-  {
-    filter_active_ = false;
-    values_.resize(nAx);
-    raw_values_.resize(nAx);
-    banded_values_.resize(nAx);
-  }
+  virtual void resize(size_t nAx);
+
 };
 using FilteredValueX = FilteredValue<-1>; 
 typedef std::shared_ptr<FilteredValueX> FilteredValueXPtr;
 typedef std::shared_ptr<FilteredValueX const> FilteredValueXConstPtr;
 
 /**
+ * 
+ * 
+ * 
+ * 
  * Pre-allocated classes with dimension already defined
  */
 #define DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(nAx)\
@@ -202,6 +180,7 @@ DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(26)
 DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(27)
 DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(29)
 
+#undef DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR
 
 } // namespace rosdyn
 

@@ -52,15 +52,15 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>Eigen3</build_depend>
+
   <build_depend>eigen_state_space_systems</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rosdyn_core</build_depend>
-  <build_export_depend>Eigen3</build_export_depend>
+
   <build_export_depend>eigen_state_space_systems</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rosdyn_core</build_export_depend>
-  <exec_depend>Eigen3</exec_depend>
+
   <exec_depend>eigen_state_space_systems</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rosdyn_core</exec_depend>

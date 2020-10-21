@@ -94,7 +94,9 @@ template<int N>
 Eigen::Matrix<double,N,1>& FilteredValue<N>::value()
 {
   if(filter_active_)
+  {
     throw std::runtime_error("The filter has been activated. The direct assignement cannot be performed. Function update() should be used.");
+  }
   return values_;
 }
 
@@ -154,12 +156,20 @@ Eigen::Matrix<double,N,1>& FilteredValue<N>::raw()
 template<int N>
 const double* FilteredValue<N>::data(const size_t iAx) const
 {
+  if(iAx >= values_.rows() )
+  {
+    throw std::runtime_error("Index out of range");
+  }
   return values_.data() + iAx;
 }
 
 template<int N>
 double* FilteredValue<N>::data(const size_t iAx)
 {
+  if(iAx >= values_.rows() )
+  {
+    throw std::runtime_error("Index out of range");
+  }
   return values_.data() + iAx;
 }
   
@@ -172,7 +182,46 @@ double* FilteredValue<N>::data(const size_t iAx)
  * 
  * 
  */
+inline
+FilteredValue<-1>::FilteredValue()
+  : filter_active_(false), natural_frequency_(0.0), sampling_time_(0.0)
+{
+}
 
+inline 
+void FilteredValue<-1>::activateFilter ( const Eigen::VectorXd& dead_band
+                    , const Eigen::VectorXd& saturation
+                    , const double natural_frequency
+                    , const double sampling_time
+                    , const Eigen::VectorXd& init_value )
+{
+  values_ = init_value;
+  banded_values_ = values_;
+  raw_values_ = values_;
+  dead_band_ = dead_band;
+  saturation_ = saturation;
+  natural_frequency_ = natural_frequency;
+  sampling_time_ = sampling_time;
+  filter_active_ = true;
+  
+  for(int i = 0; i < init_value.rows(); i++)
+  {
+    Eigen::VectorXd u(1); u(0) = init_value(i);
+    std::shared_ptr<eigen_control_toolbox::FirstOrderLowPass> filt(
+      new eigen_control_toolbox::FirstOrderLowPass( natural_frequency_,sampling_time_) );
+    lpf_.push_back(filt);
+    lpf_.back()->setStateFromIO(u,u);
+  }
+}
+
+inline
+void FilteredValue<-1>::resize(size_t nAx)
+{
+  filter_active_ = false;
+  values_.resize(nAx);
+  raw_values_.resize(nAx);
+  banded_values_.resize(nAx);
+}
 
 inline
 FilteredValue<-1>::FilteredValue(const FilteredValue<-1>& cpy)

@@ -14,11 +14,18 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 
+## Add gtest based cpp test target and link libraries
+if(CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
+  find_package(code_coverage REQUIRED)
+  # Add compiler flags for coverage instrumentation before defining any targets
+  APPEND_COVERAGE_COMPILER_FLAGS()
+endif()
+
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES rosdyn_utilities
   CATKIN_DEPENDS eigen_state_space_systems roscpp rosdyn_core 
-  DEPENDS Eigen3
+  DEPENDS Eigen3::Eigen
 )
 
 ###########

@@ -41,29 +41,56 @@
 #include <gtest/gtest.h>
 
 // Declare a test
-TEST(TestSuite, FilteredValueCtor)
+TEST(TestSuite, FilteredValue)
 {
 
-  EXPECT_NO_FATAL_FAILURE(rosdyn::FilteredValue<1> fv);
-
-  rosdyn::FilteredValue<1> fv1;
-  Eigen::Matrix<double,1,1> d;
+  EXPECT_NO_FATAL_FAILURE(rosdyn::FilteredValue<1> fv) << "Ctor";
+  constexpr size_t N = 1;
+  rosdyn::FilteredValue<N> fv1;
+  Eigen::Matrix<double, N,1>  d;    d <<  9;
+  Eigen::Matrix<double,-1,1> x(1); x << -1;
+  Eigen::Matrix<double,-1,1> y(2); y << 1,2; 
 
   EXPECT_NO_FATAL_FAILURE( fv1.value() = d );
+  EXPECT_TRUE( fv1.value().norm() == d.norm() );
 
-  EXPECT_NO_FATAL_FAILURE( fv1.activateFilter ( d, d, 0.1, 1e-3, d) );
-  EXPECT_NO_FATAL_FAILURE( fv1.deactivateFilter(  ) );
+  EXPECT_NO_FATAL_FAILURE( fv1.value() = x );
+  EXPECT_TRUE( (fv1.value()- x).norm() == 0 );
   
-  EXPECT_NO_FATAL_FAILURE( d = fv1.value() );
+  EXPECT_NO_FATAL_FAILURE( fv1.value() = y );
+  EXPECT_TRUE( fv1.value().rows() == N );
+  EXPECT_TRUE( fv1.value().rows() != y.rows() );
+  
+  EXPECT_NO_FATAL_FAILURE( fv1.activateFilter ( d, d, 0.1, 1e-3, d) );
   EXPECT_ANY_THROW( fv1.value() = d );
   
-  double a = 0.0;
+  EXPECT_NO_FATAL_FAILURE( fv1.deactivateFilter(  ) );
+  
+  EXPECT_NO_FATAL_FAILURE( fv1.value() = d );
+  EXPECT_TRUE( fv1.value().norm() == d.norm() );
 
+  EXPECT_NO_FATAL_FAILURE( d = fv1.value() );
+  EXPECT_TRUE( fv1.value().norm() == d.norm() );
+  
+  double a = 0.0;
   EXPECT_NO_FATAL_FAILURE( a = fv1.value(0) );
+  EXPECT_TRUE( fv1.value(0) == a );
+  
+  a = 99.0;
   EXPECT_NO_FATAL_FAILURE( fv1.value(0) = a );
-  
+  EXPECT_TRUE( fv1.value(0) == a );
+
   EXPECT_NO_FATAL_FAILURE( fv1.update(d) );
-  
+  EXPECT_TRUE( fv1.value().norm() == d.norm() );
+
+  double* ptr = nullptr;
+  EXPECT_NO_FATAL_FAILURE( ptr = fv1.data() );
+  EXPECT_ANY_THROW( ptr = fv1.data(1) );
+
+  constexpr double vv = 1234.0;
+  *ptr = vv;
+
+  EXPECT_TRUE( fv1.value(0) == vv ); 
 }
 
 

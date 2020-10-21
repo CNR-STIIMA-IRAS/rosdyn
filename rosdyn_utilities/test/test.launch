@@ -24,8 +24,10 @@
 </rosparam>
 </group>
 
+ <arg name="launch_prefix"
+     value="valgrind -s --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes  --log-file=/home/feymann/a.txt" />
 
-<test test-name="cnr_logger_test" pkg="cnr_logger" type="cnr_logger_test" >
+<test launch-prefix="$(arg launch_prefix)" test-name="test" pkg="rosdyn_utilities" type="rosdyn_utilities_test" >
 
 </test>
 
