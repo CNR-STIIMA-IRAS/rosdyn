@@ -1,6 +1,3 @@
-#ifndef ROSDYN_UTILITIES__CHAIN_INTERFACE_IMPL__H
-#define ROSDYN_UTILITIES__CHAIN_INTERFACE_IMPL__H
-
 #include <sstream>
 #include <rosdyn_utilities/chain_interface.h>
 
@@ -12,7 +9,6 @@ namespace rosdyn
 {
 
 
-inline
 rosdyn::ChainPtr  ChainInterface::getChain  ( const std::string& from, const std::string& to)
 {
   Eigen::Vector3d gravity;
@@ -22,8 +18,8 @@ rosdyn::ChainPtr  ChainInterface::getChain  ( const std::string& from, const std
 }
 
 
-inline
-bool ChainInterface::init(ros::NodeHandle& nh, 
+
+int ChainInterface::init(ros::NodeHandle& nh, 
                           const std::vector<std::string>& joint_names_to_handle,
                           const std::string& base_link,
                           const std::string& tool_link,
@@ -32,21 +28,50 @@ bool ChainInterface::init(ros::NodeHandle& nh,
   try
   {
     std::string robot_description_param;
-    std::string robot_description;
     if (!nh.getParam("robot_description_param", robot_description_param ) )
     {
-      report <<  nh.getNamespace() + "/robot_description_param/ is not in rosparam server. Superimposed defualt value '/robot_description'" ;
-      robot_description_param = "/robot_description";
-    }
-    if (!nh.getParam(robot_description_param, robot_description))
-    {
-      report << "Parameter '/robot_description' does not exist";
-      return false;
+      report <<  "\nParameter '" + nh.getNamespace() + "/robot_description_param' is not in rosparam server.\n";
+      report <<  help();
+      return 0;
     }
 
-    m_model = urdf::parseURDF(robot_description);
+    std::string robot_description_planning_param;
+    if(!nh.getParam("robot_description_planning_param", robot_description_planning_param ) )
+    {
+      report <<  "\nParameter '" + nh.getNamespace() + "/robot_description_planning_param' is not in rosparam server." ;
+      report <<  help();
+      return 0;
+    }
+    
+    if(!nh.hasParam(robot_description_param))
+    {
+      report << "\nParameter '" << robot_description_param << "' is not in rosparam server.\n";
+      report <<  help();
+      return -1;
+    }
+
+    if(!nh.hasParam(robot_description_planning_param))
+    {
+      report << "\nParameter '" << robot_description_planning_param << "' is not in rosparam server.\n";
+      report <<  help();
+      return -1;
+    }
+
+
+    std::string urdf_string;
+    if(!nh.getParam(robot_description_param, urdf_string))
+    {
+      report << "\nWeird error in getting the parameter '" << robot_description_param << "'. It was already checked the existence.\n";
+      return -1;
+    }
+    m_model = urdf::parseURDF(urdf_string);
+    if(m_model == nullptr )
+    {
+      report << "\nParsing the URDF from parameter '" << robot_description_param << "' failed. Weird!\n";
+      return -1;
+    }
     m_joint_names = joint_names_to_handle;
-    m_nAx = m_joint_names.size();
+    m_nAx         = m_joint_names.size();
 
     m_upper_limit    .resize(m_nAx); m_upper_limit  .setZero();
     m_lower_limit    .resize(m_nAx); m_lower_limit  .setZero();
@@ -56,65 +81,63 @@ bool ChainInterface::init(ros::NodeHandle& nh,
     {
       try
       {
-          auto joint_model = m_model->getJoint(m_joint_names.at(iAx));
-          if(!joint_model)
-          {
-            report << "The joint named '" + m_joint_names.at(iAx) + "' is not in the URDF model"; 
-            return false;
-          }
-          m_upper_limit(iAx) = joint_model->limits->upper;
-          m_lower_limit(iAx) = joint_model->limits->lower;
+        auto joint_model = m_model->getJoint(m_joint_names.at(iAx));
+        if(!joint_model)
+        {
+          report << "The joint named '" + m_joint_names.at(iAx) + "' is not in the URDF model."; 
+          return -1;
+        }
+        m_upper_limit(iAx) = joint_model->limits->upper;
+        m_lower_limit(iAx) = joint_model->limits->lower;
 
-          if ((m_upper_limit(iAx) == 0) && (m_lower_limit(iAx) == 0))
-          {
-            m_upper_limit(iAx) = std::numeric_limits<double>::infinity();
-            m_lower_limit(iAx) = -std::numeric_limits<double>::infinity();
-            report << "upper and lower limits are both equal to 0, set +/- infinity";
-          }
+        if ((m_upper_limit(iAx) == 0) && (m_lower_limit(iAx) == 0))
+        {
+          m_upper_limit(iAx) = std::numeric_limits<double>::infinity();
+          m_lower_limit(iAx) = -std::numeric_limits<double>::infinity();
+          report << "upper and lower limits are both equal to 0, set +/- infinity";
+        }
 
-          bool has_velocity_limits;
-          if (!nh.getParam(
-                "/robot_description_planning/joint_limits/" + m_joint_names.at(iAx) + "/has_velocity_limits", has_velocity_limits))
-          {
-            has_velocity_limits = false;
-          }
-          bool has_acceleration_limits;
-          if (!nh.getParam(
-                "/robot_description_planning/joint_limits/" + m_joint_names.at(iAx) + "/has_acceleration_limits", has_acceleration_limits))
-          {
-            has_acceleration_limits = false;
-          }
+        bool has_velocity_limits;
+        if (!nh.getParam(robot_description_planning_param +"/joint_limits/" + m_joint_names.at(iAx) + "/has_velocity_limits", has_velocity_limits))
+        {
+          has_velocity_limits = false;
+        }
+        bool has_acceleration_limits;
+        if (!nh.getParam(robot_description_planning_param +"/joint_limits/" + m_joint_names.at(iAx) + "/has_acceleration_limits", has_acceleration_limits))
+        {
+          has_acceleration_limits = false;
+        }
 
-          m_qd_limit(iAx) = joint_model->limits->velocity;
-          if (has_velocity_limits)
+        m_qd_limit(iAx) = joint_model->limits->velocity;
+        if (has_velocity_limits)
+        {
+          double vel;
+          if (!nh.getParam(robot_description_planning_param +"/joint_limits/" + m_joint_names.at(iAx) + "/max_velocity", vel))
           {
-            double vel;
-            if (!nh.getParam("/robot_description_planning/joint_limits/" + m_joint_names.at(iAx) + "/max_velocity", vel))
-            {
-              report << "/robot_description_planning/joint_limits/" + m_joint_names.at(iAx) + "/max_velocity is not defined";
-              return false;
-            }
-            if (vel < m_qd_limit(iAx))
-              m_qd_limit(iAx) = vel;
+            report << robot_description_planning_param +"/joint_limits/" + m_joint_names.at(iAx) + "/max_velocity is not defined";
+            return 0;
           }
+          if (vel < m_qd_limit(iAx))
+            m_qd_limit(iAx) = vel;
+        }
 
-          if (has_acceleration_limits)
+        if (has_acceleration_limits)
+        {
+          double acc;
+          if (!nh.getParam(robot_description_planning_param +"/joint_limits/" + m_joint_names.at(iAx) + "/max_acceleration", acc))
           {
-            double acc;
-            if (!nh.getParam("/robot_description_planning/joint_limits/" + m_joint_names.at(iAx) + "/max_acceleration", acc))
-            {
-              report << "/robot_description_planning/joint_limits/" + m_joint_names.at(iAx) + "/max_acceleration is not defined";
-              return false;
-            }
-            m_qdd_limit(iAx) = acc;
+            report << robot_description_planning_param +"/joint_limits/" + m_joint_names.at(iAx) + "/max_acceleration is not defined";
+            return 0;
           }
-          else
-            m_qdd_limit(iAx) = 10 * m_qd_limit(iAx);
+          m_qdd_limit(iAx) = acc;
+        }
+        else
+          m_qdd_limit(iAx) = 10 * m_qd_limit(iAx);
       }
       catch (...)
       {
         report << "Unknown excpetion in getting data from joint ''" + m_joint_names.at(iAx) + "'.";
-        return false;
+        return -1;
       }
     }
 
@@ -132,17 +155,21 @@ bool ChainInterface::init(ros::NodeHandle& nh,
     m_link_names = m_chain->getLinksName( );
 
     m_cfrmt = Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
-
-    return true;
   }
   catch(std::exception& e)
   {
     report << "Error caught: " + std::string(e.what());
-    return false;
+    return -1;
   }
+  catch(...)
+  {
+    report << "Error! ";
+    return -1;
+  }
+  return 1;
 }
 
-inline
+
 bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
                                      double max_velocity_multiplier,
                                      bool preserve_direction,
@@ -177,7 +204,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
   return scale.minCoeff()<1;
 }
 
-inline
+
 bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
                                      const Eigen::Ref<const Eigen::VectorXd> qd_actual,
                                      double dt,
@@ -234,7 +261,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
   return saturated;
 }
 
-inline
+
 bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
                                      const Eigen::Ref<const Eigen::VectorXd> qd_actual,
                                      const Eigen::Ref<const Eigen::VectorXd> q_actual,
@@ -281,7 +308,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
 
 }
 
-inline
+
 bool ChainInterface::saturatePosition(Eigen::Ref<Eigen::VectorXd> q_next, std::stringstream* report)
 {
   if(report)
@@ -314,5 +341,3 @@ bool ChainInterface::saturatePosition(Eigen::Ref<Eigen::VectorXd> q_next, std::s
 
 #undef TP
 #undef SP
-
-#endif  // ROSDYN_UTILITIES__CHAIN_INTERFACE_IMPL__H

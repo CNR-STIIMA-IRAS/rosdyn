@@ -133,7 +133,8 @@ void get_joint_names(ros::NodeHandle& nh, std::vector<std::string>& names)
       try 
       {
         std::string joint_name;
-        if(nh.getParam(key, joint_name))
+        ok = nh.getParam(key, joint_name);
+        if(ok)
         {
           names.push_back(joint_name);
         }

@@ -69,7 +69,13 @@ public:
   rosdyn::ChainPtr getChain( )                { return m_chain;     }
   rosdyn::ChainPtr getChain( const std::string& from, const std::string& to);
 
-  bool init(ros::NodeHandle& nh, 
+  /**
+   * @function init
+   * @return -1 if a critical proble in in the initialization happen (e.g., exception caught), 
+   * 0 if the parameters have not been found in the nodehandle
+   * 1 if ok
+   */
+  int init (ros::NodeHandle& nh, 
             const std::vector<std::string>& joint_names_to_handle, 
             const std::string& base_link,
             const std::string& tool_link,
@@ -97,14 +103,20 @@ public:
 
   bool saturatePosition(Eigen::Ref<Eigen::VectorXd> q_target, std::stringstream* report);
 
+  std::string help() const
+  {
+    std::string ret = "The parameters needed to properly configured the struct are:\n";
+    ret += "* robot_description_param             # the absolute path to the parameter where the urdf has been load in the rosparam server, i.e. standard /robot_desciption\n";
+    ret += "* robot_description_planning_param    # the absolute path to the parameter where the the joint limits are, i.e., standard /robot_description_planning\n";
+    ret += "All the parameters must be stored under the same namespace. ";
+    return ret;
+  }
 };
 
 typedef std::shared_ptr<ChainInterface> ChainInterfacePtr;
 typedef const std::shared_ptr<ChainInterface const> ChainInterfaceConstPtr;
 
 }  // namespace rosdyn
-
-#include <rosdyn_utilities/internal/chain_interface_impl.h>
 
 #endif  // ROSDYN_UTILITIES__CHAIN_INTERFACE__H
 
