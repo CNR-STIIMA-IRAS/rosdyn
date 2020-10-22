@@ -79,7 +79,6 @@ ChainStateN<N>& ChainStateN<N>::operator=(const ChainStateN<N>& rhs)
 template<int N>
 ChainStateN<N>& ChainStateN<N>::updateTransformations(bool effort_to_wrench)
 {
-  std::cout << "POIUYT: " << this->q().transpose() << std::endl;
   Tbt_ = kin_->getChain()->getTransformation(this->q());
   jacobian_ = kin_->getChain()->getJacobian(this->q());
   twist_= kin_->getChain()->getTwistTool(this->q(), this->qd());

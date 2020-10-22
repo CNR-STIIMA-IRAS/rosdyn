@@ -32,8 +32,6 @@ catkin_package(
 ## Build ##
 ###########
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
 include_directories(include  ${catkin_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
 add_library(${PROJECT_NAME} src/${PROJECT_NAME}/chain_interface.cpp)
 

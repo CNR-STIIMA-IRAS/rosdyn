@@ -274,8 +274,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
 
   if(report)
   {
-    *report << "[-----][BRK   SATURATION] INPUT  qd: " << TP(qd_next.transpose()) 
-            << " qd actual: " << TP(qd_actual.transpose()) << "\n";
+    *report << "[-----][BRK   SATURATION] INPUT  qd: " << TP(qd_next.transpose()) << "\n";
   }
   Eigen::VectorXd braking_distance(this->nAx());
   for(size_t iAx=0; iAx<this->nAx();iAx++)
@@ -289,12 +288,12 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
   {
     if ((q_saturated_qd(iAx) > (this->upperLimit(iAx) - braking_distance(iAx))) && (qd_next(iAx)>0))
     {
-      saturated |= true;
+      saturated = true;
       qd_next(iAx) = std::max(0.0, qd_next(iAx) - this->accelerationLimit(iAx) * dt);
     }
     else if((q_saturated_qd(iAx)<(this->lowerLimit(iAx) + braking_distance(iAx))) && (qd_next(iAx)<0))
     {
-      saturated |= true;
+      saturated = true;
       qd_next(iAx) = std::min(0.0, qd_next(iAx) + this->accelerationLimit(iAx) * dt);
     }
   }
