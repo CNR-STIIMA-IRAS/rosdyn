@@ -319,7 +319,7 @@ public:
   Chain(const rosdyn::LinkPtr& root_link, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
   Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
   Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
-  void setInputJointsName(const std::vector<std::string> joints_name);
+  void setInputJointsName(const std::vector<std::string>& joints_name);
   std::vector<std::string> getMoveableJointNames()
   {
     return m_moveable_joints_name;
@@ -907,7 +907,7 @@ inline Chain::Chain(const std::string& robot_description, const std::string& bas
 }
 
 
-inline void Chain::setInputJointsName(const std::vector< std::string > joints_name)
+inline void Chain::setInputJointsName(const std::vector< std::string >& joints_name)
 {
   m_input_to_chain_joint.resize(m_joints_number, joints_name.size());
 
