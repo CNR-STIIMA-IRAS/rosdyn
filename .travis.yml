@@ -1,5 +1,9 @@
 # Travis CI instructions
 
+branches:
+  only:
+  - master
+
 sudo: required
 cache:
   - apt
