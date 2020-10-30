@@ -2,8 +2,8 @@
 #define ROSDYN_UTILITIES__FILTERED_VALUES__H
 
 #include <memory>
-#include <rosdyn_core/spacevect_algebra.h>
 #include <Eigen/Core>
+#include <rosdyn_core/spacevect_algebra.h>
 #include <eigen_state_space_systems/eigen_common_filters.h>
 
 namespace rosdyn
@@ -86,9 +86,6 @@ protected:
   double natural_frequency_;
   double sampling_time_;
 
-  typedef Eigen::VectorXd Vector;
-  enum { NeedsToAlign = (sizeof(Vector)%16)==0 };
-
   Eigen::VectorXd raw_values_;
   Eigen::VectorXd banded_values_;
   Eigen::VectorXd values_;
@@ -99,7 +96,7 @@ protected:
 
 
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(NeedsToAlign)
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef  std::shared_ptr<FilteredValue> Ptr;
   typedef  std::shared_ptr<FilteredValue const> ConstPtr;

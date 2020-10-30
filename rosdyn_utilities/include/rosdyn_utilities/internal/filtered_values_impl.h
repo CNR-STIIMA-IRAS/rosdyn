@@ -120,7 +120,7 @@ FilteredValue<N>& FilteredValue<N>::update(const Eigen::Matrix<double,N,1>& new_
   if(filter_active_)
   {
     banded_values_ = new_values;
-    for(size_t i = 0; i<new_values.size(); i++)
+    for(int i = 0; i<new_values.size(); i++)
     {
       banded_values_[i] = new_values[i] >  dead_band_[i] ?  new_values[i] - dead_band_[i]
                         : new_values[i] < -dead_band_[i] ?  new_values[i] + dead_band_[i]
@@ -298,7 +298,7 @@ Eigen::VectorXd& FilteredValue<-1>::update(const Eigen::VectorXd& new_values)
   if(filter_active_)
   {
     banded_values_ = new_values;
-    for(size_t i = 0; i<new_values.size(); i++)
+    for(int i = 0; i<new_values.size(); i++)
     {
       banded_values_[i] = new_values[i] >  dead_band_[i] ?  new_values[i] - dead_band_[i]
                         : new_values[i] < -dead_band_[i] ?  new_values[i] + dead_band_[i]

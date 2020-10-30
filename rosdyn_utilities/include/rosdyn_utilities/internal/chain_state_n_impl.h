@@ -1,9 +1,9 @@
-#ifndef ROSDYN_UTILITIES__CHAIN_STATUS_IMPL__H
-#define ROSDYN_UTILITIES__CHAIN_STATUS_IMPL__H
+#ifndef ROSDYN_UTILITIES__CHAIN_STATE_N_IMPL__H
+#define ROSDYN_UTILITIES__CHAIN_STATE_N_IMPL__H
 
 #include <Eigen/QR> 
 #include <sstream>
-#include <rosdyn_utilities/chain_state.h>
+#include <rosdyn_utilities/chain_state_n.h>
 
 #define SP std::fixed  << std::setprecision(5)
 #define TP(X) std::fixed << std::setprecision(5) << X.format(m_cfrmt)
@@ -52,7 +52,7 @@ void ChainStateN<N>::setZero()
 }
 
 template<int N> 
-void ChainStateN<N>::copy(const ChainStateN<N>& cpy)
+void ChainStateN<N>::copy(const ChainStateN<N>& cpy, bool update_transform)
 {
   this->kin_ = cpy.kin_ ;
   this->q_ = cpy.q_;
@@ -60,7 +60,8 @@ void ChainStateN<N>::copy(const ChainStateN<N>& cpy)
   this->qdd_ = cpy.qdd_;
   this->effort_ = cpy.effort_;
   this->external_effort_ = cpy.external_effort_;
-  updateTransformations();
+  if(update_transform)
+    updateTransformations();
 }
 
 template<int N> 
@@ -75,6 +76,26 @@ ChainStateN<N>& ChainStateN<N>::operator=(const ChainStateN<N>& rhs)
   copy(rhs); 
   return *this;
 }
+
+template<int N>
+ChainStateN<N>& ChainStateN<N>::updateTransformations(const Eigen::Matrix<double,N,1> q,
+                                                      const Eigen::Matrix<double,N,1> qd,
+                                                      const Eigen::Matrix<double,N,1> qdd,
+                                                      const Eigen::Matrix<double,N,1> external_effort)
+{
+  Tbt_      = kin_->getChain()->getTransformation(q);
+  jacobian_ = kin_->getChain()->getJacobian(qd);
+  twist_    = kin_->getChain()->getTwistTool(q,qd);
+  twistd_   = kin_->getChain()->getDTwistTool(q,qd,qdd);
+
+  Eigen::Matrix<double,N,6> jt = jacobian_.transpose();
+  Eigen::Matrix<double,6,N> jti;
+  jti = pseudoInverse(jt);
+  
+  wrench_.update(jti * external_effort);
+  return *this;
+}
+
 
 template<int N>
 ChainStateN<N>& ChainStateN<N>::updateTransformations(bool effort_to_wrench)
@@ -262,10 +283,10 @@ public:
   ChainInterfacePtr getKin() const { return kin_; }
   ChainStateN& updateTransformations( bool effort_to_wrench = true )
   {
-    Tbt_ = kin_->getChain()->getTransformation(this->q());
+    Tbt_      = kin_->getChain()->getTransformation(this->q());
     jacobian_ = kin_->getChain()->getJacobian(this->q());
-    twist_= kin_->getChain()->getTwistTool(this->q(), this->qd());
-    twistd_  = kin_->getChain()->getDTwistTool(this->q(), this->qd(),this->qdd());
+    twist_    = kin_->getChain()->getTwistTool(this->q(), this->qd());
+    twistd_   = kin_->getChain()->getDTwistTool(this->q(), this->qd(),this->qdd());
 
     if(effort_to_wrench)
     {
@@ -282,6 +303,25 @@ public:
     
     return *this;
   }
+
+  ChainStateN& updateTransformations(const Eigen::Matrix<double,-1,1> q,
+                                     const Eigen::Matrix<double,-1,1> qd,
+                                     const Eigen::Matrix<double,-1,1> qdd,
+                                     const Eigen::Matrix<double,-1,1> external_effort)
+  {
+    Tbt_      = kin_->getChain()->getTransformation(q);
+    jacobian_ = kin_->getChain()->getJacobian(qd);
+    twist_    = kin_->getChain()->getTwistTool(q,qd);
+    twistd_   = kin_->getChain()->getDTwistTool(q,qd,qdd);
+
+    Eigen::Matrix<double,-1,6> jt = jacobian_.transpose();
+    Eigen::Matrix<double,6,-1> jti;
+    jti = pseudoInverse(jt);
+    
+    wrench_.update(jti * external_effort);
+    return *this;
+  }
+
   
   double* handle_to_q(const size_t& iAx) {CHECK_iAx(iAx); return q_.data(iAx); }
   double* handle_to_qd(const size_t& iAx) {CHECK_iAx(iAx); return qd_.data(iAx); }
@@ -331,7 +371,7 @@ public:
   
   
   
-  void copy(const ChainStateN<-1>& cpy)
+  void copy(const ChainStateN<-1>& cpy, bool update_transform = true)
   {
     this->kin_ = cpy.kin_ ;
     this->q_ = cpy.q_;
@@ -339,7 +379,8 @@ public:
     this->qdd_ = cpy.qdd_;
     this->effort_ = cpy.effort_;
     this->external_effort_ = cpy.external_effort_;
-    updateTransformations();
+    if(update_transform)
+      updateTransformations();
   }
   
   void setZero()
@@ -353,13 +394,9 @@ public:
   }
 };
 
-
-
-
-
 }  // rosdyn
 
 #undef TP
 #undef SP
 
-#endif  //  ROSDYN_UTILITIES__CHAIN_STATUS_IMPL__H
+#endif  //  ROSDYN_UTILITIES__CHAIN_STATE_N_IMPL__H

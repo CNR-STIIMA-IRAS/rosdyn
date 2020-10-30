@@ -216,8 +216,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
 
   if(report)
   {
-    *report<<"[-----][ACC   SATURATION] INPUT  qd: "<<TP(qd_next.transpose())
-           <<"( qd actual:"<<TP(qd_actual.transpose())<<")\n";
+    *report<<"[-----][ACC   SATURATION] INPUT  qd: "<<TP(qd_next.transpose())<<"\n";
   }
   Eigen::VectorXd qd_sup  = qd_actual + accelerationLimit() * dt;
   Eigen::VectorXd qd_inf  = qd_actual - accelerationLimit() * dt;
@@ -251,7 +250,6 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
       qd_next = qd_next + dqd;
     }
   }
-
 
   if(report)
   {

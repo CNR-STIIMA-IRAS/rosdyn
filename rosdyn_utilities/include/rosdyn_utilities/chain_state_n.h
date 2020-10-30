@@ -1,5 +1,5 @@
-#ifndef ROSDYN_UTILITIES__CHAIN_STATUS_N__H
-#define ROSDYN_UTILITIES__CHAIN_STATUS_N__H
+#ifndef ROSDYN_UTILITIES__CHAIN_STATE_N__H
+#define ROSDYN_UTILITIES__CHAIN_STATE_N__H
 
 #include <memory>
 #include <string>
@@ -48,11 +48,8 @@ protected:
 
   rosdyn::ChainInterfacePtr kin_;
 
-  typedef Eigen::Matrix<double,N,1> Vector;
-  enum { NeedsToAlign = (sizeof(Vector)%16)==0 };
-
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(NeedsToAlign)
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef std::shared_ptr<ChainStateN> Ptr;
   typedef std::shared_ptr<ChainStateN const> ConstPtr;
@@ -115,6 +112,10 @@ public:
   // METHODS
   ChainInterfacePtr getKin() const { return kin_; }
   ChainStateN& updateTransformations( bool effort_to_wrench = true );
+  ChainStateN& updateTransformations(const Eigen::Matrix<double,N,1> q,
+                        const Eigen::Matrix<double,N,1> qd,
+                        const Eigen::Matrix<double,N,1> qdd,
+                        const Eigen::Matrix<double,N,1> external_effort);
   
   double* handle_to_q(const size_t& iAx) {CHECK_iAx(iAx); return q_.data(iAx); }
   double* handle_to_qd(const size_t& iAx) {CHECK_iAx(iAx); return qd_.data(iAx); }
@@ -134,7 +135,7 @@ public:
   ChainStateN& operator=(const ChainStateN& rhs);
 
   virtual bool init(ChainInterfacePtr kin);
-  void copy(const ChainStateN<N>& cpy);
+  void copy(const ChainStateN<N>& cpy, bool update_transform = true);
   void setZero();
 };
 
@@ -143,11 +144,11 @@ public:
 /**
  * impl and specialization
  */
-#include <rosdyn_utilities/internal/chain_state_impl.h>
+#include <rosdyn_utilities/internal/chain_state_n_impl.h>
 
 
 
-#endif  // ROSDYN_UTILITIES__CHAIN_STATUS_N__H
+#endif  // ROSDYN_UTILITIES__CHAIN_STATE_N__H
 
 
 

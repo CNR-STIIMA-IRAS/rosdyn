@@ -34,6 +34,14 @@ catkin_package(
 
 include_directories(include  ${catkin_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
 add_library(${PROJECT_NAME} src/${PROJECT_NAME}/chain_interface.cpp)
+target_precompile_headers(${PROJECT_NAME} PUBLIC  <sstream>
+                                                  <memory>
+                                                  <string>
+                                                  <vector>
+                                                  <cmath>
+                                                  <Eigen/Core>
+                                                  <urdf_model/model.h>
+                                                  <urdf_parser/urdf_parser.h> )
 
 add_executable(${PROJECT_NAME}_example src/rosdyn_utilities_node_test.cpp)
 set_target_properties(${PROJECT_NAME}_example PROPERTIES OUTPUT_NAME node PREFIX "")
