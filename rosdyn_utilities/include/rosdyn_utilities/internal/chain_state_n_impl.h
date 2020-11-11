@@ -3,6 +3,7 @@
 
 #include <Eigen/QR> 
 #include <sstream>
+#include <eigen_matrix_utils/eigen_matrix_utils.h>
 #include <rosdyn_utilities/chain_state_n.h>
 
 #define SP std::fixed  << std::setprecision(5)
@@ -33,26 +34,26 @@ PseudoInverseType<MatType> pseudoInverse(const MatType &a, double epsilon = std:
 namespace rosdyn
 {
 
-template<int N> 
-ChainStateN<N>::ChainStateN(ChainInterfacePtr kin) 
+template<int N, int MN> 
+ChainStateN<N,MN>::ChainStateN(ChainInterfacePtr kin) 
 {   
   assert(kin); 
   init(kin);
 } 
 
-template<int N>
-void ChainStateN<N>::setZero()
+template<int N, int MN>
+void ChainStateN<N,MN>::setZero()
 {
-  this->q_.value().setZero();
-  this->qd_.value().setZero();
-  this->qdd_.value().setZero();
-  this->effort_.value().setZero();
-  this->external_effort_.value().setZero();
+  eigen_utils::setZero(this->q_.value());
+  eigen_utils::setZero(this->qd_.value());
+  eigen_utils::setZero(this->qdd_.value());
+  eigen_utils::setZero(this->effort_.value());
+  eigen_utils::setZero(this->external_effort_.value());
   updateTransformations();
 }
 
-template<int N> 
-void ChainStateN<N>::copy(const ChainStateN<N>& cpy, bool update_transform)
+template<int N, int MN> 
+void ChainStateN<N,MN>::copy(const ChainStateN<N,MN>& cpy, bool update_transform)
 {
   this->kin_ = cpy.kin_ ;
   this->q_ = cpy.q_;
@@ -64,24 +65,24 @@ void ChainStateN<N>::copy(const ChainStateN<N>& cpy, bool update_transform)
     updateTransformations();
 }
 
-template<int N> 
-ChainStateN<N>::ChainStateN(const ChainStateN<N>& cpy)
+template<int N, int MN> 
+ChainStateN<N,MN>::ChainStateN(const ChainStateN<N,MN>& cpy)
 {
   copy(cpy); 
 }
 
-template<int N>
-ChainStateN<N>& ChainStateN<N>::operator=(const ChainStateN<N>& rhs)
+template<int N, int MN>
+ChainStateN<N,MN>& ChainStateN<N,MN>::operator=(const ChainStateN<N,MN>& rhs)
 {
   copy(rhs); 
   return *this;
 }
 
-template<int N>
-ChainStateN<N>& ChainStateN<N>::updateTransformations(const Eigen::Matrix<double,N,1> q,
-                                                      const Eigen::Matrix<double,N,1> qd,
-                                                      const Eigen::Matrix<double,N,1> qdd,
-                                                      const Eigen::Matrix<double,N,1> external_effort)
+template<int N, int MN>
+ChainStateN<N,MN>& ChainStateN<N,MN>::updateTransformations(const ChainStateN<N,MN>::Value& q,
+                                                            const ChainStateN<N,MN>::Value& qd,
+                                                            const ChainStateN<N,MN>::Value& qdd,
+                                                            const ChainStateN<N,MN>::Value& external_effort)
 {
   Tbt_      = kin_->getChain()->getTransformation(q);
   jacobian_ = kin_->getChain()->getJacobian(qd);
@@ -97,8 +98,8 @@ ChainStateN<N>& ChainStateN<N>::updateTransformations(const Eigen::Matrix<double
 }
 
 
-template<int N>
-ChainStateN<N>& ChainStateN<N>::updateTransformations(bool effort_to_wrench)
+template<int N, int MN>
+ChainStateN<N,MN>& ChainStateN<N,MN>::updateTransformations(bool effort_to_wrench)
 {
   Tbt_ = kin_->getChain()->getTransformation(this->q());
   jacobian_ = kin_->getChain()->getJacobian(this->q());
@@ -174,14 +175,14 @@ void get_joint_names(ros::NodeHandle& nh, std::vector<std::string>& names)
   return;
 }
 
-template<int N>
-bool ChainStateN<N>:: init(ChainInterfacePtr kin)
+template<int N, int MN>
+bool ChainStateN<N,MN>:: init(ChainInterfacePtr kin)
 {
   if(!kin)
   {
     return false; 
   }
-  if(kin->nAx() !=N)
+  if(kin->nAx()!=N)
   {
     return false;
   }
@@ -190,7 +191,7 @@ bool ChainStateN<N>:: init(ChainInterfacePtr kin)
   return true;
 }
 
-
+#if 0
 
 /**
  * 
@@ -393,6 +394,7 @@ public:
     updateTransformations();
   }
 };
+#endif
 
 }  // rosdyn
 

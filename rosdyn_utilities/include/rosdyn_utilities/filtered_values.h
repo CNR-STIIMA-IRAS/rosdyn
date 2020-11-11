@@ -15,92 +15,19 @@ namespace rosdyn
  * The template is designed in order to use as raw data std::vector or Eigen::VectorXd, or static dimensioned Eigen::Matrix<double,N,1>
  * The specialization for Eigen::VectorXd, Eigen:Matrix<double,6,1>, and Eigen:Matrix<double,7,1> is provided.
  */
-template<int N>
+template<int N, int MaxN=N>
 class FilteredValue
 {
-protected:
-  bool filter_active_;
-  double natural_frequency_;
-  double sampling_time_;
-
-  typedef Eigen::Matrix<double,N,1> Vector;
-  enum { NeedsToAlign = (sizeof(Vector)%16)==0 };
-
-  Eigen::Matrix<double,N,1> raw_values_;
-  Eigen::Matrix<double,N,1> banded_values_;
-  Eigen::Matrix<double,N,1> values_;
-  Eigen::Matrix<double,N,1> dead_band_;
-  Eigen::Matrix<double,N,1> saturation_;
-
-  std::vector<std::shared_ptr<eigen_control_toolbox::FirstOrderLowPass>> lpf_; 
-
-
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(NeedsToAlign)
-
-  typedef  std::shared_ptr<FilteredValue> Ptr;
-  typedef  std::shared_ptr<FilteredValue const> ConstPtr;
-
-  FilteredValue();
-  virtual ~FilteredValue() = default;
-  FilteredValue(const FilteredValue&);
-  FilteredValue& operator=(const FilteredValue&);
-  FilteredValue(FilteredValue&&) = default;
-  FilteredValue& operator=(FilteredValue&&) = default;
-
-  void activateFilter ( const Eigen::Matrix<double,N,1>& dead_band
-                      , const Eigen::Matrix<double,N,1>& saturation
-                      , const double natural_frequency
-                      , const double sampling_time
-                      , const Eigen::Matrix<double,N,1>& init_value );
-
-  void deactivateFilter(  );
-
-  const Eigen::Matrix<double,N,1>& value() const;
-  Eigen::Matrix<double,N,1>& value();
-
-  FilteredValue<N>& update(const Eigen::Matrix<double,N,1>& new_values);
-
-  const double& value(const size_t iAx) const;
-  double&       value(const size_t iAx);
-  
-  const double* data(const size_t iAx = 0) const;
-  double* data(const size_t iAx = 0);
-  
-  const Eigen::Matrix<double,N,1>& raw() const;
-  Eigen::Matrix<double,N,1>& raw();
-};
-
-
-/**
- * 
- * @class FilteredValue<-1> 
- * @brief Specialization to VectorXd 
- * 
- */
-template<>
-class FilteredValue<-1>
-{
-protected:
-  bool filter_active_;
-  double natural_frequency_;
-  double sampling_time_;
-
-  Eigen::VectorXd raw_values_;
-  Eigen::VectorXd banded_values_;
-  Eigen::VectorXd values_;
-  Eigen::VectorXd dead_band_;
-  Eigen::VectorXd saturation_;
-
-  std::vector<std::shared_ptr<eigen_control_toolbox::FirstOrderLowPass>> lpf_; 
-
-
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef  std::shared_ptr<FilteredValue> Ptr;
   typedef  std::shared_ptr<FilteredValue const> ConstPtr;
 
+  //! Value: dimension N, if N==1, then the Value type is a double
+  using Value = typename std::conditional<N==1, 
+                    double, Eigen::Matrix<double,N,1,0,MaxN,1>>::type;
+
   FilteredValue();
   virtual ~FilteredValue() = default;
   FilteredValue(const FilteredValue&);
@@ -108,35 +35,80 @@ public:
   FilteredValue(FilteredValue&&) = default;
   FilteredValue& operator=(FilteredValue&&) = default;
 
-  void activateFilter ( const Eigen::VectorXd& dead_band
-                      , const Eigen::VectorXd& saturation
+  bool activateFilter ( const Value& dead_band
+                      , const Value& saturation
                       , const double natural_frequency
                       , const double sampling_time
-                      , const Eigen::VectorXd& init_value );
+                      , const Value& init_value );
 
+  void deactivateFilter( );
 
-  void deactivateFilter(  );
+  // ACCESSOR
+  const Value& value() const;
+  Value& value();
+
+  const Value& raw() const;
+  Value& raw();
+
+  // conditional template, if n==1, it is a simple double, otherwise, 
+  // access to data() of the matrix
+  template <int n=N, typename std::enable_if<n==1, int>::type = 0>
+  const double* data() const;
+
+  template <int n=N, typename std::enable_if<n!=1, int>::type = 0>
+  const double* data() const;
   
-  const Eigen::VectorXd& value() const;
-  Eigen::VectorXd& value();
-
-  double value(const size_t iAx) const;
-  double& value(const size_t iAx);
-
-  Eigen::VectorXd& update(const Eigen::VectorXd& new_values);
+  template <int n=N, typename std::enable_if<n==1, int>::type = 0>
+  double* data();
   
-  const double* data(const size_t iAx = 0) const;
-  double* data(const size_t iAx = 0);
+  template <int n=N, typename std::enable_if<n!=1, int>::type = 0>
+  double* data();
+
+  // METHOD
+  FilteredValue<N,MaxN>& update(const Value& new_values);
+  const Value& getUpdatedValue( ) const;
+
+  // SPECIAL ACCESSOR (ONLY IF N!=1)
+  template <int n=N, typename std::enable_if<n!=1, int>::type = 0>
+  const double& value(const int iAx) const;
+
+  template <int n=N, typename std::enable_if<n!=1, int>::type = 0>
+  double& value(const int iAx);
   
-  const Eigen::VectorXd& raw() const;
-  Eigen::VectorXd& raw();
+  template <int n=N, typename std::enable_if<n!=1, int>::type = 0>
+  const double* data(const int iAx) const;
 
-  virtual void resize(size_t nAx);
+  template <int n=N, typename std::enable_if<n!=1, int>::type = 0>
+  double* data(const int iAx);
+  
+  template <int n=N, typename std::enable_if<n!=1, int>::type = 0>
+  bool resize(int nAx);
 
+protected:
+  bool filter_active_;
+  double natural_frequency_;
+  double sampling_time_;
+
+  Value raw_values_;
+  Value bonded_value_;
+  Value values_;
+  Value dead_band_;
+  Value saturation_;
+
+  eigen_control_toolbox::FirstOrderLowPass<N,MaxN> lpf_; 
 };
-using FilteredValueX = FilteredValue<-1>; 
-typedef std::shared_ptr<FilteredValueX> FilteredValueXPtr;
-typedef std::shared_ptr<FilteredValueX const> FilteredValueXConstPtr;
+
+//! The class is for 1-dim problems
+using  FilteredScalar = FilteredValue<1>;
+typedef std::shared_ptr<FilteredScalar      > FilteredScalarPtr;
+typedef std::shared_ptr<FilteredScalar const> FilteredScalarConstPtr;
+
+
+//! The class is for dynamic allocation
+using  FilteredVectorXd = FilteredValue<-1>;
+typedef std::shared_ptr<FilteredVectorXd      > FilteredVectorXdPtr;
+typedef std::shared_ptr<FilteredVectorXd const> FilteredVectorXdConstPtr;
+
 
 /**
  * 
@@ -146,27 +118,15 @@ typedef std::shared_ptr<FilteredValueX const> FilteredValueXConstPtr;
  * Pre-allocated classes with dimension already defined
  */
 #define DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(nAx)\
-using  FilteredValue ## nAx = FilteredValue<nAx>;\
-typedef std::shared_ptr<FilteredValue<nAx>      > FilteredValue ## nAx ## Ptr;\
-typedef std::shared_ptr<FilteredValue<nAx> const> FilteredValue ## nAx ## ConstPtr;\
+using   FilteredVector ## nAx ## d = FilteredValue<nAx>;\
+typedef std::shared_ptr<FilteredVector ## nAx ## d      > FilteredVector ## nAx ## dPtr;\
+typedef std::shared_ptr<FilteredVector ## nAx ## d const> FilteredVector ## nAx ## dConstPtr;\
 
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(1); // FilteredValue1, FilteredValue1Ptr, FilteredValue1ConstPtr
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(2)
+DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(2) // FilteredValue2, FilteredValue1Ptr, FilteredValue2ConstPtr
 DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(3)
 DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(4)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(5)
 DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(6)
 DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(7)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(9)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(10)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(11)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(12)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(13)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(14)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(15)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(16)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(17)
-DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR(19)
 
 #undef DEFINE_FILTEREDVALUE_STATIC_DIMENSION_PTR
 

@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(catkin REQUIRED COMPONENTS
   eigen_state_space_systems
+  eigen_matrix_utils
   roscpp
   rosdyn_core
 )
@@ -34,15 +35,16 @@ catkin_package(
 
 include_directories(include  ${catkin_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
 add_library(${PROJECT_NAME} src/${PROJECT_NAME}/chain_interface.cpp)
-target_precompile_headers(${PROJECT_NAME} PUBLIC  <sstream>
-                                                  <memory>
-                                                  <string>
-                                                  <vector>
-                                                  <cmath>
-                                                  <Eigen/Core>
-                                                  <urdf_model/model.h>
-                                                  <urdf_parser/urdf_parser.h> )
-
+if(${CMAKE_VERSION} VERSION_GREATER  "3.16.0") 
+	target_precompile_headers(${PROJECT_NAME} PUBLIC  <sstream>
+													  <memory>
+													  <string>
+													  <vector>
+													  <cmath>
+													  <Eigen/Core>
+													  <urdf_model/model.h>
+													  <urdf_parser/urdf_parser.h> )
+endif()
 add_executable(${PROJECT_NAME}_example src/rosdyn_utilities_node_test.cpp)
 set_target_properties(${PROJECT_NAME}_example PROPERTIES OUTPUT_NAME node PREFIX "")
 add_dependencies(${PROJECT_NAME}_example ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

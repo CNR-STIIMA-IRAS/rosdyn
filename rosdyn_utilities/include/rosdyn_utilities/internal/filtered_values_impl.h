@@ -2,22 +2,27 @@
 #define ROSDYN_UTILITIES__FILTERED_VALUES__IMPL__H
 
 #include <memory>
-#include <rosdyn_core/spacevect_algebra.h>
 #include <Eigen/Core>
+
+#include <eigen_matrix_utils/eigen_matrix_utils.h>
 #include <eigen_state_space_systems/eigen_common_filters.h>
+
+#include <rosdyn_core/spacevect_algebra.h>
+
 #include <rosdyn_utilities/filtered_values.h>
 
 namespace rosdyn
 {
 
-template<int N>
-FilteredValue<N>::FilteredValue() 
+template<int N, int MaxN>
+FilteredValue<N,MaxN>::FilteredValue() 
 : filter_active_(false), natural_frequency_(0.0), sampling_time_(0.0)
 {
 }
 
-template<int N>
-FilteredValue<N>::FilteredValue(const FilteredValue& cpy)
+
+template<int N, int MaxN>
+FilteredValue<N,MaxN>::FilteredValue(const FilteredValue& cpy)
 {
   filter_active_ = cpy.filter_active_;
   natural_frequency_ = cpy.natural_frequency_ ;
@@ -33,8 +38,9 @@ FilteredValue<N>::FilteredValue(const FilteredValue& cpy)
   }
 }
 
-template<int N>
-FilteredValue<N>& FilteredValue<N>::operator=(const FilteredValue& rhs)
+
+template<int N, int MaxN>
+FilteredValue<N,MaxN>& FilteredValue<N,MaxN>::operator=(const FilteredValue<N,MaxN>& rhs)
 {
   filter_active_ = rhs.filter_active_;
   natural_frequency_ = rhs.natural_frequency_ ;
@@ -51,47 +57,59 @@ FilteredValue<N>& FilteredValue<N>::operator=(const FilteredValue& rhs)
   return *this;
 }
 
-
-template<int N>
-void FilteredValue<N>::activateFilter ( const Eigen::Matrix<double,N,1>& dead_band
-                                      , const Eigen::Matrix<double,N,1>& saturation
-                                      , const double natural_frequency
-                                      , const double sampling_time
-                                      , const Eigen::Matrix<double,N,1>& init_value )
+template<int N, int MaxN>
+bool FilteredValue<N,MaxN>::activateFilter( const FilteredValue<N,MaxN>::Value& dead_band
+                                          , const FilteredValue<N,MaxN>::Value& saturation
+                                          , const double natural_frequency
+                                          , const double sampling_time
+                                          , const FilteredValue<N,MaxN>::Value& init_value )
 {
+  if((eigen_utils::rows(dead_band) != eigen_utils::rows(saturation))
+  || (eigen_utils::rows(dead_band) != eigen_utils::rows(init_value)))
+  {
+    return false;
+  }
+
+  if( (N>0) && (eigen_utils::rows(values_) != eigen_utils::rows(dead_band)))
+  {
+    return false;
+  }
+
   values_ = init_value;
-  banded_values_ = values_;
+  bonded_value_ = values_;
   raw_values_ = values_;
   dead_band_ = dead_band;
   saturation_ = saturation;
   natural_frequency_ = natural_frequency;
   sampling_time_ = sampling_time;
   filter_active_ = true;
-  
-  for(int i = 0; i < init_value.rows(); i++)
-  {
-    Eigen::VectorXd u(1); u(0) = init_value(i);
-    std::shared_ptr<eigen_control_toolbox::FirstOrderLowPass> filt(
-      new eigen_control_toolbox::FirstOrderLowPass( natural_frequency_,sampling_time_) );
-    lpf_.push_back(filt);
-    lpf_.back()->setStateFromIO(u,u);
-  }
+
+  lpf_.init( natural_frequency_,sampling_time_, eigen_utils::rows(init_value) );
+  lpf_.setStateFromLastIO(init_value, init_value);
+
+  return true;
 }
 
-template<int N>
-void FilteredValue<N>::deactivateFilter(  )
+
+
+template<int N, int MaxN>
+void FilteredValue<N,MaxN>::deactivateFilter(  )
 {
   filter_active_ = false;
 }
 
-template<int N>
-const Eigen::Matrix<double,N,1>& FilteredValue<N>::value() const
+template<int N, int MaxN>
+const typename FilteredValue<N,MaxN>::Value& FilteredValue<N,MaxN>::value() const
 {
+  if(filter_active_)
+  {
+    throw std::runtime_error("The filter has been activated. The direct access be performed. Function getUpdatedValue() should be used.");
+  }
   return values_;
 }
 
-template<int N>
-Eigen::Matrix<double,N,1>& FilteredValue<N>::value()
+template<int N, int MaxN>
+typename FilteredValue<N,MaxN>::Value& FilteredValue<N,MaxN>::value()
 {
   if(filter_active_)
   {
@@ -100,38 +118,58 @@ Eigen::Matrix<double,N,1>& FilteredValue<N>::value()
   return values_;
 }
 
-template<int N>
-const double& FilteredValue<N>::value(const size_t iAx) const
+template<int N, int MaxN>
+const typename FilteredValue<N,MaxN>::Value& FilteredValue<N,MaxN>::getUpdatedValue() const
+{
+  if(!filter_active_)
+  {
+    throw std::runtime_error("The filter is not active. The access must be done through value().");
+  }
+  return values_;
+}
+
+
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n!=1, int>::type>
+const double& FilteredValue<N,MaxN>::value(const int iAx) const
 {
   return values_(iAx);
 }
 
-template<int N>
-double& FilteredValue<N>::value(const size_t iAx)
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n!=1, int>::type>
+double& FilteredValue<N,MaxN>::value(const int iAx)
 {
   double* ptr_to_val = values_.data() + iAx;
   return *ptr_to_val;
 }
 
-template<int N>
-FilteredValue<N>& FilteredValue<N>::update(const Eigen::Matrix<double,N,1>& new_values)
+template<int N, int MaxN>
+FilteredValue<N,MaxN>& FilteredValue<N,MaxN>::update(const FilteredValue<N,MaxN>::Value& new_values)
 {
-  assert( values_.rows() == new_values.rows() );
+  if(!filter_active_)
+  {
+    throw std::runtime_error("The filter is not active. The assignement must be done through value().");
+  }
+  assert( eigen_utils::rows(values_) == eigen_utils::rows(new_values) );
   if(filter_active_)
   {
-    banded_values_ = new_values;
-    for(int i = 0; i<new_values.size(); i++)
+    bonded_value_ = new_values;
+    for(int i = 0; i<eigen_utils::rows(new_values); i++)
     {
-      banded_values_[i] = new_values[i] >  dead_band_[i] ?  new_values[i] - dead_band_[i]
-                        : new_values[i] < -dead_band_[i] ?  new_values[i] + dead_band_[i]
-                        : 0;
+      double& b = eigen_utils::at(bonded_value_,i,0);
+      double  d = eigen_utils::at(dead_band_,i,0);
+      double  n = eigen_utils::at(new_values,i,0);
+      double  s = eigen_utils::at(saturation_,i,0);
+      b = n >  d ?  n - d 
+        : n < -d ?  n + d
+        : 0;
 
-      banded_values_[i] = banded_values_[i] >  saturation_[i] ?  saturation_[i]
-                        : banded_values_[i] < -saturation_[i] ? -saturation_[i]
-                        : banded_values_[i];
-      
-      values_[i] = lpf_[i]->update(banded_values_[i]);
+      b = b >  s ?  s
+        : b < -s ? -s
+        : b;
     }
+    values_ = lpf_.update(bonded_value_);
   }
   else
   {
@@ -141,208 +179,92 @@ FilteredValue<N>& FilteredValue<N>::update(const Eigen::Matrix<double,N,1>& new_
   return *this;
 }
 
-template<int N>
-const Eigen::Matrix<double,N,1>& FilteredValue<N>::raw() const
+template<int N, int MaxN>
+const typename FilteredValue<N,MaxN>::Value& FilteredValue<N,MaxN>::raw() const
 {
   return raw_values_;
 }
 
-template<int N>
-Eigen::Matrix<double,N,1>& FilteredValue<N>::raw() 
+template<int N, int MaxN>
+typename FilteredValue<N,MaxN>::Value& FilteredValue<N,MaxN>::raw() 
 { 
   return raw_values_; 
 }
 
-template<int N>
-const double* FilteredValue<N>::data(const size_t iAx) const
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n!=1, int>::type>
+const double* FilteredValue<N,MaxN>::data() const
 {
-  if(iAx >= values_.rows() )
+  return values_.data();
+}
+
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n==1, int>::type>
+const double* FilteredValue<N,MaxN>::data() const
+{
+  return &values_;
+}
+
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n!=1, int>::type>
+double* FilteredValue<N,MaxN>::data( )
+{
+ return values_.data();
+}
+
+
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n==1, int>::type>
+double* FilteredValue<N,MaxN>::data( )
+{
+ return &values_;
+}
+
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n!=1, int>::type>
+const double* FilteredValue<N,MaxN>::data(const int iAx) const
+{
+  if(iAx >= eigen_utils::rows(values_) )
   {
     throw std::runtime_error("Index out of range");
   }
   return values_.data() + iAx;
 }
 
-template<int N>
-double* FilteredValue<N>::data(const size_t iAx)
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n!=1, int>::type>
+double* FilteredValue<N,MaxN>::data(const int iAx)
 {
-  if(iAx >= values_.rows() )
+  if(iAx >= eigen_utils::rows(values_) )
   {
     throw std::runtime_error("Index out of range");
   }
   return values_.data() + iAx;
 }
 
-
-
-
-/**
- * 
- * 
- * 
- * 
- */
-inline
-FilteredValue<-1>::FilteredValue()
-  : filter_active_(false), natural_frequency_(0.0), sampling_time_(0.0)
-{
-}
-
-inline 
-void FilteredValue<-1>::activateFilter ( const Eigen::VectorXd& dead_band
-                    , const Eigen::VectorXd& saturation
-                    , const double natural_frequency
-                    , const double sampling_time
-                    , const Eigen::VectorXd& init_value )
-{
-  values_ = init_value;
-  banded_values_ = values_;
-  raw_values_ = values_;
-  dead_band_ = dead_band;
-  saturation_ = saturation;
-  natural_frequency_ = natural_frequency;
-  sampling_time_ = sampling_time;
-  filter_active_ = true;
-  
-  for(int i = 0; i < init_value.rows(); i++)
-  {
-    Eigen::VectorXd u(1); u(0) = init_value(i);
-    std::shared_ptr<eigen_control_toolbox::FirstOrderLowPass> filt(
-      new eigen_control_toolbox::FirstOrderLowPass( natural_frequency_,sampling_time_) );
-    lpf_.push_back(filt);
-    lpf_.back()->setStateFromIO(u,u);
-  }
-}
-
-inline
-void FilteredValue<-1>::resize(size_t nAx)
+template<int N, int MaxN>
+template <int n, typename std::enable_if<n!=1, int>::type>
+inline bool FilteredValue<N,MaxN>::resize(int nAx)
 {
   filter_active_ = false;
-  values_.resize(nAx);
-  raw_values_.resize(nAx);
-  banded_values_.resize(nAx);
-}
-
-inline
-FilteredValue<-1>::FilteredValue(const FilteredValue<-1>& cpy)
-{
-  filter_active_ = cpy.filter_active_;
-  natural_frequency_ = cpy.natural_frequency_ ;
-  sampling_time_ = cpy.sampling_time_;
-
-  if(filter_active_)
-  {
-    activateFilter(cpy.raw_values_, cpy.saturation_, cpy.natural_frequency_, cpy.sampling_time_, cpy.values_);
-  }
-  else
-  {
-    values_ = cpy.values_;
-  }
-}
-
-inline
-FilteredValue<-1>& FilteredValue<-1>::operator=(const FilteredValue<-1>& rhs)
-{
-  filter_active_ = rhs.filter_active_;
-  natural_frequency_ = rhs.natural_frequency_ ;
-  sampling_time_ = rhs.sampling_time_;
-
-  if(filter_active_)
-  {
-    activateFilter(rhs.raw_values_, rhs.saturation_, rhs.natural_frequency_, rhs.sampling_time_, rhs.values_);
-  }
-  else
-  {
-    values_ = rhs.values_;
-  }
-  return *this;
-}
-
-inline
-void FilteredValue<-1>::deactivateFilter(  )
-{
-  filter_active_ = false;
-}
-
-inline
-const Eigen::VectorXd& FilteredValue<-1>::value() const
-{
-  return values_;
-}
-
-inline
-Eigen::VectorXd& FilteredValue<-1>::value()
-{
-  if(filter_active_)
-    throw std::runtime_error("The filter has been activated. The direct assignement cannot be performed. Function update() should be used.");
-  return values_;
-}
-
-inline
-double FilteredValue<-1>::value(const size_t iAx) const
-{
-  return values_(iAx);
-}
-
-inline
-double& FilteredValue<-1>::value(const size_t iAx)
-{
-  double* ptr_to_val = values_.data() + iAx;
-  return *ptr_to_val;
-}
-
-inline
-Eigen::VectorXd& FilteredValue<-1>::update(const Eigen::VectorXd& new_values)
-{
-  assert( values_.rows() == new_values.rows() );
-  if(filter_active_)
-  {
-    banded_values_ = new_values;
-    for(int i = 0; i<new_values.size(); i++)
-    {
-      banded_values_[i] = new_values[i] >  dead_band_[i] ?  new_values[i] - dead_band_[i]
-                        : new_values[i] < -dead_band_[i] ?  new_values[i] + dead_band_[i]
-                        : 0;
-
-      banded_values_[i] = banded_values_[i] >  saturation_[i] ?  saturation_[i]
-                        : banded_values_[i] < -saturation_[i] ? -saturation_[i]
-                        : banded_values_[i];
-      
-      values_[i] = lpf_[i]->update(banded_values_[i]);
-    }
-  }
-  else
-  {
-    values_ = new_values;
-  }
-  raw_values_ = new_values;
-  return filter_active_ ? values_ : raw_values_;
-}
-
-inline
-const double* FilteredValue<-1>::data(const size_t iAx) const
-{
-  return values_.data() + iAx;
-}
-
-inline
-double* FilteredValue<-1>::data(const size_t iAx)
-{
-  return values_.data() + iAx;
-}
+  if(!eigen_utils::resize(values_, nAx,1))
+    return false;
   
+  if(!eigen_utils::resize(raw_values_, nAx,1))
+    return false;
+  
+  if(!eigen_utils::resize(bonded_value_, nAx,1))
+    return false;
+  
+  if(!eigen_utils::resize(dead_band_, nAx,1))
+    return false;
+  
+  if(!eigen_utils::resize(saturation_, nAx,1))
+    return false;
 
-inline
-const Eigen::VectorXd& FilteredValue<-1>::raw() const
-{
-  return raw_values_;
+  return true;
 }
 
-inline
-Eigen::VectorXd& FilteredValue<-1>::raw() 
-{ 
-  return raw_values_; 
-}
 
 
 

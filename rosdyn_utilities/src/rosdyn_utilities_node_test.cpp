@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
   ros::NodeHandle nh;
 
   rosdyn::ChainInterfacePtr kin(new rosdyn::ChainInterface());
-  rosdyn::ChainStatePtr  state(new rosdyn::ChainState(kin));
+  rosdyn::ChainStatePtr state(new rosdyn::ChainState(kin));
 
   rosdyn::ChainState7Ptr state7(new rosdyn::ChainState7() );
 

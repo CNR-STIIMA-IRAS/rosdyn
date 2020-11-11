@@ -24,15 +24,15 @@ namespace rosdyn
 /**
  * @class ChainStateN 
  */
-template<int N>
+template<int N, int MaxN = N>
 class ChainStateN
 {
 protected:
-  rosdyn::FilteredValue<N> q_;
-  rosdyn::FilteredValue<N> qd_;
-  rosdyn::FilteredValue<N> qdd_;
-  rosdyn::FilteredValue<N> effort_;
-  rosdyn::FilteredValue<N> external_effort_;
+  rosdyn::FilteredValue<N,MaxN> q_;
+  rosdyn::FilteredValue<N,MaxN> qd_;
+  rosdyn::FilteredValue<N,MaxN> qdd_;
+  rosdyn::FilteredValue<N,MaxN> effort_;
+  rosdyn::FilteredValue<N,MaxN> external_effort_;
   
   Eigen::Affine3d Tbt_;
   Eigen::Vector6d twist_;
@@ -54,15 +54,17 @@ public:
   typedef std::shared_ptr<ChainStateN> Ptr;
   typedef std::shared_ptr<ChainStateN const> ConstPtr;
 
+  using Value = typename rosdyn::FilteredValue<N,MaxN>::Value;
+
   // GETTER
   const std::string& jointName(const size_t iAx) const { return kin_->jointNames().at(iAx);}
   const std::vector<std::string>& jointNames() const { return kin_->jointNames();}
   const size_t nAx() const { return kin_->nAx(); }
-  const Eigen::Matrix<double,N,1>& q() const { return q_.value();  }
-  const Eigen::Matrix<double,N,1>& qd() const { return qd_.value(); }
-  const Eigen::Matrix<double,N,1>& qdd() const { return qdd_.value();}
-  const Eigen::Matrix<double,N,1>& effort() const { return effort_.value(); }
-  const Eigen::Matrix<double,N,1>& external_effort() const { return external_effort_.value(); }
+  const Value& q() const { return q_.value();  }
+  const Value& qd() const { return qd_.value(); }
+  const Value& qdd() const { return qdd_.value();}
+  const Value& effort() const { return effort_.value(); }
+  const Value& external_effort() const { return external_effort_.value(); }
 
   double q(const size_t& iAx) const {CHECK_iAx(iAx); return q_.value(iAx); }
   double qd(const size_t& iAx) const {CHECK_iAx(iAx); return qd_.value(iAx); }
@@ -83,11 +85,11 @@ public:
   const Eigen::Matrix<double,6,N>& jacobian( ) const { return jacobian_;  }
   
   // SETTER
-  Eigen::Matrix<double,N,1>& q() { return q_.value();  }
-  Eigen::Matrix<double,N,1>& qd() { return qd_.value(); }
-  Eigen::Matrix<double,N,1>& qdd() { return qdd_.value();}
-  Eigen::Matrix<double,N,1>& effort() { return effort_.value(); }
-  Eigen::Matrix<double,N,1>& external_effort() { return external_effort_.value(); }
+  Value& q() { return q_.value();  }
+  Value& qd() { return qd_.value(); }
+  Value& qdd() { return qdd_.value();}
+  Value& effort() { return effort_.value(); }
+  Value& external_effort() { return external_effort_.value(); }
   Eigen::Vector6d& wrench( ) { return wrench_.value();}
 
   double& q(const size_t& iAx) { return q_.value(iAx); }
@@ -102,20 +104,20 @@ public:
   double& effort(const std::string& name) {DEF_iAX(name); return effort(iAx); }
   double& external_effort(const std::string& name) {DEF_iAX(name); return external_effort(iAx); }
 
-  rosdyn::FilteredValue<N>& qFilteredValue() {return q_;}
-  rosdyn::FilteredValue<N>& qdFilteredValue() {return qd_;}
-  rosdyn::FilteredValue<N>& qddFilteredValue() {return qdd_;}
-  rosdyn::FilteredValue<N>& effortFilteredValue() {return effort_;}
-  rosdyn::FilteredValue<N>& externalEffortFilteredValue() {return external_effort_;}
-  rosdyn::FilteredValue<6>& wrenchFilteredValue() {return wrench_;}
+  rosdyn::FilteredValue<N,MaxN>& qFilteredValue() {return q_;}
+  rosdyn::FilteredValue<N,MaxN>& qdFilteredValue() {return qd_;}
+  rosdyn::FilteredValue<N,MaxN>& qddFilteredValue() {return qdd_;}
+  rosdyn::FilteredValue<N,MaxN>& effortFilteredValue() {return effort_;}
+  rosdyn::FilteredValue<N,MaxN>& externalEffortFilteredValue() {return external_effort_;}
+  rosdyn::FilteredValue<6>&       wrenchFilteredValue() {return wrench_;}
 
   // METHODS
   ChainInterfacePtr getKin() const { return kin_; }
   ChainStateN& updateTransformations( bool effort_to_wrench = true );
-  ChainStateN& updateTransformations(const Eigen::Matrix<double,N,1> q,
-                        const Eigen::Matrix<double,N,1> qd,
-                        const Eigen::Matrix<double,N,1> qdd,
-                        const Eigen::Matrix<double,N,1> external_effort);
+  ChainStateN& updateTransformations( const Value& q,
+                                      const Value& qd,
+                                      const Value& qdd,
+                                      const Value& external_effort);
   
   double* handle_to_q(const size_t& iAx) {CHECK_iAx(iAx); return q_.data(iAx); }
   double* handle_to_qd(const size_t& iAx) {CHECK_iAx(iAx); return qd_.data(iAx); }
@@ -135,7 +137,7 @@ public:
   ChainStateN& operator=(const ChainStateN& rhs);
 
   virtual bool init(ChainInterfacePtr kin);
-  void copy(const ChainStateN<N>& cpy, bool update_transform = true);
+  void copy(const ChainStateN<N,MaxN>& cpy, bool update_transform = true);
   void setZero();
 };
 
