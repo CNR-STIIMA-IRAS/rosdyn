@@ -233,6 +233,8 @@ protected:
   std::map<std::string, unsigned int> m_joints_name;
   std::vector<std::string> m_moveable_joints_name;
 
+  std::map<std::string, std::vector<unsigned int>> m_parent_moveable_joints_of_link;
+
   Eigen::Matrix6Xd m_jacobian;
 
   Eigen::Affine3d m_T_bt;                               // base <- tool
@@ -365,9 +367,12 @@ public:
    * Kinematics methods
    */
   Eigen::Affine3d getTransformation(const Eigen::VectorXd& q);
+  Eigen::Affine3d getTransformationLink(const Eigen::VectorXd& q, const std::string& link_name);
   std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> getTransformations(const Eigen::VectorXd& q);
   Eigen::Matrix6Xd getJacobian(const Eigen::VectorXd& q);
+  Eigen::Matrix6Xd getJacobianLink(const Eigen::VectorXd& q,const std::string& link_name);
   std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
+  Eigen::Vector6d getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name);
   Eigen::Vector6d getTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
   {
     return getTwist(q, Dq).back();
@@ -876,18 +881,6 @@ inline Chain::Chain(const rosdyn::LinkPtr& root_link,
 
   setInputJointsName(m_moveable_joints_name);
 
-  // for QP local IK
-  m_CE.resize(m_joints_number, 0);
-  m_ce0.resize(0);
-  m_CE.setZero();
-  m_ce0.setZero();
-
-  m_CI.resize(m_joints_number, 2 * m_joints_number);
-  m_ci0.resize(2 * m_joints_number);
-  m_CI.setZero();
-  m_ci0.setZero();
-  m_CI.block(0, 0, m_joints_number, m_joints_number).setIdentity();
-  m_CI.block(0, m_joints_number, m_joints_number, m_joints_number) = -m_CI.block(0, 0, m_joints_number, m_joints_number);
 }
 
 inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
@@ -971,6 +964,53 @@ inline void Chain::setInputJointsName(const std::vector< std::string >& joints_n
                    << "\nq min = " << m_q_min.transpose()
                    << "\nDq max = " << m_Dq_max.transpose()
                    << "\ntau max = " << m_tau_max.transpose());
+
+  // for QP local IK
+  m_CE.resize(m_active_joints_number, 0);
+  m_ce0.resize(0);
+  m_CE.setZero();
+  m_ce0.setZero();
+
+  m_CI.resize(m_active_joints_number, 2 * m_active_joints_number);
+  m_ci0.resize(2 * m_active_joints_number);
+  m_CI.setZero();
+  m_ci0.setZero();
+  m_CI.block(0, 0, m_active_joints_number, m_active_joints_number).setIdentity();
+  m_CI.block(0, m_active_joints_number, m_active_joints_number, m_active_joints_number) = -m_CI.block(0, 0, m_active_joints_number, m_active_joints_number);
+
+
+
+  // compute moveable joint between base and a link;
+  m_parent_moveable_joints_of_link.clear();
+  for (const LinkPtr& link: m_links)
+  {
+    std::vector<unsigned int> joints;
+    if (link==m_links.at(0))
+    {
+      m_parent_moveable_joints_of_link.insert(std::pair<std::string,std::vector<unsigned int>>(link->getName(),joints));
+      continue;
+    }
+    bool found_link=false;
+    for (unsigned int ijnt=0;ijnt<m_joints.size();ijnt++)
+    {
+
+      std::vector<unsigned int>::iterator it_jnt;
+      it_jnt= std::find(m_active_joints.begin(),m_active_joints.end(),ijnt);
+      if (it_jnt<m_active_joints.end())
+        joints.push_back(it_jnt-m_active_joints.begin());
+
+      if (m_joints.at(ijnt)->getChildLink()==link)
+      {
+        m_parent_moveable_joints_of_link.insert(std::pair<std::string,std::vector<unsigned int>>(link->getName(),joints));
+        found_link=true;
+        break;
+      }
+    }
+    if (!found_link)
+    {
+      throw  std::invalid_argument("unable to find link "+link->getName());
+    }
+  }
 }
 
 inline void Chain::computeFrames()
@@ -1024,6 +1064,19 @@ inline std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> C
   return m_T_bl;
 }
 
+inline Eigen::Affine3d Chain::getTransformationLink(const Eigen::VectorXd &q, const std::string &link_name)
+{
+  getTransformation(q);
+  std::vector<std::string>::iterator it=std::find(m_links_name.begin(), m_links_name.end(), link_name);
+  if (it == m_links_name.end())
+  {
+    throw std::invalid_argument("link "+link_name+" is not member of the chain");
+  }
+
+  unsigned int link_idx=it - m_links_name.begin();
+  return m_T_bl.at(link_idx);
+}
+
 inline Eigen::Matrix6Xd Chain::getJacobian(const Eigen::VectorXd& q)
 {
   getTransformation(q);
@@ -1048,6 +1101,34 @@ inline Eigen::Matrix6Xd Chain::getJacobian(const Eigen::VectorXd& q)
   return m_jacobian;
 }
 
+Eigen::Matrix6Xd Chain::getJacobianLink(const Eigen::VectorXd& q, const std::string& link_name)
+{
+  if (!m_is_screws_computed)
+    computeScrews();
+
+  std::vector<std::string>::iterator it=std::find(m_links_name.begin(), m_links_name.end(), link_name);
+  if (it == m_links_name.end())
+  {
+    throw std::invalid_argument("link "+link_name+" is not member of the chain");
+  }
+
+  unsigned int link_idx=it - m_links_name.begin();
+
+  std::vector<unsigned int> joints=m_parent_moveable_joints_of_link.at(link_name);
+
+
+  Eigen::Matrix6Xd jac(6,m_active_joints.size());
+  jac.setZero();
+  for (unsigned int idx = 0; idx < joints.size(); idx++)
+  {
+    unsigned int nj = m_active_joints.at(idx);
+    unsigned int nl = nj + 1;
+    if (!m_joints.at(nj)->isFixed())
+      jac.col(idx) = spatialTranslation(m_screws_of_c_in_b.at(nl), m_T_bl.at(link_idx).translation() - m_T_bl.at(nl).translation());
+  }
+
+  return jac;
+}
 
 inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> Chain::getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
 {
@@ -1081,6 +1162,20 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> 
   m_is_vel_computed = true;
 
   return m_twists;
+}
+
+
+inline Eigen::Vector6d Chain::getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name)
+{
+  getTwist(q,Dq);
+  std::vector<std::string>::iterator it=std::find(m_links_name.begin(), m_links_name.end(), link_name);
+  if (it == m_links_name.end())
+  {
+    throw std::invalid_argument("link "+link_name+" is not member of the chain");
+  }
+
+  unsigned int link_idx=it - m_links_name.begin();
+  return m_twists.at(link_idx);
 }
 
 inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
@@ -1455,12 +1550,13 @@ inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T
 {
   ros::Time tini = ros::Time::now();
 
+  assert(seed.size()==m_q_min.size());
   sol = seed;
 
   while ((ros::Time::now() - tini) < max_time)
   {
-    rosdyn::getFrameDistance(T_b_t, getTransformation(sol), m_cart_error_in_b);
 
+    rosdyn::getFrameDistance(T_b_t, getTransformation(sol), m_cart_error_in_b);
     if (m_cart_error_in_b.norm() < toll)
     {
       return true;
@@ -1469,8 +1565,8 @@ inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T
     m_H =  m_jacobian.transpose() * m_jacobian;
     m_f = -m_jacobian.transpose() * m_cart_error_in_b;
 
-    m_ci0.head(m_joints_number) = sol - m_q_min;
-    m_ci0.tail(m_joints_number) = m_q_max - sol;
+    m_ci0.head(m_active_joints_number) = sol - m_q_min;
+    m_ci0.tail(m_active_joints_number) = m_q_max - sol;
 
 
     Eigen::solve_quadprog(m_H,
