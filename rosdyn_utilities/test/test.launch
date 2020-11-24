@@ -1,31 +1,11 @@
 <launch>
 
-<group ns="file_and_screen_different_appenders" >
-<rosparam>
-  appenders: [file, screen]
-  levels: [trace, info]
-  file_name: "ciao"
-</rosparam>
-</group>
+<arg name="debug" default="false" />
+<arg unless="$(arg debug)" name="launch_prefix" value="" />
+<arg     if="$(arg debug)" name="launch_prefix"
+     value="valgrind --tool=memcheck --leak-check=full --show-reachable=yes  --num-callers=20 --track-fds=yes  --log-file=/home/feymann/a.txt" />
 
-<group ns="file_and_screen_same_appender" >
-<rosparam >
-  appenders: [file, screen]
-  levels: [debug, debug]
-  file_name: "ciao"
-</rosparam>
-</group>
-
-<group ns="only_file_streamer">
-<rosparam>
-  appenders: [file]
-  levels: [debug]
-  file_name: "ciao"
-</rosparam>
-</group>
-
- <arg name="launch_prefix"
-     value="valgrind -s --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes  --log-file=/home/feymann/a.txt" />
+  <!-- value="gdb - ex run - args" /> -->
 
 <test launch-prefix="$(arg launch_prefix)" test-name="test" pkg="rosdyn_utilities" type="rosdyn_utilities_test" >
 

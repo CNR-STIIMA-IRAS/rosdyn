@@ -8,9 +8,12 @@
 #include <Eigen/Core>
 #include <urdf_model/model.h>
 #include <urdf_parser/urdf_parser.h>
+
+#include <eigen_state_space_systems/filtered_values.h>
+
 #include <rosdyn_core/primitives.h>
 #include <rosdyn_utilities/chain_interface.h>
-#include <rosdyn_utilities/filtered_values.h>
+
 
 #define DEF_iAX(name)\
   int iAx = index(name); if(iAx==-1) throw std::runtime_error("Name not in the joint_names list");
@@ -28,16 +31,16 @@ template<int N, int MaxN = N>
 class ChainStateN
 {
 protected:
-  rosdyn::FilteredValue<N,MaxN> q_;
-  rosdyn::FilteredValue<N,MaxN> qd_;
-  rosdyn::FilteredValue<N,MaxN> qdd_;
-  rosdyn::FilteredValue<N,MaxN> effort_;
-  rosdyn::FilteredValue<N,MaxN> external_effort_;
+  eigen_control_toolbox::FilteredValue<N,MaxN> q_;
+  eigen_control_toolbox::FilteredValue<N,MaxN> qd_;
+  eigen_control_toolbox::FilteredValue<N,MaxN> qdd_;
+  eigen_control_toolbox::FilteredValue<N,MaxN> effort_;
+  eigen_control_toolbox::FilteredValue<N,MaxN> external_effort_;
   
   Eigen::Affine3d Tbt_;
   Eigen::Vector6d twist_;
   Eigen::Vector6d twistd_;
-  rosdyn::FilteredValue<6> wrench_;
+  eigen_control_toolbox::FilteredValue<6> wrench_;
   Eigen::Matrix<double,6,N> jacobian_;
 
   int index(const std::string& name) const
@@ -54,7 +57,7 @@ public:
   typedef std::shared_ptr<ChainStateN> Ptr;
   typedef std::shared_ptr<ChainStateN const> ConstPtr;
 
-  using Value = typename rosdyn::FilteredValue<N,MaxN>::Value;
+  using Value = typename eigen_control_toolbox::FilteredValue<N,MaxN>::Value;
 
   // GETTER
   const std::string& jointName(const size_t iAx) const { return kin_->jointNames().at(iAx);}
@@ -104,12 +107,12 @@ public:
   double& effort(const std::string& name) {DEF_iAX(name); return effort(iAx); }
   double& external_effort(const std::string& name) {DEF_iAX(name); return external_effort(iAx); }
 
-  rosdyn::FilteredValue<N,MaxN>& qFilteredValue() {return q_;}
-  rosdyn::FilteredValue<N,MaxN>& qdFilteredValue() {return qd_;}
-  rosdyn::FilteredValue<N,MaxN>& qddFilteredValue() {return qdd_;}
-  rosdyn::FilteredValue<N,MaxN>& effortFilteredValue() {return effort_;}
-  rosdyn::FilteredValue<N,MaxN>& externalEffortFilteredValue() {return external_effort_;}
-  rosdyn::FilteredValue<6>&       wrenchFilteredValue() {return wrench_;}
+  eigen_control_toolbox::FilteredValue<N,MaxN>& qFilteredValue() {return q_;}
+  eigen_control_toolbox::FilteredValue<N,MaxN>& qdFilteredValue() {return qd_;}
+  eigen_control_toolbox::FilteredValue<N,MaxN>& qddFilteredValue() {return qdd_;}
+  eigen_control_toolbox::FilteredValue<N,MaxN>& effortFilteredValue() {return effort_;}
+  eigen_control_toolbox::FilteredValue<N,MaxN>& externalEffortFilteredValue() {return external_effort_;}
+  eigen_control_toolbox::FilteredValue<6>&       wrenchFilteredValue() {return wrench_;}
 
   // METHODS
   ChainInterfacePtr getKin() const { return kin_; }

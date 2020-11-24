@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <rosdyn_utilities/filtered_values.h>
+#include <eigen_state_space_systems/filtered_values.h>
 #include <rosdyn_utilities/chain_state.h>
 #include <rosdyn_utilities/chain_interface.h>
 
