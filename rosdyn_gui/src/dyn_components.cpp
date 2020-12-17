@@ -34,7 +34,7 @@ namespace rosdyn_gui
 {
 
 FrictionWidgets::FrictionWidgets(ros::NodeHandle& nh,
-                                 const std::__cxx11::string& joint_name,
+                                 const std::string& joint_name,
                                  QWidget* parent): QWidget(parent), m_nh(nh)
 {
   if (!m_nh.getParam("/meto_cfg/urdf_name", m_robot_name))
