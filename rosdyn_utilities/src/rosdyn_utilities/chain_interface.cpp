@@ -1,9 +1,8 @@
 #include <sstream>
+#include <eigen_matrix_utils/eigen_matrix_utils.h>
+#include <eigen_state_space_systems/utils/operations.h>
 #include <rosdyn_utilities/chain_interface.h>
 
-
-#define SP std::fixed  << std::setprecision(5)
-#define TP(X) std::fixed << std::setprecision(5) << X.format(m_cfrmt)
 
 namespace rosdyn
 {
@@ -177,7 +176,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
 {
   if(report)
   {
-    *report << "[-----][SPEED SATURATION] INPUT  qd: " << TP(qd_next.transpose()) << "\n";
+    *report << "[-----][SPEED SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next) << "\n";
   }
   Eigen::VectorXd scale(nAx());
   for(size_t iAx=0;iAx<nAx();iAx++)
@@ -198,7 +197,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
   if(report)
   {
     *report << (scale.minCoeff()<1 ? "[TRUE ]": "[FALSE]" )
-            << "[SPEED SATURATION] OUTPUT qd: " << TP(qd_next.transpose()) << "\n";
+            << "[SPEED SATURATION] OUTPUT qd: " << eigen_utils::to_string(qd_next) << "\n";
   }
 
   return scale.minCoeff()<1;
@@ -216,7 +215,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
 
   if(report)
   {
-    *report<<"[-----][ACC   SATURATION] INPUT  qd: "<<TP(qd_next.transpose())<<"\n";
+    *report<<"[-----][ACC   SATURATION] INPUT  qd: "<<eigen_utils::to_string(qd_next)<<"\n";
   }
   Eigen::VectorXd qd_sup  = qd_actual + accelerationLimit() * dt;
   Eigen::VectorXd qd_inf  = qd_actual - accelerationLimit() * dt;
@@ -224,7 +223,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
   for(size_t iAx=0;iAx<nAx();iAx++)
   {
     dqd(iAx) = qd_next(iAx) > qd_sup(iAx) ? (qd_sup(iAx) - qd_next(iAx))
-             : qd_next(iAx) < qd_inf(iAx) ? (qd_inf(iAx) - qd_next(iAx))
+             : qd_next(iAx) < qd_inf(iAx) ? (qd_inf(iAx) + qd_next(iAx))
              : 0.0;
   }
   saturated |= dqd.cwiseAbs().maxCoeff()>0.0;
@@ -242,11 +241,11 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
     }
     else
     {
-      *report << "Target vel     : " << TP(qd_next.transpose()) << "\n";
-      *report << "Prev target vel: " << TP(qd_actual.transpose()) << "\n";
-      *report << "qd_sup         : " << TP(qd_sup.transpose()) << "\n";
-      *report << "qd_inf         : " << TP(qd_inf.transpose()) << "\n";
-      *report << "Calc correction: " << TP(dqd.transpose()) << "\n";
+      *report << "Target vel     : " << eigen_utils::to_string(qd_next) << "\n";
+      *report << "Prev target vel: " << eigen_utils::to_string(qd_actual) << "\n";
+      *report << "qd_sup         : " << eigen_utils::to_string(qd_sup) << "\n";
+      *report << "qd_inf         : " << eigen_utils::to_string(qd_inf) << "\n";
+      *report << "Calc correction: " << eigen_utils::to_string(dqd) << "\n";
       qd_next = qd_next + dqd;
     }
   }
@@ -254,7 +253,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
   if(report)
   {
     *report << (saturated ? "[TRUE ]": "[FALSE]" )
-            <<"[ACC   SATURATION] OUTPUT qd: "<<TP(qd_next.transpose())<< "\n";
+            <<"[ACC   SATURATION] OUTPUT qd: "<<eigen_utils::to_string(qd_next)<< "\n";
   }
   return saturated;
 }
@@ -272,7 +271,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
 
   if(report)
   {
-    *report << "[-----][BRK   SATURATION] INPUT  qd: " << TP(qd_next.transpose()) << "\n";
+    *report << "[-----][BRK   SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next) << "\n";
   }
   Eigen::VectorXd braking_distance(this->nAx());
   for(size_t iAx=0; iAx<this->nAx();iAx++)
@@ -299,7 +298,7 @@ bool ChainInterface::saturateSpeed(Eigen::Ref<Eigen::VectorXd> qd_next,
   if(report)
   {
     *report << (saturated ? "[TRUE ]": "[FALSE]" )
-            << "[BRK   SATURATION] OUTPUT qd: " << TP(qd_next.transpose()) << "\n";
+            << "[BRK   SATURATION] OUTPUT qd: " << eigen_utils::to_string(qd_next) << "\n";
   }
   return saturated;
 
@@ -310,14 +309,14 @@ bool ChainInterface::saturatePosition(Eigen::Ref<Eigen::VectorXd> q_next, std::s
 {
   if(report)
   {
-    *report << "[POS   SATURATION] INPUT  q: " << TP(q_next.transpose()) << "\n";
+    *report << "[POS   SATURATION] INPUT  q: " << eigen_utils::to_string(q_next) << "\n";
   }
   
   Eigen::VectorXd dq(q_next.rows());
   for(size_t iAx=0;iAx<nAx();iAx++)
   {
     dq(iAx)  = q_next(iAx) > upperLimit(iAx) ? (upperLimit(iAx) - q_next(iAx))
-             : q_next(iAx) < lowerLimit(iAx) ? (lowerLimit(iAx) - q_next(iAx))
+             : q_next(iAx) < lowerLimit(iAx) ? (lowerLimit(iAx) + q_next(iAx))
              : 0.0;
   }
   
@@ -326,15 +325,140 @@ bool ChainInterface::saturatePosition(Eigen::Ref<Eigen::VectorXd> q_next, std::s
   if(report)
   {
     *report << (dq.cwiseAbs().maxCoeff()>0.0 ? "[TRUE ]": "[FALSE]" )
-            << "[POS   SATURATION] OUTPUT q: " << TP(q_next.transpose()) << "\n";
+            << "[POS   SATURATION] OUTPUT q: " << eigen_utils::to_string(q_next) << "\n";
   }
 
   return (dq.cwiseAbs().maxCoeff()>0.0);
 }
 
+bool ChainInterface::saturateSpeed(double& qd_next,
+                                   double max_velocity_multiplier,
+                                   bool /*preserve_direction*/,
+                                   std::stringstream* report)
+{
+  if(report)
+  {
+    *report << "[-----][SPEED SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next) << "\n";
+  }
+  double scale = std::fabs(qd_next) > speedLimit(0) * max_velocity_multiplier
+               ? speedLimit(0) * max_velocity_multiplier/ std::fabs(qd_next)
+               : 1.0;
+
+  qd_next = scale * qd_next;
+
+  if(report)
+  {
+    *report << (scale<1 ? "[TRUE ]": "[FALSE]" )
+            << "[SPEED SATURATION] OUTPUT qd: " << eigen_utils::to_string(qd_next) << "\n";
+  }
+
+  return scale<1;
+}
+
+
+bool ChainInterface::saturateSpeed(double& qd_next,
+                                     const double& qd_actual,
+                                     double dt,
+                                     double max_velocity_multiplier,
+                                     bool preserve_direction,
+                                     std::stringstream* report)
+{
+  bool saturated = saturateSpeed(qd_next, max_velocity_multiplier, preserve_direction, report);
+
+  if(report)
+  {
+    *report<<"[-----][ACC   SATURATION] INPUT  qd: "<<eigen_utils::to_string(qd_next)<<"\n";
+  }
+  double qd_sup  = qd_actual + accelerationLimit(0) * dt;
+  double qd_inf  = qd_actual - accelerationLimit(0) * dt;
+  double dqd = 0;
+  dqd  = qd_next > qd_sup ? (qd_sup - qd_next)
+       : qd_next < qd_inf ? (qd_inf + qd_next)
+       : 0.0;
+  saturated |= std::fabs(dqd)>0.0;
+
+  if(report)
+  {
+    *report << "Target vel     : " << eigen_utils::to_string(qd_next) << "\n";
+    *report << "Prev target vel: " << eigen_utils::to_string(qd_actual) << "\n";
+    *report << "qd_sup         : " << eigen_utils::to_string(qd_sup) << "\n";
+    *report << "qd_inf         : " << eigen_utils::to_string(qd_inf) << "\n";
+    *report << "Calc correction: " << eigen_utils::to_string(dqd) << "\n";
+  }
+  qd_next = qd_next + dqd;
+
+  if(report)
+  {
+    *report << (saturated ? "[TRUE ]": "[FALSE]" )
+            <<"[ACC   SATURATION] OUTPUT qd: "<<eigen_utils::to_string(qd_next)<< "\n";
+  }
+  return saturated;
+}
+
+
+bool ChainInterface::saturateSpeed(double& qd_next,
+                                     const double& qd_actual,
+                                     const double& q_actual,
+                                     double dt,
+                                     double max_velocity_multiplier,
+                                     bool preserve_direction,
+                                     std::stringstream* report)
+{
+  bool saturated = saturateSpeed(qd_next, qd_actual, dt,  max_velocity_multiplier, preserve_direction, report);
+
+  if(report)
+  {
+    *report << "[-----][BRK   SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next) << "\n";
+  }
+  double braking_distance;
+  braking_distance  = 0.5 * this->accelerationLimit(0)
+                           * std::pow(std::abs(qd_next)/this->accelerationLimit(0), 2.0);
+
+  double q_saturated_qd = q_actual + qd_actual* dt;
+  if ((q_saturated_qd > (this->upperLimit(0) - braking_distance)) && (qd_next>0))
+  {
+    saturated = true;
+    qd_next = std::max(0.0, qd_next - this->accelerationLimit(0) * dt);
+  }
+  else if((q_saturated_qd<(this->lowerLimit(0) + braking_distance)) && (qd_next<0))
+  {
+    saturated = true;
+    qd_next = std::min(0.0, qd_next + this->accelerationLimit(0) * dt);
+  }
+
+  if(report)
+  {
+    *report << (saturated ? "[TRUE ]": "[FALSE]" )
+            << "[BRK   SATURATION] OUTPUT qd: " << eigen_utils::to_string(qd_next) << "\n";
+  }
+  return saturated;
+
+}
+
+
+bool ChainInterface::saturatePosition(double& q_next, std::stringstream* report)
+{
+  if(report)
+  {
+    *report << "[POS   SATURATION] INPUT  q: " << eigen_utils::to_string(q_next) << "\n";
+  }
+
+  double dq;
+  dq   = q_next > upperLimit(0) ? (upperLimit(0) - q_next)
+       : q_next < lowerLimit(0) ? (lowerLimit(0) + q_next)
+       : 0.0;
+
+  q_next += dq;
+
+  if(report)
+  {
+    *report << (std::fabs(dq)>0.0 ? "[TRUE ]": "[FALSE]" )
+            << "[POS   SATURATION] OUTPUT q: " << eigen_utils::to_string(q_next) << "\n";
+  }
+
+  return (std::fabs(dq)>0.0);
+}
+
 }  // namespace rosdyn
 
 
-
-#undef TP
-#undef SP

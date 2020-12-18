@@ -103,6 +103,32 @@ public:
 
   bool saturatePosition(Eigen::Ref<Eigen::VectorXd> q_target, std::stringstream* report);
 
+
+  //! SPECIAL CASE 1DOF
+  bool saturateSpeed(double& qd_target,
+                     const double& qd_actual,
+                     const double& q_actual,
+                     double dt,
+                     double max_velocity_multiplier,
+                     bool preserve_direction,
+                     std::stringstream* report);
+
+  bool saturateSpeed(double& qd_target,
+                     const double& qd_actual,
+                     double dt,
+                     double max_velocity_multiplier,
+                     bool preserve_direction,
+                     std::stringstream* report);
+
+  bool saturateSpeed(double& qd_target,
+                     double max_velocity_multiplier,
+                     bool preserve_direction,
+                     std::stringstream* report);
+
+  bool saturatePosition(double& q_target, std::stringstream* report);
+
+
+
   std::string help() const
   {
     std::string ret = "The parameters needed to properly configured the struct are:\n";

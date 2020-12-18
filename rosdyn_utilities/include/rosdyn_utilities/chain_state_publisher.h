@@ -15,7 +15,7 @@ class ChainStatePublisher
 {
 private:
   ros::NodeHandle nh_;
-  std::shared_ptr<rosdyn::ChainStateN<N> > chain_;
+  std::shared_ptr<rosdyn::ChainState<N> > chain_;
   realtime_tools::RealtimePublisher<sensor_msgs::JointState> pub_;
 
 public:
@@ -29,7 +29,7 @@ public:
   ChainStatePublisher& operator=(const ChainStatePublisher& cpy) = delete;
   ChainStatePublisher& operator=(ChainStatePublisher&& cpy) = delete;
 
-  ChainStatePublisher(const std::string& name, const std::shared_ptr<ChainStateN<N>>& chain) : nh_("/")
+  ChainStatePublisher(const std::string& name, const std::shared_ptr<ChainState<N>>& chain) : nh_("/")
   {
     chain_ = chain;
     pub_.init(nh_, "/log/" + name, 4);

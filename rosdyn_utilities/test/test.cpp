@@ -36,11 +36,45 @@
 #include <iostream>
 #include <ros/ros.h>
 #include <eigen_matrix_utils/eigen_matrix_utils.h>
-#include <rosdyn_utilities/filtered_values.h>
+#include <eigen_state_space_systems/filtered_values.h>
 #include <rosdyn_utilities/chain_interface.h>
 #include <rosdyn_utilities/chain_state.h>
 #include <gtest/gtest.h>
 
+using ChainStateX = rosdyn::ChainState<-1, 20>;
+using ChainStateXX = rosdyn::ChainState<-1>;
+using ChainState1 = rosdyn::ChainState<1>;
+using ChainState3 = rosdyn::ChainState<3>;
+using ChainState6 = rosdyn::ChainState<6>;
+
+
+std::shared_ptr<ChainStateX>  chainX;
+std::shared_ptr<ChainStateXX> chainXX;
+std::shared_ptr<ChainState1>  chain1;
+std::shared_ptr<ChainState3>  chain3;
+std::shared_ptr<ChainState6>  chain6;
+
+
+// Declare a test
+TEST(TestSuite, fullConstructor)
+{
+  EXPECT_NO_FATAL_FAILURE(chainX .reset(new ChainStateX ()) );
+  EXPECT_NO_FATAL_FAILURE(chainXX.reset(new ChainStateXX()) );
+  EXPECT_NO_FATAL_FAILURE(chain1 .reset(new ChainState1 ()) );
+  EXPECT_NO_FATAL_FAILURE(chain3 .reset(new ChainState3 ()) );
+  EXPECT_NO_FATAL_FAILURE(chain6 .reset(new ChainState6 ()) );
+}
+
+
+// Declare a test
+TEST(TestSuite, desctructor)
+{
+  EXPECT_NO_FATAL_FAILURE(chainX  .reset() );
+  EXPECT_NO_FATAL_FAILURE(chainXX .reset() );
+  EXPECT_NO_FATAL_FAILURE(chain1  .reset() );
+  EXPECT_NO_FATAL_FAILURE(chain3  .reset() );
+  EXPECT_NO_FATAL_FAILURE(chain6  .reset() );
+}
 
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv)

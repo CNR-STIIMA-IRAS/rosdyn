@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(rosdyn_utilities)
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -37,7 +39,8 @@ include_directories(include  ${catkin_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
 add_library(${PROJECT_NAME} src/${PROJECT_NAME}/chain_interface.cpp)
 if(${CMAKE_VERSION} VERSION_GREATER  "3.16.0") 
 	target_precompile_headers(${PROJECT_NAME} PUBLIC  <sstream>
-													  <memory>
+                            <type_traits>
+                            <memory>
 													  <string>
 													  <vector>
 													  <cmath>
