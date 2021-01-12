@@ -10,8 +10,7 @@ int main(int argc, char* argv[])
 
   rosdyn::ChainInterfacePtr kin(new rosdyn::ChainInterface());
   rosdyn::ChainStateXPtr state(new rosdyn::ChainStateX(kin));
-
-  rosdyn::ChainState7Ptr state7(new rosdyn::ChainState7() );
+  rosdyn::ChainState7Ptr state7(new rosdyn::ChainState7(kin) );
 
   return 0;
 }

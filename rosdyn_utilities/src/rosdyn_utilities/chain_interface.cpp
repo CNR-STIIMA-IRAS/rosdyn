@@ -26,14 +26,29 @@ int ChainInterface::init(ros::NodeHandle& nh,
 {
   try
   {
+    //=============================================================
+    std::string urdf_string;
     std::string robot_description_param;
-    if (!nh.getParam("robot_description_param", robot_description_param ) )
+    if(!nh.getParam("robot_description_param", robot_description_param ) )
     {
       report <<  "\nParameter '" + nh.getNamespace() + "/robot_description_param' is not in rosparam server.\n";
       report <<  help();
       return 0;
     }
+    else if(!ros::param::has(robot_description_param))
+    {
+      report << "\nParameter '" << robot_description_param << "' is not in rosparam server.\n";
+      report <<  help();
+      return -1;
+    }
+    if(!ros::param::get(robot_description_param, urdf_string))
+    {
+      report << "\nWeird error in getting the parameter '" << robot_description_param << "'. It was already checked the existence.\n";
+      return -1;
+    }
+    //=============================================================
 
+    //=============================================================
     std::string robot_description_planning_param;
     if(!nh.getParam("robot_description_planning_param", robot_description_planning_param ) )
     {
@@ -41,28 +56,16 @@ int ChainInterface::init(ros::NodeHandle& nh,
       report <<  help();
       return 0;
     }
-    
-    if(!nh.hasParam(robot_description_param))
-    {
-      report << "\nParameter '" << robot_description_param << "' is not in rosparam server.\n";
-      report <<  help();
-      return -1;
-    }
-
-    if(!nh.hasParam(robot_description_planning_param))
+    if(!ros::param::has(robot_description_planning_param))
     {
       report << "\nParameter '" << robot_description_planning_param << "' is not in rosparam server.\n";
       report <<  help();
       return -1;
     }
+    //=============================================================
 
 
-    std::string urdf_string;
-    if(!nh.getParam(robot_description_param, urdf_string))
-    {
-      report << "\nWeird error in getting the parameter '" << robot_description_param << "'. It was already checked the existence.\n";
-      return -1;
-    }
+
     m_model = urdf::parseURDF(urdf_string);
     if(m_model == nullptr )
     {

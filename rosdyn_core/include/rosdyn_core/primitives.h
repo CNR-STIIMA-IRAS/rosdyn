@@ -364,8 +364,11 @@ public:
   /*
    * Kinematics methods
    */
-  Eigen::Affine3d getTransformation(const Eigen::VectorXd& q);
-  std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> getTransformations(const Eigen::VectorXd& q);
+  template<typename Derived>
+  Eigen::Affine3d getTransformation(const Eigen::MatrixBase<Derived>& q);
+
+  template<typename Derived>
+  std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> getTransformations(const Eigen::MatrixBase<Derived>& q);
   Eigen::Matrix6Xd getJacobian(const Eigen::VectorXd& q);
   std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
   Eigen::Vector6d getTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
@@ -996,12 +999,13 @@ inline void Chain::computeScrews()
   m_is_screws_computed = true;
 }
 
-inline Eigen::Affine3d Chain::getTransformation(const Eigen::VectorXd& q)
+template<typename Derived>
+inline Eigen::Affine3d Chain::getTransformation(const Eigen::MatrixBase<Derived>& q)
 {
   if ((q == m_last_q) || (m_joints_number == 0))
     return m_T_bt;
 
-  m_last_q = q;
+  m_last_q = Eigen::Map<const Eigen::VectorXd>(q.derived().data(), q.derived().rows());
   m_is_screws_computed =
     m_is_jac_computed =
       m_is_vel_computed =
@@ -1020,7 +1024,8 @@ inline Eigen::Affine3d Chain::getTransformation(const Eigen::VectorXd& q)
   return m_T_bt;
 }
 
-inline std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> Chain::getTransformations(const Eigen::VectorXd& q)
+template<typename Derived>
+inline std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> Chain::getTransformations(const Eigen::MatrixBase<Derived>& q)
 {
   getTransformation(q);
   return m_T_bl;

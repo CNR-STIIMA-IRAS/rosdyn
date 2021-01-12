@@ -5,7 +5,7 @@
 #include <ros/node_handle.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <sensor_msgs/JointState.h>
-#include <rosdyn_utilities/chain_state_n.h>
+#include <rosdyn_utilities/chain_state.h>
 
 namespace rosdyn
 {

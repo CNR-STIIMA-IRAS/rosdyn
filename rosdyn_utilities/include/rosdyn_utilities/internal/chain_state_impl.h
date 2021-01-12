@@ -42,6 +42,13 @@ inline ChainState<N,MN>::ChainState(ChainInterfacePtr kin)
   init(kin);
 }
 
+template<int N, int MN>
+inline ChainState<N,MN>::~ChainState()
+{
+  stop_update_transformations_ = true;
+  if(update_transformations_.joinable())
+    update_transformations_.join();
+}
 
 
 template<int N, int MN>
@@ -51,7 +58,7 @@ inline bool ChainState<N,MN>::init(ChainInterfacePtr kin)
   {
     return false;
   }
-  if(kin->nAx()!=N)
+  if(int(kin->nAx())!=N)
   {
     return false;
   }
@@ -68,7 +75,7 @@ inline void ChainState<N,MN>::setZero()
   eigen_utils::setZero(this->qdd_.value());
   eigen_utils::setZero(this->effort_.value());
   eigen_utils::setZero(this->external_effort_.value());
-  updateTransformations();
+  updateTransformations(SECOND_ORDER|FFWD_STATIC);
 }
 
 template<int N, int MN>
@@ -81,7 +88,9 @@ inline void ChainState<N,MN>::copy(const ChainState<N,MN>& cpy, bool update_tran
   this->effort_ = cpy.effort_;
   this->external_effort_ = cpy.external_effort_;
   if(update_transform)
-    updateTransformations();
+  {
+    updateTransformations(SECOND_ORDER|FFWD_STATIC);
+  }
 }
 
 template<int N, int MN>
@@ -111,9 +120,21 @@ inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations( const ChainSta
   _qdd(0) = *qdd;
   _external_effort(0) = *external_effort;
 
-  Tbt_      = kin_->getChain()->getTransformation(_q);
-  jacobian_ = kin_->getChain()->getJacobian(_qd);
-  twist_    = kin_->getChain()->getTwistTool(_q,_qd);
+  if(!kin_)
+  {
+    throw std::runtime_error("kin_ nullptr!Chain State has not the ownership of the ChainInterface*!");
+  }
+
+  if(q)
+  {
+    Tbt_      = kin_->getChain()->getTransformation(_q);
+  }
+  if(q && qd)
+  {
+    jacobian_ = kin_->getChain()->getJacobian(_qd);
+    twist_    = kin_->getChain()->getTwistTool(_q,_qd);
+  }
+  if(q && qd && qdd)
   twistd_   = kin_->getChain()->getDTwistTool(_q,_qd,_qdd);
 
   if(external_effort)
@@ -135,10 +156,23 @@ inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations( const ChainSta
                                                                   const ChainState<N,MN>::Value* external_effort,
                                                                   const Eigen::Matrix<double,6,1>* wrench)
 {
-  Tbt_      = kin_->getChain()->getTransformation(*q);
-  jacobian_ = kin_->getChain()->getJacobian(*qd);
-  twist_    = kin_->getChain()->getTwistTool(*q,*qd);
-  twistd_   = kin_->getChain()->getDTwistTool(*q,*qd,*qdd);
+  if(!kin_)
+  {
+    throw std::runtime_error("kin_ nullptr!Chain State has not the ownership of the ChainInterface*!");
+  }
+  if(q)
+  {
+    Tbt_ = kin_->getChain()->getTransformation(*q);
+  }
+  if(q && qd)
+  {
+    jacobian_ = kin_->getChain()->getJacobian(*qd);
+    twist_    = kin_->getChain()->getTwistTool(*q,*qd);
+  }
+  if(q && qd && qdd)
+  {
+    twistd_   = kin_->getChain()->getDTwistTool(*q,*qd,*qdd);
+  }
 
   if(external_effort)
   {
@@ -155,18 +189,61 @@ inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations( const ChainSta
 }
 
 template<int N, int MN>
-inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(bool effort_to_wrench)
+inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(int ffwd_kin_type)
 {
-  if(effort_to_wrench)
-  {
-    return updateTransformations(&this->q(),&this->qd(), &this->qdd(), &this->external_effort(), nullptr);
-  }
-  else
-  {
-    assert(0);
-  }
+  return updateTransformations( ffwd_kin_type & ZERO_ORDER ? &this->q() : nullptr
+                              , ffwd_kin_type & FIRST_ORDER ? &this->qd() : nullptr
+                              , ffwd_kin_type & SECOND_ORDER ? &this->qdd() : nullptr
+                              , ffwd_kin_type & FFWD_STATIC ? &this->external_effort() : nullptr
+                              , ffwd_kin_type & INV_STATIC ? nullptr : nullptr);
   return *this;
 }
+
+template<int N,int MaxN>
+void ChainState<N,MaxN>::startUpdateTransformationsThread(int ffwd_kin_type, double hz)
+{
+  ffwd_kin_type_ = ffwd_kin_type;
+  hz_ = hz;
+  stop_update_transformations_ = false;
+  update_transformations_ = std::thread(&ChainState<N,MaxN>::updateTransformationsThread, this);
+}
+
+template<int N, int MaxN>
+void ChainState<N,MaxN>::stopUpdateTransformationsThread()
+{
+  stop_update_transformations_ = true;
+  if(update_transformations_.joinable())
+    update_transformations_.join();
+}
+
+template<int N,int MaxN>
+void ChainState<N,MaxN>::updateTransformationsThread()
+{
+  auto _q = q();
+  auto _qd = qd();
+  auto _qdd = qdd();
+  auto _external_effort = external_effort();
+
+  ros::Rate rt(hz_);
+  while(!stop_update_transformations_)
+  {
+    {
+      std::lock_guard<std::mutex> lock(mtx_);
+      _q = q();
+      _qd = qd();
+      _qdd = qdd();
+      _external_effort = external_effort();
+    }
+    updateTransformations(ffwd_kin_type_ & ZERO_ORDER ? &_q : nullptr
+                        , ffwd_kin_type_ & FIRST_ORDER ? &_qd : nullptr
+                        , ffwd_kin_type_ & SECOND_ORDER ? &_qdd : nullptr
+                        , ffwd_kin_type_ & FFWD_STATIC ? &_external_effort : nullptr
+                        , ffwd_kin_type_ & INV_STATIC ? nullptr : nullptr);
+
+    rt.sleep();
+  }
+}
+
 
 
 inline void get_joint_names(ros::NodeHandle& nh, std::vector<std::string>& names)
