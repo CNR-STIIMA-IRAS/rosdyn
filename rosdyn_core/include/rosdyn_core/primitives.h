@@ -76,11 +76,11 @@ typedef shared_ptr_namespace::shared_ptr< rosdyn::Chain   > ChainPtr;
 
 class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
 {
+public:
+  enum Type {REVOLUTE, PRISMATIC, FIXED  };
 protected:
-  enum
-  {
-    REVOLUTE, PRISMATIC, FIXED
-  } m_type;  // NOLINT(whitespace/braces)
+
+  Type m_type;  // NOLINT(whitespace/braces)
 
   double m_q_max;
   double m_q_min;
@@ -131,6 +131,8 @@ public:
   {
     return m_parent_link;
   }
+
+  const Type& getType()const {return m_type;}
 
   const Eigen::Affine3d& getTransformation(const double& q = 0);
   const Eigen::Vector6d& getScrew_of_child_in_parent();
@@ -408,6 +410,10 @@ public:
     return getDDTwist(q, Dq, DDq, DDDq).back();
   }
 
+  /* get all the multiturn solution. q is in the output vector.
+   */
+  std::vector<Eigen::VectorXd> getMultiplicity(const Eigen::VectorXd& q);
+
   /* Iterative solve the IK problem.
    * Each iteration the solution is updated by a term dq
    *
@@ -456,6 +462,7 @@ public:
 
   Eigen::MatrixXd getJointInertia(const Eigen::VectorXd& q);
   Eigen::VectorXd getNominalParameters();
+
 };
 
 inline Joint::Joint()
@@ -1614,6 +1621,54 @@ inline bool Chain::computeWeigthedLocalIk(Eigen::VectorXd& sol, const Eigen::Aff
     sol += m_joint_error;
   }
   return false;
+}
+
+inline std::vector<Eigen::VectorXd> Chain::getMultiplicity(const Eigen::VectorXd &q)
+{
+  std::vector<std::vector<double>> multiturn_ax(m_active_joints_number);
+
+  for (unsigned int idx = 0; idx < m_active_joints_number; idx++)
+  {
+    multiturn_ax.at(idx).push_back(q(idx));
+    rosdyn::JointPtr& jnt = m_joints.at(m_active_joints.at(idx));
+    if (jnt->getType()!=Joint::Type::REVOLUTE)
+      continue;
+    double tmp=q(idx);
+    while (true)
+    {
+      tmp+=2*M_PI;
+      if (tmp>m_q_max(idx))
+        break;
+      multiturn_ax.at(idx).push_back(tmp);
+    }
+    tmp=q(idx);
+    while (true)
+    {
+      tmp-=2*M_PI;
+      if (tmp<m_q_min(idx))
+        break;
+      multiturn_ax.at(idx).push_back(tmp);
+    }
+  }
+
+  std::vector<Eigen::VectorXd> multiturn;
+  multiturn.push_back(q);
+  for (unsigned int idx = 0; idx < m_active_joints_number; idx++)
+  {
+    size_t size_multiturn=multiturn.size();
+    for (size_t is=1;is<multiturn_ax.at(idx).size();is++)
+    {
+      for (size_t im=0;im<size_multiturn;im++)
+      {
+        Eigen::VectorXd new_q=multiturn.at(im);
+        new_q(idx)=multiturn_ax.at(idx).at(is);
+        multiturn.push_back(new_q);
+      }
+    }
+  }
+
+  return multiturn;
+
 }
 
 inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_interface, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
