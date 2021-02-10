@@ -93,14 +93,14 @@
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg     if="$(arg debug)" name="launch_prefix"
       value="valgrind -v --track-origins=yes --tool=memcheck --leak-check=full --show-reachable=yes  --num-callers=20 --track-fds=yes  --log-file=/home/feymann/a.txt" />
-      <test launch-prefix="$(arg launch_prefix)" test-name="rosdyn_utilities_test" pkg="rosdyn_utilities" type="rosdyn_utilities_test">
+      <test launch-prefix="$(arg launch_prefix)" test-name="rosdyn_core_test" pkg="rosdyn_core" type="rosdyn_core_test">
       </test>
 </group>
 <group unless="$(arg valgrind)">
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 
-<test launch-prefix="$(arg launch_prefix)" test-name="rosdyn_utilities_test" pkg="rosdyn_utilities" type="rosdyn_utilities_test">
+<test launch-prefix="$(arg launch_prefix)" test-name="rosdyn_core_test" pkg="rosdyn_core" type="rosdyn_core_test">
 </test>
 
 </group>

@@ -41,9 +41,10 @@ namespace rosdyn
  *   - the distance between origins (namely, origin_b_in_w - origin_a_in_w)
  *   - the product between the angle and unit vector  (AngleAxis)  expressed in frame w
  */
-inline void getFrameDistance(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance)
+inline void getFrameDistance(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::Vector6d& distance)
 {
-  distance.resize(6);
+  //distance.resize(6);
+  distance.setZero();
   distance.block(0, 0, 3, 1) = T_wa.translation() - T_wb.translation();
   Eigen::AngleAxisd aa_ab(T_wa.linear().inverse() * T_wb.linear());
 
@@ -58,9 +59,10 @@ inline void getFrameDistance(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d
  *   - the distance between origins (namely, origin_b_in_w - origin_a_in_w)
  *   - the double of vector part of the quaternion q_ab expressed in frame w (namely R_wa * 2*imag(q_ab) ~= angle*axis)
  */
-inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance)
+inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::Vector6d& distance)
 {
-  distance.resize(6);
+  //distance.resize(6);
+  distance.setZero();
   distance.block(0, 0, 3, 1) = T_wa.translation() - T_wb.translation();
   Eigen::Quaterniond q_ab(T_wa.linear().inverse() * T_wb.linear());
 
@@ -84,9 +86,10 @@ inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affi
  * and the jacobian of the distance error defined as
  * J=[eye(3) zeros(3, 3);zeros(3, 3) R_wa*(eye(3)*real(q_ab)-skew(imag(q_ab)))*R_wa']
  */
-inline void getFrameDistanceQuatJac(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance,  Eigen::MatrixXd& jacobian)
+inline void getFrameDistanceQuatJac(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::Vector6d& distance,  Eigen::MatrixXd& jacobian)
 {
-  distance.resize(6);
+  distance.setZero();
+  //distance.resize(6);
   jacobian.resize(6, 6);
   jacobian.setIdentity();
 

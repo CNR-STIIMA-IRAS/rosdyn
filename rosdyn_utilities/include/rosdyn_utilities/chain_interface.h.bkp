@@ -14,45 +14,66 @@
 namespace rosdyn
 {
 
-class ChainInterface
+
+//! This constant is used in the templated-inherited controller,
+//! when a dynamic-sized allocation is selected, with pre-allocated memory
+// constexpr int max_num_axes = MAX_NUM_AXES;
+
+//struct Limits
+//{
+//  rosdyn::VectorXd q_sup;
+//  rosdyn::VectorXd q_inf;
+//  rosdyn::VectorXd qd_max;
+//  rosdyn::VectorXd qdd_max;
+//  rosdyn::VectorXd effort_max;
+
+//  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+//  ~Limits() = default;
+//};
+
+class ChainInterface : public Chain
 {
 
 private:
-  urdf::ModelInterfaceSharedPtr m_model;
-  std::string                   m_base_link;
-  std::string                   m_tool_link;
-  rosdyn::ChainPtr              m_chain;
 
+//  Limits                        m_limit;
   std::vector<std::string>      m_joint_names;
   std::vector<std::string>      m_link_names;
-  size_t                        m_nAx;
-  Eigen::VectorXd               m_upper_limit;
-  Eigen::VectorXd               m_lower_limit;
-  Eigen::VectorXd               m_qd_limit;
-  Eigen::VectorXd               m_qdd_limit;
-  Eigen::VectorXd               m_effort_limit;
+//  size_t                        m_nAx;
+
+  std::string                   m_base_link;
+  std::string                   m_tool_link;
+
+  urdf::ModelInterfaceSharedPtr m_model;
+//  rosdyn::Chain                 m_chain;
 
   Eigen::IOFormat               m_cfrmt;
 
 public:
-  const size_t& nAx                         ( ) const { return m_nAx;         }
-  const Eigen::VectorXd& upperLimit         ( ) const { return m_upper_limit; }
-  const Eigen::VectorXd& lowerLimit         ( ) const { return m_lower_limit; }
-  const Eigen::VectorXd& speedLimit         ( ) const { return m_qd_limit;    }
-  const Eigen::VectorXd& accelerationLimit  ( ) const { return m_qdd_limit;   }
-  const Eigen::VectorXd& effortLimit        ( ) const { return m_effort_limit;}
+
+  ChainInterface();
+  ~ChainInterface();
+  ChainInterface(const ChainInterface&) = delete;
+  ChainInterface& operator=(const ChainInterface&) = delete;
+  ChainInterface(ChainInterface&&) = delete;
+  ChainInterface& operator=(ChainInterface&&) = delete;
+
+
+  const size_t& nAx                  ( ) const { return this->getActiveJointsNumber();         }
+  const VectorXd& accelerationLimit  ( ) const { return this->getDQMax();}
+  const VectorXd& effortLimit        ( ) const { return this->getTauMax();}
   const std::vector<std::string>& jointNames( ) const { return m_joint_names; }
-  const double& upperLimit         (size_t iAx) const { return m_upper_limit(iAx); }
-  const double& lowerLimit         (size_t iAx) const { return m_lower_limit(iAx); }
-  const double& speedLimit         (size_t iAx) const { return m_qd_limit(iAx);    }
-  const double& accelerationLimit  (size_t iAx) const { return m_qdd_limit(iAx);   }
-  const double& eeffortLimit       (size_t iAx) const { return m_effort_limit(iAx);   }
+  const double& upperLimit         (size_t iAx) const { return m_limit.q_sup(iAx); }
+  const double& lowerLimit         (size_t iAx) const { return m_limit.q_inf(iAx); }
+  const double& speedLimit         (size_t iAx) const { return m_limit.qd_max(iAx);    }
+  const double& accelerationLimit  (size_t iAx) const { return m_limit.qdd_max(iAx);   }
+  const double& eeffortLimit       (size_t iAx) const { return m_limit.effort_max(iAx);   }
   const std::string& jointName     (size_t iAx) const { return m_joint_names.at(iAx); }
-  double upperLimit         (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_upper_limit (idx); }
-  double lowerLimit         (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_lower_limit (idx); }
-  double speedLimit         (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_qd_limit    (idx); }
-  double accelerationLimit  (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_qdd_limit   (idx); }
-  double eeffortLimit       (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_effort_limit(idx); }
+  double upperLimit         (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_limit.q_sup (idx); }
+  double lowerLimit         (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_limit.q_inf (idx); }
+  double speedLimit         (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_limit.qd_max    (idx); }
+  double accelerationLimit  (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_limit.qdd_max   (idx); }
+  double eeffortLimit       (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_limit.effort_max(idx); }
   int jointIndex (const std::string& name) const
   {
     auto it = std::find(m_joint_names.begin(),m_joint_names.end(), name);
@@ -66,7 +87,7 @@ public:
   const std::string&                toolLink  ( ) const { return m_tool_link; }
   const std::string&                toolFrame ( ) const { return toolLink();  }
   
-  rosdyn::ChainPtr getChain( )                { return m_chain;     }
+  rosdyn::Chain&   getChain( )                { return m_chain;     }
   rosdyn::ChainPtr getChain( const std::string& from, const std::string& to);
 
   /**

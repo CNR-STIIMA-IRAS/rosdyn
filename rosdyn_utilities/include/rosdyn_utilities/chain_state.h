@@ -11,14 +11,14 @@
 #include <urdf_model/model.h>
 #include <urdf_parser/urdf_parser.h>
 
-#include <eigen_state_space_systems/filtered_values.h>
-#include <rosdyn_utilities/chain_interface.h>
+#include <eigen_state_space_systems/filters/filtered_values.h>
+#include <rosdyn_core/primitives.h>
 
 #define DEF_iAX(name)\
   int iAx = index(name); if(iAx==-1) throw std::runtime_error("Name not in the joint_names list");
 
 #define CHECK_iAx(iAx)\
-  if(iAx>=nAx()) throw std::runtime_error("Index out of range!");
+  if(iAx>=eigen_utils::rows(q_.value())) throw std::runtime_error("Index out of range!");
 
 namespace rosdyn
 {
@@ -41,20 +41,17 @@ public:
   using Value = typename eigen_control_toolbox::FilteredValue<N,MaxN>::Value;
 
   // GETTER
-  const std::string& jointName(const size_t iAx) const { return kin_->jointNames().at(iAx);}
-  const std::vector<std::string>& jointNames() const { return kin_->jointNames();}
-  const size_t& nAx() const { return kin_->nAx(); }
   const Value&  q() const { return q_.value();  }
   const Value&  qd() const { return qd_.value(); }
   const Value&  qdd() const { return qdd_.value();}
   const Value&  effort() const { return effort_.value(); }
   const Value&  external_effort() const { return external_effort_.value(); }
 
-  double q(const size_t& iAx) const {CHECK_iAx(iAx); return q_.value(iAx); }
-  double qd(const size_t& iAx) const {CHECK_iAx(iAx); return qd_.value(iAx); }
-  double qdd(const size_t& iAx) const {CHECK_iAx(iAx); return qdd_.value(iAx); }
-  double effort(const size_t& iAx) const {CHECK_iAx(iAx); return effort_.value(iAx); }
-  double external_effort(const size_t& iAx) const {CHECK_iAx(iAx); return external_effort_.value(iAx); }
+  double q(const int& iAx) const {CHECK_iAx(iAx); return q_.value(iAx); }
+  double qd(const int& iAx) const {CHECK_iAx(iAx); return qd_.value(iAx); }
+  double qdd(const int& iAx) const {CHECK_iAx(iAx); return qdd_.value(iAx); }
+  double effort(const int& iAx) const {CHECK_iAx(iAx); return effort_.value(iAx); }
+  double external_effort(const int& iAx) const {CHECK_iAx(iAx); return external_effort_.value(iAx); }
 
   double q(const std::string& name) const {DEF_iAX(name); return q(iAx); }
   double qd(const std::string& name) const {DEF_iAX(name); return qd(iAx); }
@@ -66,7 +63,7 @@ public:
   const Eigen::Vector6d& twist( ) const { return twist_; }
   const Eigen::Vector6d& twistd( ) const { return twistd_;}
   const Eigen::Vector6d& wrench( ) const { return wrench_.value();}
-  const Eigen::Matrix<double,6,N>& jacobian( ) const { return jacobian_;  }
+  const Eigen::Matrix<double,6,N, Eigen::ColMajor,6, MaxN>& jacobian( ) const { return jacobian_; }
 
   // SETTER
   Value& q() { return q_.value();  }
@@ -76,11 +73,11 @@ public:
   Value& external_effort() { return external_effort_.value(); }
   Eigen::Vector6d& wrench( ) { return wrench_.value();}
 
-  double& q(const size_t& iAx) { return q_.value(iAx); }
-  double& qd(const size_t& iAx) { return qd_.value(iAx); }
-  double& qdd(const size_t& iAx) { return qdd_.value(iAx); }
-  double& effort(const size_t& iAx) { return effort_.value(iAx); }
-  double& external_effort(const size_t& iAx) { return external_effort_.value(iAx); }
+  double& q(const int& iAx) { return q_.value(iAx); }
+  double& qd(const int& iAx) { return qd_.value(iAx); }
+  double& qdd(const int& iAx) { return qdd_.value(iAx); }
+  double& effort(const int& iAx) { return effort_.value(iAx); }
+  double& external_effort(const int& iAx) { return external_effort_.value(iAx); }
 
   double& q(const std::string& name) {DEF_iAX(name); return q(iAx); }
   double& qd(const std::string& name) {DEF_iAX(name); return qd(iAx); }
@@ -93,26 +90,35 @@ public:
   eigen_control_toolbox::FilteredValue<N,MaxN>& qddFilteredValue() {return qdd_;}
   eigen_control_toolbox::FilteredValue<N,MaxN>& effortFilteredValue() {return effort_;}
   eigen_control_toolbox::FilteredValue<N,MaxN>& externalEffortFilteredValue() {return external_effort_;}
-  eigen_control_toolbox::FilteredValue<6>&       wrenchFilteredValue() {return wrench_;}
+  eigen_control_toolbox::FilteredValue<6>&      wrenchFilteredValue() {return wrench_;}
 
   // METHODS
-  enum KinematicsType {
+  enum KinematicsType
+  {
     ZERO_ORDER   = 0b00000001, // ONLY POSITION FFWD
     FIRST_ORDER  = 0b00000011, // POS AND VEL FFWD
     SECOND_ORDER = 0b00000111, // POS, VEL, ACC FFWD
     FFWD_STATIC  = 0b00001000, // from EFFORT to wrench
     INV_STATIC   = 0b00010000  // from wrench to effort
   };
-  ChainState& updateTransformations(int ffwd_kin_type);
 
-  void startUpdateTransformationsThread(int ffwd_kin_type, double hz = 10.0);
-  void stopUpdateTransformationsThread();
+  template<int n=N, std::enable_if_t<n!=1,int> = 0>
+  ChainState& updateTransformations(ChainPtr kin, int ffwd_kin_type);
 
-  double* handle_to_q(const size_t& iAx=0) {CHECK_iAx(iAx); return q_.data(iAx); }
-  double* handle_to_qd(const size_t& iAx=0) {CHECK_iAx(iAx); return qd_.data(iAx); }
-  double* handle_to_qdd(const size_t& iAx=0) {CHECK_iAx(iAx); return qdd_.data(iAx); }
-  double* handle_to_effort(const size_t& iAx=0) {CHECK_iAx(iAx); return effort_.data(iAx); }
-  double* handle_to_external_effort(const size_t& iAx=0) {CHECK_iAx(iAx); return external_effort_.data(iAx); }
+  template<int n=N, std::enable_if_t<n==1,int> = 0>
+  ChainState& updateTransformations(ChainPtr kin, int ffwd_kin_type);
+
+  template<int n=N, std::enable_if_t<n!=1,int> = 0>
+  ChainState& updateTransformations(Chain& kin, int ffwd_kin_type);
+
+  template<int n=N, std::enable_if_t<n==1,int> = 0>
+  ChainState& updateTransformations(Chain& kin, int ffwd_kin_type);
+
+  double* handle_to_q(const int& iAx=0) {CHECK_iAx(iAx); return q_.data(iAx); }
+  double* handle_to_qd(const int& iAx=0) {CHECK_iAx(iAx); return qd_.data(iAx); }
+  double* handle_to_qdd(const int& iAx=0) {CHECK_iAx(iAx); return qdd_.data(iAx); }
+  double* handle_to_effort(const int& iAx=0) {CHECK_iAx(iAx); return effort_.data(iAx); }
+  double* handle_to_external_effort(const int& iAx=0) {CHECK_iAx(iAx); return external_effort_.data(iAx); }
 
   double* handle_to_q(const std::string& name) {DEF_iAX(name); return q_.data(iAx); }
   double* handle_to_qd(const std::string& name) {DEF_iAX(name); return qd_.data(iAx); }
@@ -121,17 +127,24 @@ public:
   double* handle_to_external_effort(const std::string& name) {DEF_iAX(name); return external_effort_.data(iAx); }
 
   ChainState() = default;
-  ChainState(ChainInterfacePtr kin);
-  ChainState(const ChainState& cpy);
-  ChainState& operator=(const ChainState& rhs);
-  ~ChainState();
+  ChainState(ChainPtr chain);
+  ChainState(Chain&   chain);
+  ChainState(const ChainState& cpy) = delete;
+  ChainState(ChainState&& cpy) = delete;
+  ChainState& operator=(const ChainState& rhs) = delete;
+  ChainState& operator=(ChainState&& rhs) = delete;
+  ~ChainState() = default;
 
-  ChainInterfacePtr getChainInterface() {return kin_;}
+  virtual bool init(ChainPtr kin);
+  virtual bool init(Chain& kin);
+  void setZero(ChainPtr kin);
+  void setZero(Chain& kin);
 
-  bool initialized() const { return kin_ != nullptr; }
-  virtual bool init(ChainInterfacePtr kin);
-  void setZero();
+  enum CopyType { ONLY_JOINT, ONLY_CART, FULL_STATE };
+  void copy(const ChainState<N,MaxN>& cpy, CopyType what);
 
+  const std::vector<std::string> getJointNames() const { return joint_names_; }
+   int nAx() const { return int(joint_names_.size()); }
 
 protected:
   eigen_control_toolbox::FilteredValue<N,MaxN> q_;
@@ -144,38 +157,14 @@ protected:
   Eigen::Vector6d twist_;
   Eigen::Vector6d twistd_;
   eigen_control_toolbox::FilteredValue<6> wrench_;
-  Eigen::Matrix<double,6,N> jacobian_;
+  Eigen::Matrix<double,6,N, Eigen::ColMajor,6, MaxN> jacobian_;
 
   int index(const std::string& name) const
   {
-    auto it = std::find(kin_->jointNames().begin(), kin_->jointNames().end(), name);
-    return(it == kin_->jointNames().end()) ? -1 : std::distance(kin_->jointNames().begin(),it);
+      auto it = std::find(joint_names_.begin(), joint_names_.end(), name);
+      return(it == joint_names_.end()) ? -1 : std::distance(joint_names_.begin(),it);
   }
-
-  rosdyn::ChainInterfacePtr kin_;
-
-  void updateTransformationsThread();
-  double          hz_;
-  int             ffwd_kin_type_;
-  std::thread     update_transformations_;
-  bool            stop_update_transformations_;
-  std::mutex      mtx_;
-
-  template<int n=N, std::enable_if_t<n==1, int> =0 >
-  ChainState& updateTransformations(const Value* q,
-                                    const Value* qd,
-                                    const Value* qdd,
-                                    const Value* external_effort = nullptr,
-                                    const Eigen::Matrix<double,6,1>* wrench = nullptr);
-
-  template<int n=N, std::enable_if_t<n!=1, int> =0 >
-  ChainState& updateTransformations(const Value* q,
-                                    const Value* qd,
-                                    const Value* qdd,
-                                    const Value* external_effort = nullptr,
-                                    const Eigen::Matrix<double,6,1>* wrench = nullptr);
-
-  void copy(const ChainState<N,MaxN>& cpy, bool update_transform = false);
+  std::vector<std::string> joint_names_;
 };
 
 using ChainStateX = ChainState<-1>;

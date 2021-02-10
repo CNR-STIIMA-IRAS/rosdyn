@@ -1,6 +1,8 @@
+#include<algorithm> // for copy() and assign()
+#include<iterator> // for back_inserter
 #include <sstream>
 #include <eigen_matrix_utils/eigen_matrix_utils.h>
-#include <eigen_state_space_systems/utils/operations.h>
+#include <eigen_matrix_utils/overloads.h>
 #include <rosdyn_utilities/chain_interface.h>
 
 
@@ -8,7 +10,7 @@ namespace rosdyn
 {
 
 
-rosdyn::ChainPtr  ChainInterface::getChain  ( const std::string& from, const std::string& to)
+rosdyn::ChainPtr  ChainInterface::getChain( const std::string& from, const std::string& to)
 {
   Eigen::Vector3d gravity;
   gravity << 0, 0, -9.806;
@@ -16,6 +18,19 @@ rosdyn::ChainPtr  ChainInterface::getChain  ( const std::string& from, const std
   return chain;
 }
 
+ChainInterface::ChainInterface()
+  : m_joint_names(0), m_link_names(0), m_cfrmt(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]")
+{
+  m_joint_names.reserve(max_num_axes);
+  m_link_names.reserve(max_num_axes);
+}
+
+ChainInterface::~ChainInterface()
+{
+  m_joint_names.clear();
+  m_link_names.clear();
+  m_model.reset();
+}
 
 
 int ChainInterface::init(ros::NodeHandle& nh, 
@@ -24,8 +39,12 @@ int ChainInterface::init(ros::NodeHandle& nh,
                           const std::string& tool_link,
                           std::stringstream& report)
 {
+  size_t l = __LINE__;
   try
   {
+    l = __LINE__;
+
+
     //=============================================================
     std::string urdf_string;
     std::string robot_description_param;
@@ -48,6 +67,7 @@ int ChainInterface::init(ros::NodeHandle& nh,
     }
     //=============================================================
 
+    l = __LINE__;
     //=============================================================
     std::string robot_description_planning_param;
     if(!nh.getParam("robot_description_planning_param", robot_description_planning_param ) )
@@ -65,21 +85,33 @@ int ChainInterface::init(ros::NodeHandle& nh,
     //=============================================================
 
 
-
+    l = __LINE__;
     m_model = urdf::parseURDF(urdf_string);
     if(m_model == nullptr )
     {
       report << "\nParsing the URDF from parameter '" << robot_description_param << "' failed. Weird!\n";
       return -1;
     }
-    m_joint_names = joint_names_to_handle;
-    m_nAx         = m_joint_names.size();
-
-    m_upper_limit    .resize(m_nAx); m_upper_limit  .setZero();
-    m_lower_limit    .resize(m_nAx); m_lower_limit  .setZero();
-    m_qd_limit       .resize(m_nAx); m_qd_limit     .setZero();
-    m_qdd_limit      .resize(m_nAx); m_qdd_limit    .setZero();
-    for (unsigned int iAx = 0; iAx < m_nAx; iAx++)
+    l = __LINE__;
+    m_joint_names.clear();
+    l = __LINE__;
+    if((joint_names_to_handle.size()==0) || (joint_names_to_handle.size()>rosdyn::max_num_axes) )
+    {
+      report << "\nThe number of joint names is out-of-range (input dimension: '"
+              << joint_names_to_handle.size() << ")'. Maximum allowed number of axes is " << rosdyn::max_num_axes
+                << ". To increase the number of axes re-compile with -DMAX_NUM_AXES=<number>\n";
+      return -1;
+    }
+    l = __LINE__;
+    for(auto const & n : joint_names_to_handle)
+    {
+      l = __LINE__;
+      std::cout << m_joint_names.size() << " " << n << std::endl;
+      l = __LINE__;
+      m_joint_names.push_back(n);
+    }
+    l = __LINE__;
+    for (unsigned int iAx = 0; iAx < this->getActiveJointsNumber(); iAx++)
     {
       try
       {
@@ -88,15 +120,6 @@ int ChainInterface::init(ros::NodeHandle& nh,
         {
           report << "The joint named '" + m_joint_names.at(iAx) + "' is not in the URDF model."; 
           return -1;
-        }
-        m_upper_limit(iAx) = joint_model->limits->upper;
-        m_lower_limit(iAx) = joint_model->limits->lower;
-
-        if ((m_upper_limit(iAx) == 0) && (m_lower_limit(iAx) == 0))
-        {
-          m_upper_limit(iAx) = std::numeric_limits<double>::infinity();
-          m_lower_limit(iAx) = -std::numeric_limits<double>::infinity();
-          report << "upper and lower limits are both equal to 0, set +/- infinity";
         }
 
         bool has_velocity_limits;
@@ -110,7 +133,6 @@ int ChainInterface::init(ros::NodeHandle& nh,
           has_acceleration_limits = false;
         }
 
-        m_qd_limit(iAx) = joint_model->limits->velocity;
         if (has_velocity_limits)
         {
           double vel;
@@ -119,8 +141,8 @@ int ChainInterface::init(ros::NodeHandle& nh,
             report << robot_description_planning_param +"/joint_limits/" + m_joint_names.at(iAx) + "/max_velocity is not defined";
             return 0;
           }
-          if (vel < m_qd_limit(iAx))
-            m_qd_limit(iAx) = vel;
+          if (vel < m_limit.qd_max(iAx))
+            m_limit.qd_max(iAx) = vel;
         }
 
         if (has_acceleration_limits)
@@ -131,10 +153,10 @@ int ChainInterface::init(ros::NodeHandle& nh,
             report << robot_description_planning_param +"/joint_limits/" + m_joint_names.at(iAx) + "/max_acceleration is not defined";
             return 0;
           }
-          m_qdd_limit(iAx) = acc;
+          m_limit.qdd_max(iAx) = acc;
         }
         else
-          m_qdd_limit(iAx) = 10 * m_qd_limit(iAx);
+          m_limit.qdd_max(iAx) = 10 * m_limit.qd_max(iAx);
       }
       catch (...)
       {
@@ -143,24 +165,33 @@ int ChainInterface::init(ros::NodeHandle& nh,
       }
     }
 
+    l = __LINE__;
     m_base_link = base_link;
     m_tool_link = tool_link;
 
     Eigen::Vector3d gravity;
     gravity << 0, 0, -9.806;
 
-    std::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link);  //link primitivo da cui parte la catena cinematica (world ad esempio)
+    l = __LINE__;
+    std::shared_ptr<rosdyn::Link> root_link(new rosdyn::Link());  //link primitivo da cui parte la catena cinematica (world ad esempio)
     root_link->fromUrdf(m_model->root_link_);
 
-    m_chain.reset(new rosdyn::Chain(root_link, m_base_link, m_tool_link, gravity)); //ricostruisce tutta la catena cinematica andando a leggere l'URDF
-    m_chain->setInputJointsName(m_joint_names);
-    m_link_names = m_chain->getLinksName( );
-
-    m_cfrmt = Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
+    l = __LINE__;
+    std::string error;
+    if(!m_chain.init(error, root_link, m_base_link, m_tool_link, gravity))
+    {
+      report << "Error in chain initalization: " << error;
+      return -1;
+    }//ricostruisce tutta la catena cinematica andando a leggere l'URDF
+    l = __LINE__;
+    m_chain.setInputJointsName(m_joint_names);
+    l = __LINE__;
+    m_link_names = m_chain.getLinksName( );
   }
   catch(std::exception& e)
   {
-    report << "Error caught: " + std::string(e.what());
+    report << __PRETTY_FUNCTION__<<":" << __LINE__<< ": Exception (last line executed " << l <<"):\n\t"
+           << std::string(e.what());
     return -1;
   }
   catch(...)
