@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(catkin REQUIRED COMPONENTS
-  eigen_state_space_systems
+  state_space_filters
   eigen_matrix_utils
   roscpp
   rosdyn_core
@@ -26,7 +26,7 @@ endif()
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS eigen_state_space_systems roscpp rosdyn_core 
+  CATKIN_DEPENDS state_space_filters roscpp rosdyn_core
 )
 
 ###########

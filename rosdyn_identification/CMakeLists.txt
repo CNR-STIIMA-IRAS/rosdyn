@@ -30,7 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   trajectory_msgs
   eigen_matrix_utils
-  eigen_state_space_systems
+  state_space_filters
   moveit_planning_helper
   roslint
 )
@@ -55,7 +55,7 @@ catkin_package(
                   std_msgs
                   trajectory_msgs
                   eigen_matrix_utils
-                  eigen_state_space_systems
+                  state_space_filters
                   moveit_planning_helper
                   roslint
   DEPENDS

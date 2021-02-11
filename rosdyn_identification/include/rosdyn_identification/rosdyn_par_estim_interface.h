@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rosdyn_identification/rosdyn_par_estim.h>
 
 #include <eigen_matrix_utils/eigen_matrix_utils.h>
-#include <eigen_state_space_systems/common_filters.h>
+#include <state_space_filters/common_filters.h>
 #include <std_srvs/Empty.h>
 
 /*! \file meto_par_estim_interface.h

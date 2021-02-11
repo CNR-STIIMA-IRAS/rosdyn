@@ -383,4 +383,23 @@ inline void get_joint_names(ros::NodeHandle& nh, std::vector<std::string>& names
 #undef TP
 #undef SP
 
+namespace std
+{
+
+template<int N, int MaxN>
+inline std::string to_string(const rosdyn::ChainState<N,MaxN>& chain)
+{
+  std::string ret;
+  ret += "q:     " + eu::to_string(chain.q())                        + "\n";
+  ret += "qd:    " + eu::to_string(chain.qd())                       + "\n";
+  ret += "qdd:   " + eu::to_string(chain.qdd())                      + "\n";
+  ret += "eff:   " + eu::to_string(chain.effort())                   + "\n";
+  ret += "tool:  " + eu::to_string(chain.toolPose().matrix(),false)  + "\n";
+  ret += "twist: " + eu::to_string(chain.twist())                    + "\n";
+  ret += "twistd:" + eu::to_string(chain.twistd())                   + "\n";
+  return ret;
+}
+
+}
+
 #endif  //  ROSDYN_UTILITIES__CHAIN_STATE_IMPL__H

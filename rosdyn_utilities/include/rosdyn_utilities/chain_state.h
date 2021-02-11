@@ -11,7 +11,7 @@
 #include <urdf_model/model.h>
 #include <urdf_parser/urdf_parser.h>
 
-#include <eigen_state_space_systems/filters/filtered_values.h>
+#include <state_space_filters/filtered_values.h>
 #include <rosdyn_core/primitives.h>
 
 #define DEF_iAX(name)\
@@ -144,7 +144,7 @@ public:
   void copy(const ChainState<N,MaxN>& cpy, CopyType what);
 
   const std::vector<std::string> getJointNames() const { return joint_names_; }
-   int nAx() const { return int(joint_names_.size()); }
+  int nAx() const { return int(joint_names_.size()); }
 
 protected:
   eigen_control_toolbox::FilteredValue<N,MaxN> q_;
@@ -185,6 +185,12 @@ DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(1)
 DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(3)
 DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(6)
 DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(7)
+}
+
+namespace std
+{
+template<int N, int MaxN = N>
+std::string to_string(const rosdyn::ChainState<N,MaxN>& chain);
 }
 
 #include <rosdyn_utilities/internal/chain_state_impl.h>

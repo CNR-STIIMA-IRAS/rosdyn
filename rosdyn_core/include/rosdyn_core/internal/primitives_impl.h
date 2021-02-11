@@ -141,7 +141,6 @@ inline void Joint::fromUrdf(const urdf::JointConstPtr& urdf_joint,
 
 inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& what)
 {
-  size_t l = __LINE__;
   //=============================================================
   if(!ros::param::has(full_param_path))
   {
