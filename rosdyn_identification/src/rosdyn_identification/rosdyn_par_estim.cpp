@@ -70,10 +70,9 @@ MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::string& robot_descrip
   Eigen::Vector3d grav;
   grav << grav_stl.at(0), grav_stl.at(1), grav_stl.at(2);
 
-  rosdyn::LinkPtr root_link(new rosdyn::Link());
-  root_link->fromUrdf(m_model->root_link_);
+  m_root_link.fromUrdf(m_model->root_link_.get());
 
-  m_chain.reset(new rosdyn::Chain(root_link, base_frame, tool_frame, grav));
+  m_chain.reset(new rosdyn::Chain(&m_root_link, base_frame, tool_frame, grav));
   m_chain->setInputJointsName(js_name);
 
   m_joints_names = js_name;
@@ -247,7 +246,9 @@ double MetoParEstim::getConditionNumber()
   return m_condition_number;
 }
 
-Eigen::MatrixXd MetoParEstim::getTrajectoryFullRegressor(const Eigen::MatrixXd& q, const Eigen::MatrixXd& Dq, const Eigen::MatrixXd& DDq)
+Eigen::MatrixXd MetoParEstim::getTrajectoryFullRegressor(const Eigen::MatrixXd& /*q*/,
+                                                          const Eigen::MatrixXd& /*Dq*/,
+                                                            const Eigen::MatrixXd& /*DDq*/)
 {
   return m_phi_full;
 }

@@ -13,26 +13,27 @@ namespace rosdyn
 {
 
 template<int N, int MaxN = N>
-class ChainStatePublisher
+class ChainStatePublisherN
 {
 private:
   ros::NodeHandle nh_;
-  const rosdyn::ChainState<N, MaxN>* state_;
+  const rosdyn::ChainStateN<N, MaxN>* state_;
   realtime_tools::RealtimePublisher<sensor_msgs::JointState> pub_;
 
 public:
-  typedef std::shared_ptr<ChainStatePublisher> Ptr;
-  typedef std::shared_ptr<ChainStatePublisher const> ConstPtr;
+  typedef std::shared_ptr<ChainStatePublisherN> Ptr;
+  typedef std::shared_ptr<ChainStatePublisherN const> ConstPtr;
 
-  ChainStatePublisher() = delete;
-  virtual ~ChainStatePublisher() = default;
-  ChainStatePublisher(const ChainStatePublisher& cpy) = delete;
-  ChainStatePublisher(ChainStatePublisher&& cpy) = delete;
-  ChainStatePublisher& operator=(const ChainStatePublisher& cpy) = delete;
-  ChainStatePublisher& operator=(ChainStatePublisher&& cpy) = delete;
+  ChainStatePublisherN() = delete;
+  virtual ~ChainStatePublisherN() = default;
+  ChainStatePublisherN(const ChainStatePublisherN& cpy) = delete;
+  ChainStatePublisherN(ChainStatePublisherN&& cpy) = delete;
+  ChainStatePublisherN& operator=(const ChainStatePublisherN& cpy) = delete;
+  ChainStatePublisherN& operator=(ChainStatePublisherN&& cpy) = delete;
 
-  ChainStatePublisher(const std::string& name, const rosdyn::Chain& chain, const ChainState<N,MaxN>* state)
-    : nh_("/"), state_(state)
+  ChainStatePublisherN(ros::NodeHandle& nh, const std::string& name,
+                        const rosdyn::Chain& chain, const ChainStateN<N,MaxN>* state)
+    : nh_(nh), state_(state)
   {
     if(!state_)
     {
@@ -62,10 +63,19 @@ public:
 };
 
 template<int N, int MaxN = N>
-using  ChainStatePublisherPtr = typename ChainStatePublisher<N,MaxN>::Ptr;
+using  ChainStatePublisherNPtr = typename ChainStatePublisherN<N,MaxN>::Ptr;
 
 template<int N, int MaxN = N>
-using  ChainStatePublisherConstPtr = typename ChainStatePublisher<N,MaxN>::ConstPtr;
+using  ChainStatePublisherNConstPtr = typename ChainStatePublisherN<N,MaxN>::ConstPtr;
+
+/**
+ * @brief ChainState
+ */
+typedef ChainStatePublisherN<-1, rosdyn::max_num_axes> ChainStatePublisher;
+typedef ChainStatePublisher::Ptr                       ChainStatePublisherPtr;
+typedef ChainStatePublisher::ConstPtr                  ChainStatePublisherConstPtr;
+
+
 
 }  // namespace rosdyn
 

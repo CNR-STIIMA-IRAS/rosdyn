@@ -24,21 +24,22 @@ namespace rosdyn
 {
 
 /**
- * @class ChainState
+ * @class ChainStateN
  *
  * The class does not own the pointer to ChainInterface, but only a raw pointer is used.
  * This allow the usage also in the stack as stati object.
  */
 template<int N, int MaxN = N>
-class ChainState
+class ChainStateN
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  typedef std::shared_ptr<ChainState> Ptr;
-  typedef std::shared_ptr<ChainState const> ConstPtr;
+  typedef std::shared_ptr<ChainStateN> Ptr;
+  typedef std::shared_ptr<ChainStateN const> ConstPtr;
 
   using Value = typename eigen_control_toolbox::FilteredValue<N,MaxN>::Value;
+  using JacobianMatrix = Eigen::Matrix<double,6,N, Eigen::ColMajor,6, MaxN>;
 
   // GETTER
   const Value&  q() const { return q_.value();  }
@@ -63,7 +64,7 @@ public:
   const Eigen::Vector6d& twist( ) const { return twist_; }
   const Eigen::Vector6d& twistd( ) const { return twistd_;}
   const Eigen::Vector6d& wrench( ) const { return wrench_.value();}
-  const Eigen::Matrix<double,6,N, Eigen::ColMajor,6, MaxN>& jacobian( ) const { return jacobian_; }
+  const JacobianMatrix&  jacobian( ) const { return jacobian_; }
 
   // SETTER
   Value& q() { return q_.value();  }
@@ -103,16 +104,16 @@ public:
   };
 
   template<int n=N, std::enable_if_t<n!=1,int> = 0>
-  ChainState& updateTransformations(ChainPtr kin, int ffwd_kin_type);
+  ChainStateN& updateTransformations(ChainPtr kin, int ffwd_kin_type);
 
   template<int n=N, std::enable_if_t<n==1,int> = 0>
-  ChainState& updateTransformations(ChainPtr kin, int ffwd_kin_type);
+  ChainStateN& updateTransformations(ChainPtr kin, int ffwd_kin_type);
 
   template<int n=N, std::enable_if_t<n!=1,int> = 0>
-  ChainState& updateTransformations(Chain& kin, int ffwd_kin_type);
+  ChainStateN& updateTransformations(Chain& kin, int ffwd_kin_type);
 
   template<int n=N, std::enable_if_t<n==1,int> = 0>
-  ChainState& updateTransformations(Chain& kin, int ffwd_kin_type);
+  ChainStateN& updateTransformations(Chain& kin, int ffwd_kin_type);
 
   double* handle_to_q(const int& iAx=0) {CHECK_iAx(iAx); return q_.data(iAx); }
   double* handle_to_qd(const int& iAx=0) {CHECK_iAx(iAx); return qd_.data(iAx); }
@@ -126,14 +127,14 @@ public:
   double* handle_to_effort(const std::string& name) {DEF_iAX(name); return effort_.data(iAx); }
   double* handle_to_external_effort(const std::string& name) {DEF_iAX(name); return external_effort_.data(iAx); }
 
-  ChainState() = default;
-  ChainState(ChainPtr chain);
-  ChainState(Chain&   chain);
-  ChainState(const ChainState& cpy) = delete;
-  ChainState(ChainState&& cpy) = delete;
-  ChainState& operator=(const ChainState& rhs) = delete;
-  ChainState& operator=(ChainState&& rhs) = delete;
-  ~ChainState() = default;
+  ChainStateN() = default;
+  ChainStateN(ChainPtr chain);
+  ChainStateN(Chain&   chain);
+  ChainStateN(const ChainStateN& cpy) = delete;
+  ChainStateN(ChainStateN&& cpy) = delete;
+  ChainStateN& operator=(const ChainStateN& rhs) = delete;
+  ChainStateN& operator=(ChainStateN&& rhs) = delete;
+  ~ChainStateN() = default;
 
   virtual bool init(ChainPtr kin);
   virtual bool init(Chain& kin);
@@ -141,7 +142,7 @@ public:
   void setZero(Chain& kin);
 
   enum CopyType { ONLY_JOINT, ONLY_CART, FULL_STATE };
-  void copy(const ChainState<N,MaxN>& cpy, CopyType what);
+  void copy(const ChainStateN<N,MaxN>& cpy, CopyType what);
 
   const std::vector<std::string> getJointNames() const { return joint_names_; }
   int nAx() const { return int(joint_names_.size()); }
@@ -157,7 +158,7 @@ protected:
   Eigen::Vector6d twist_;
   Eigen::Vector6d twistd_;
   eigen_control_toolbox::FilteredValue<6> wrench_;
-  Eigen::Matrix<double,6,N, Eigen::ColMajor,6, MaxN> jacobian_;
+  JacobianMatrix jacobian_;
 
   int index(const std::string& name) const
   {
@@ -167,30 +168,41 @@ protected:
   std::vector<std::string> joint_names_;
 };
 
-using ChainStateX = ChainState<-1>;
-typedef ChainStateX::Ptr  ChainStateXPtr;
-typedef ChainStateX::ConstPtr  ChainStateXConstPtr;
+
+/**
+ * @brief ChainState
+ */
+typedef ChainStateN<-1, rosdyn::max_num_axes> ChainState;
+typedef ChainState::Ptr                       ChainStatePtr;
+typedef ChainState::ConstPtr                  ChainStateConstPtr;
+
+/**
+ *
+ */
+typedef ChainStateN<-1>         ChainStateX;
+typedef ChainStateX::Ptr        ChainStateXPtr;
+typedef ChainStateX::ConstPtr   ChainStateXConstPtr;
 
 
 /**
- * Define the ChainState# iwth a pre-defined number of axes
- */ 
+ * Define the ChainStateN# iwth a pre-defined number of axes
+ */
 
-#define DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(nAx)\
-using ChainState ## nAx = ChainState<nAx>;\
-typedef std::shared_ptr<ChainState<nAx>      > ChainState ## nAx ## Ptr;\
-typedef std::shared_ptr<ChainState<nAx> const> ChainState ## nAx ## ConstPtr;\
+#define DEFINE_ChainStateN_PTR_STATIC_DIMENSION(nAx)\
+using ChainState ## nAx = ChainStateN<nAx>;\
+typedef std::shared_ptr<ChainStateN<nAx>      > ChainState ## nAx ## Ptr;\
+typedef std::shared_ptr<ChainStateN<nAx> const> ChainState ## nAx ## ConstPtr;\
 
-DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(1)
-DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(3)
-DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(6)
-DEFINE_CHAINSTATE_PTR_STATIC_DIMENSION(7)
+DEFINE_ChainStateN_PTR_STATIC_DIMENSION(1)
+DEFINE_ChainStateN_PTR_STATIC_DIMENSION(3)
+DEFINE_ChainStateN_PTR_STATIC_DIMENSION(6)
+DEFINE_ChainStateN_PTR_STATIC_DIMENSION(7)
 }
 
 namespace std
 {
 template<int N, int MaxN = N>
-std::string to_string(const rosdyn::ChainState<N,MaxN>& chain);
+std::string to_string(const rosdyn::ChainStateN<N,MaxN>& chain);
 }
 
 #include <rosdyn_utilities/internal/chain_state_impl.h>

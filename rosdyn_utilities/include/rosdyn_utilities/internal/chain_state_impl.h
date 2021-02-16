@@ -36,13 +36,13 @@ namespace rosdyn
 {
 
 template<int N, int MN>
-inline ChainState<N,MN>::ChainState(ChainPtr kin)
-  : ChainState<N,MN>::ChainState(*kin)
+inline ChainStateN<N,MN>::ChainStateN(ChainPtr kin)
+  : ChainStateN<N,MN>::ChainStateN(*kin)
 {
 }
 
 template<int N, int MN>
-inline ChainState<N,MN>::ChainState(Chain& kin)
+inline ChainStateN<N,MN>::ChainStateN(Chain& kin)
 {
   if(!init(kin))
   {
@@ -56,7 +56,7 @@ inline ChainState<N,MN>::ChainState(Chain& kin)
 
 
 template<int N, int MN>
-inline bool ChainState<N,MN>::init(ChainPtr kin)
+inline bool ChainStateN<N,MN>::init(ChainPtr kin)
 {
   /*size_t l = __LINE__;
   try
@@ -88,7 +88,7 @@ inline bool ChainState<N,MN>::init(ChainPtr kin)
 }
 
 template<int N, int MN>
-inline bool ChainState<N,MN>::init(Chain& kin)
+inline bool ChainStateN<N,MN>::init(Chain& kin)
 {
   size_t l = __LINE__;
   try
@@ -129,7 +129,7 @@ inline bool ChainState<N,MN>::init(Chain& kin)
 }
 
 template<int N, int MN>
-inline void ChainState<N,MN>::setZero(ChainPtr kin)
+inline void ChainStateN<N,MN>::setZero(ChainPtr kin)
 {
   eigen_utils::setZero(this->q_.value());
   eigen_utils::setZero(this->qd_.value());
@@ -143,7 +143,7 @@ inline void ChainState<N,MN>::setZero(ChainPtr kin)
 }
 
 template<int N, int MN>
-inline void ChainState<N,MN>::setZero(Chain& kin)
+inline void ChainStateN<N,MN>::setZero(Chain& kin)
 {
   eigen_utils::setZero(this->q_.value());
   eigen_utils::setZero(this->qd_.value());
@@ -154,7 +154,7 @@ inline void ChainState<N,MN>::setZero(Chain& kin)
 }
 
 template<int N, int MN>
-inline void ChainState<N,MN>::copy(const ChainState<N,MN>& cpy, CopyType what)
+inline void ChainStateN<N,MN>::copy(const ChainStateN<N,MN>& cpy, CopyType what)
 {
   //this->kin_ = cpy.kin_ ;
   if(what ==this->ONLY_JOINT || what == this->FULL_STATE)
@@ -177,7 +177,7 @@ inline void ChainState<N,MN>::copy(const ChainState<N,MN>& cpy, CopyType what)
 
 template<int N, int MN>
 template<int n, std::enable_if_t<n==1,int> >
-inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(ChainPtr kin, int ffwd_kin_type)
+inline ChainStateN<N,MN>& ChainStateN<N,MN>::updateTransformations(ChainPtr kin, int ffwd_kin_type)
 {
   Eigen::Matrix<double,1,1> _q,_qd,_qdd,_external_effort;
   if(!kin)
@@ -219,7 +219,7 @@ inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(ChainPtr kin, i
 
 template<int N, int MN>
 template<int n, std::enable_if_t<n!=1,int> >
-inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(ChainPtr kin, int ffwd_kin_type)
+inline ChainStateN<N,MN>& ChainStateN<N,MN>::updateTransformations(ChainPtr kin, int ffwd_kin_type)
 {
   if(!kin)
   {
@@ -257,7 +257,7 @@ inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(ChainPtr kin, i
 
 template<int N, int MN>
 template<int n, std::enable_if_t<n==1,int> >
-inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(Chain& kin, int ffwd_kin_type)
+inline ChainStateN<N,MN>& ChainStateN<N,MN>::updateTransformations(Chain& kin, int ffwd_kin_type)
 {
   Eigen::Matrix<double,1,1> _q,_qd,_qdd,_external_effort;
   eigen_utils::copy(_q,q_.value());
@@ -295,7 +295,7 @@ inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(Chain& kin, int
 
 template<int N, int MN>
 template<int n, std::enable_if_t<n!=1,int> >
-inline ChainState<N,MN>& ChainState<N,MN>::updateTransformations(Chain& kin, int ffwd_kin_type)
+inline ChainStateN<N,MN>& ChainStateN<N,MN>::updateTransformations(Chain& kin, int ffwd_kin_type)
 {
   if(ffwd_kin_type & ZERO_ORDER)
   {
@@ -387,7 +387,7 @@ namespace std
 {
 
 template<int N, int MaxN>
-inline std::string to_string(const rosdyn::ChainState<N,MaxN>& chain)
+inline std::string to_string(const rosdyn::ChainStateN<N,MaxN>& chain)
 {
   std::string ret;
   ret += "q:     " + eu::to_string(chain.q())                        + "\n";

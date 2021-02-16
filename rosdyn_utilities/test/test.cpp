@@ -35,7 +35,6 @@
 
 #include <math.h>
 #include <iostream>
-#include <ros/ros.h>
 #include <eigen_matrix_utils/eigen_matrix_utils.h>
 #include <rosdyn_utilities/chain_state.h>
 #include <rosdyn_utilities/chain_state_publisher.h>
@@ -103,27 +102,22 @@ template<class F>
 };
 //======================================================================================================================
 
-
-std::shared_ptr<ros::NodeHandle> root_nh;
-std::shared_ptr<ros::NodeHandle> robot_nh;
-std::shared_ptr<ros::NodeHandle> ctrl_nh;
-
 rosdyn::ChainPtr kin1  ;
 rosdyn::ChainPtr kin3  ;
 rosdyn::ChainPtr kin6  ;
 
-using ChainStateX20= rosdyn::ChainState<-1, 20>;
-using ChainStateXX = rosdyn::ChainState<-1>;
-using ChainState1  = rosdyn::ChainState<1>;
-using ChainState3  = rosdyn::ChainState<3>;
-using ChainState6  = rosdyn::ChainState<6>;
+using ChainStateX20= rosdyn::ChainStateN<-1, 20>;
+using ChainStateXX = rosdyn::ChainStateN<-1>;
+using ChainState1  = rosdyn::ChainStateN<1>;
+using ChainState3  = rosdyn::ChainStateN<3>;
+using ChainState6  = rosdyn::ChainStateN<6>;
 
 
-using ChainStatePublisherX20= rosdyn::ChainStatePublisher<-1, 20>;
-using ChainStatePublisherXX = rosdyn::ChainStatePublisher<-1>;
-using ChainStatePublisher1  = rosdyn::ChainStatePublisher<1>;
-using ChainStatePublisher3  = rosdyn::ChainStatePublisher<3>;
-using ChainStatePublisher6  = rosdyn::ChainStatePublisher<6>;
+using ChainStatePublisherX20= rosdyn::ChainStatePublisherN<-1, 20>;
+using ChainStatePublisherXX = rosdyn::ChainStatePublisherN<-1>;
+using ChainStatePublisher1  = rosdyn::ChainStatePublisherN<1>;
+using ChainStatePublisher3  = rosdyn::ChainStatePublisherN<3>;
+using ChainStatePublisher6  = rosdyn::ChainStatePublisherN<6>;
 
 std::shared_ptr<ChainStateX20> chainX20;
 std::shared_ptr<ChainStateXX>  chainXX;
@@ -144,21 +138,21 @@ TEST(TestSuite, chainInit)
   ASSERT_NO_THROW(kin6.reset(new rosdyn::Chain()););
 
   urdf::Model model;
-  model.initParam("robot_description");
+  model.initFile("/home/feymann/ctrl_ws/src/nicola_simulation_stuff/ur/ur_description/urdf/ur5.urdf");
 
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
 
   rosdyn::Chain chain;
   std::string error;
-  rosdyn::LinkPtr root_link(new rosdyn::Link());
-  root_link->fromUrdf(model.root_link_);
+  rosdyn::Link root_link;
+  root_link.fromUrdf(model.root_link_.get());
 
   std::stringstream report;
   int ret = -1;
-  ASSERT_NO_THROW(kin1->init(error, root_link, "base_link","shoulder_link"););
-  ASSERT_NO_THROW(kin3->init(error, root_link, "base_link","forearm_link") ;);
-  ASSERT_NO_THROW(kin6->init(error, root_link, "base_link","tool0")        ;);
+  ASSERT_NO_THROW(kin1->init(error, &root_link, "base_link","shoulder_link"););
+  ASSERT_NO_THROW(kin3->init(error, &root_link, "base_link","forearm_link") ;);
+  ASSERT_NO_THROW(kin6->init(error, &root_link, "base_link","tool0")        ;);
 
   if(ret==-1)
     std::cerr << "ERROR: " << report.str() << std::endl;
@@ -362,11 +356,12 @@ TEST(TestSuite, handlesX20)
 
 TEST(TestSuite, publisherConstructors)
 {
-  ASSERT_TRUE(no_throw([]{chain_pub_XX .reset( new ChainStatePublisherXX ("chain_pub_XX", *kin6, chainXX .get()));}));
-  ASSERT_TRUE(no_throw([]{chain_pub_1  .reset( new ChainStatePublisher1  ("chain_pub_1" , *kin1, chain1  .get()));}));
-  ASSERT_TRUE(no_throw([]{chain_pub_3  .reset( new ChainStatePublisher3  ("chain_pub_3" , *kin3, chain3  .get()));}));
-  ASSERT_TRUE(no_throw([]{chain_pub_6  .reset( new ChainStatePublisher6  ("chain_pub_6" , *kin6, chain6  .get()));}));
-  ASSERT_TRUE(no_throw([]{chain_pub_X20.reset( new ChainStatePublisherX20("chain_pub_X" , *kin6, chainX20.get()));}));
+  ros::NodeHandle nh("~");
+  ASSERT_TRUE(no_throw([&nh]{chain_pub_XX .reset( new ChainStatePublisherXX (nh, "chain_pub_XX", *kin6, chainXX .get()));}));
+  ASSERT_TRUE(no_throw([&nh]{chain_pub_1  .reset( new ChainStatePublisher1  (nh, "chain_pub_1" , *kin1, chain1  .get()));}));
+  ASSERT_TRUE(no_throw([&nh]{chain_pub_3  .reset( new ChainStatePublisher3  (nh, "chain_pub_3" , *kin3, chain3  .get()));}));
+  ASSERT_TRUE(no_throw([&nh]{chain_pub_6  .reset( new ChainStatePublisher6  (nh, "chain_pub_6" , *kin6, chain6  .get()));}));
+  ASSERT_TRUE(no_throw([&nh]{chain_pub_X20.reset( new ChainStatePublisherX20(nh, "chain_pub_X" , *kin6, chainX20.get()));}));
 }
 
 TEST(TestSuite, publish)
@@ -401,10 +396,6 @@ int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "cnr_logger_tester");
-
-  root_nh  .reset(new ros::NodeHandle("/"));
-  robot_nh .reset(new ros::NodeHandle("/ur10_hw"));
-  ctrl_nh  .reset(new ros::NodeHandle("/ur10_hw/fake_controller"));
 
   return RUN_ALL_TESTS();
 }

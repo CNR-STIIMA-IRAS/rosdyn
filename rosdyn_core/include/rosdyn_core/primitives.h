@@ -106,7 +106,7 @@ typedef std::vector< Matrix66d, Eigen::aligned_allocator< Matrix66d > >         
 typedef Eigen::Matrix<double, 6, 10>                                            Matrix610d;
 typedef std::vector< Matrix610d, Eigen::aligned_allocator< Matrix610d > >       VectorOfMatrix610d;
 
-class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
+class Joint //: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
 {
 protected:
 
@@ -134,8 +134,8 @@ protected:
   double m_last_q;  // last value of q
 
   std::string m_name;
-  rosdyn::LinkPtr m_parent_link;
-  rosdyn::LinkPtr m_child_link;
+  rosdyn::Link* m_parent_link;
+  rosdyn::Link* m_child_link;
 
   enum
   {
@@ -151,31 +151,31 @@ public:
   Joint();
   ~Joint() = default;
 
-  void fromUrdf(const urdf::JointConstPtr& urdf_joint, LinkPtr parent_link, const urdf::LinkConstPtr& child_link);
+  void fromUrdf(const urdf::Joint* urdf_joint, Link* parent_link, const urdf::Link* child_link);
   int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
-  rosdyn::JointPtr pointer();
-  rosdyn::JointConstPtr pointer() const;
+  rosdyn::Joint* pointer();
+  const rosdyn::Joint* pointer() const;
   const std::string& getName() const
   {
     return m_name;
   }
 
-  rosdyn::LinkPtr getChildLink()
+  rosdyn::Link* getChildLink()
   {
     return m_child_link;
   }
 
-  rosdyn::LinkConstPtr getChildLink() const
+  const rosdyn::Link* getChildLink() const
   {
     return m_child_link;
   }
 
-  rosdyn::LinkPtr getParentLink()
+  rosdyn::Link* getParentLink()
   {
     return m_parent_link;
   }
 
-  rosdyn::LinkConstPtr getParentLink() const
+  const rosdyn::Link*  getParentLink() const
   {
     return m_parent_link;
   }
@@ -214,56 +214,56 @@ public:
 /**
  * @brief The Link class
  */
-class Link: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Link>
+class Link // : public shared_ptr_namespace::enable_shared_from_this<rosdyn::Link>
 {
 private:
   Eigen::Vector3d m_cog_in_c;
   rosdyn::Matrix66d m_Inertia_cc;
   rosdyn::VectorOfMatrix66d m_Inertia_cc_single_term;
 
-  rosdyn::JointPtr m_parent_joint;
+  rosdyn::Joint* m_parent_joint;
 
-  std::vector<rosdyn::JointPtr> m_child_joints;
-  std::vector<rosdyn::LinkPtr> m_child_links;
+  std::vector<rosdyn::Joint* > m_child_joints;
+  std::vector<rosdyn::Link* > m_child_links;
   std::string m_name;
 
   double m_mass;
 
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   Link() = default;
   ~Link() = default;
 
-  void fromUrdf(const urdf::LinkConstPtr& urdf_link,
-                JointPtr parent_joint = nullptr);
-  rosdyn::LinkPtr pointer();
-  rosdyn::LinkConstPtr pointer() const;
+  void fromUrdf(const urdf::Link* urdf_link, rosdyn::Joint* parent_joint = nullptr);
+  rosdyn::Link* pointer();
+  const rosdyn::Link* pointer() const;
 
   std::string getName() const
   {
     return m_name;
   }
 
-  rosdyn::JointPtr getParentJoint()
+  rosdyn::Joint* getParentJoint()
   {
     return m_parent_joint;
   }
 
-  rosdyn::JointConstPtr getParentJoint() const
+  const rosdyn::Joint* getParentJoint() const
   {
     return m_parent_joint;
   }
 
-  const std::vector<rosdyn::JointPtr>& getChildrenJoints() const
+  const std::vector<rosdyn::Joint*>& getChildrenJoints() const
   {
     return m_child_joints;
   }
 
-  rosdyn::LinkPtr findChild(const std::string& name);
-  rosdyn::JointPtr findChildJoint(const std::string& name);
+  rosdyn::Link* findChild(const std::string& name);
+  rosdyn::Joint* findChildJoint(const std::string& name);
 
-  rosdyn::LinkConstPtr findChild(const std::string& name) const;
-  rosdyn::JointConstPtr findChildJoint(const std::string& name) const;
-
+  const rosdyn::Link*  findChild(const std::string& name) const;
+  const rosdyn::Joint* findChildJoint(const std::string& name) const;
 
   const Eigen::Matrix66d& getSpatialInertia()
   {
@@ -303,7 +303,7 @@ public:
   Chain& operator=(const Chain&) = delete;
   Chain& operator=(Chain&&) = delete;
 
-  Chain(rosdyn::LinkPtr root_link,
+  Chain(rosdyn::Link* root_link,
           const std::string& base_link_name,
             const std::string& ee_link_name,
               const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
@@ -319,12 +319,17 @@ public:
               const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
 
   bool init(std::string& error,
-              LinkPtr root_link,
+              rosdyn::Link* root_link,
                 const std::string& base_link_name,
                   const std::string& ee_link_name,
                     const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
 
-  void setInputJointsName(const std::vector<std::string> joints_name);
+  /**
+   * @brief setInputJointsName
+   * @param joints_name
+   * @return 1 ok, -1 error, 0 warnings (the joint_names are not in the list of the URDF)
+   */
+  int setInputJointsName(const std::vector<std::string> joints_name);
   int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
 
   const std::vector<std::string>& getMoveableJointNames() const
@@ -561,7 +566,7 @@ public:
   template<typename Derived>
   const MatrixXd& getRegressor(const Eigen::MatrixBase<Derived>& q,
                                 const Eigen::MatrixBase<Derived>& Dq,
-                                  const Eigen::MatrixBase<Derived>& DDq);
+                                  const Eigen::MatrixBase<Derived>& DDq, int* ok = nullptr);
 
   template<typename Derived>
   const MatrixXd& getJointInertia(const Eigen::MatrixBase<Derived>& q);
@@ -569,8 +574,8 @@ public:
   Eigen::VectorXd getNominalParameters();
 
 protected:
-  std::vector<rosdyn::LinkPtr> m_links;
-  std::vector<rosdyn::JointPtr> m_joints;
+  std::vector<rosdyn::Link*> m_links;
+  std::vector<rosdyn::Joint*> m_joints;
   unsigned int m_joints_number;
   unsigned int m_active_joints_number;
   unsigned int m_links_number;
@@ -642,6 +647,8 @@ protected:
   VectorOfVector6d m_inertial_wrenches;
   VectorOfVector6d m_gravity_wrenches;
   VectorOfMatrix610d m_wrenches_regressor;
+
+  MatrixXd         m_regressor_extended_purged;
 
   std::vector<unsigned int> m_active_joints;
 

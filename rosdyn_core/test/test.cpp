@@ -25,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <chrono>
 
 #include <rosdyn_core/primitives.h>
 #include <rosdyn_core/kinematics_saturation.h>
@@ -35,8 +36,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <gtest/gtest.h>
 
+shared_ptr_namespace::shared_ptr<rosdyn::Chain> chain;
 
-TEST(Suite, FullTest)
+
+TEST(Suite, chainPtrTest)
 {
   std::string base_frame = "base_link";
   std::string tool_frame = "tool0";
@@ -53,12 +56,12 @@ TEST(Suite, FullTest)
   js.name.at(5) = "wrist_3_joint";
 
   urdf::Model model;
-  model.initParam("robot_description");
+  model.initFile("/home/feymann/ctrl_ws/src/nicola_simulation_stuff/ur/ur_description/urdf/ur5.urdf");
 
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
 
-  shared_ptr_namespace::shared_ptr<rosdyn::Chain> chain = rosdyn::createChain(model, base_frame, tool_frame, grav);
+  chain = rosdyn::createChain(model, base_frame, tool_frame, grav);
 //  chain->setInputJointsName(js.name);
 
   unsigned int n_joints = chain->getActiveJointsNumber();
@@ -97,7 +100,8 @@ TEST(Suite, FullTest)
   double t_nonlinacc_eigen = 0;
   double t_torque_eigen = 0;
   double t_inertia_eigen = 0;
-  ros::Time t0;
+  // ros::Time t0;
+  auto t0 = std::chrono::steady_clock::now();
   int ntrial = 1e4;
 
 
@@ -108,76 +112,76 @@ TEST(Suite, FullTest)
     DDq.setRandom();
     DDDq.setRandom();
 
-    t0 = ros::Time::now();
-    t_null += (ros::Time::now() - t0).toSec() * 1e6;
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
+    t_null += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
+    t0 = std::chrono::steady_clock::now();
 
     T_base_tool = chain->getTransformation(q);
-    t_pose_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_pose_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     jacobian_of_tool_in_base = chain->getJacobian(q);
-    t_jac_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_jac_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     twists = chain->getTwist(q, Dq);
-    t_vel_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_vel_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     linacc_twists = chain->getDTwistLinearPart(q, DDq);
-    t_linacc_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_linacc_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     nonlinacc_twists = chain->getDTwistNonLinearPart(q, Dq);
-    t_nonlinacc_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_nonlinacc_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     acc_twists = chain->getDTwist(q, Dq, DDq);
-    t_acc_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_acc_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     jerk_twists = chain->getDDTwist(q, Dq, DDq, DDDq);
-    t_jerk_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_jerk_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     tau = chain->getJointTorque(q, Dq, DDq);
-    t_torque_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_torque_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     joint_inertia = chain->getJointInertia(q);
-    t_inertia_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_inertia_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     twist_of_tool_in_base = chain->getTwistTool(q, Dq);
     linacc_twist_of_tool_in_base = chain->getDTwistLinearPartTool(q, DDq);
@@ -186,23 +190,23 @@ TEST(Suite, FullTest)
     jerk_twist_of_tool_in_base = chain->getDDTwistTool(q, Dq, DDq, DDDq);
   }
 
-  ROS_INFO("average on %d trials: \nnote:\ncompute torque implies computing acceleration,\ncompute acceleration implies computing velocity,\ncompute velocity implies computing pose", ntrial);  // NOLINT(whitespace/line_length)
-  ROS_INFO("computation time No operation                                    = %8.5f [us]", t_null / ntrial);
-  ROS_INFO("computation time pose                                            = %8.5f [us]", t_pose_eigen / ntrial);
-  ROS_INFO("computation time jacobian                                        = %8.5f [us]", t_jac_eigen / ntrial);
-  ROS_INFO("computation time velocity twists for all links                   = %8.5f [us]", t_vel_eigen / ntrial);
-  ROS_INFO("computation time linear raceleration twists for all links        = %8.5f [us]", t_linacc_eigen / ntrial);
-  ROS_INFO("computation time non linear acceleration twists for all links    = %8.5f [us]", t_nonlinacc_eigen / ntrial);
-  ROS_INFO("computation time acceleration twists for all links               = %8.5f [us]", t_acc_eigen  / ntrial);
-  ROS_INFO("computation time jerk twists for all links                       = %8.5f [us]", t_jerk_eigen / ntrial);
-  ROS_INFO("computation time joint torque                                    = %8.5f [us]", t_torque_eigen / ntrial);
-  ROS_INFO("computation time joint inertia                                   = %8.5f [us]", t_inertia_eigen / ntrial);
+  printf("average on %d trials: \nnote:\ncompute torque implies computing acceleration,\ncompute acceleration implies computing velocity,\ncompute velocity implies computing pose\n", ntrial);  // NOLINT(whitespace/line_length)
+  printf("computation time No operation                                    = %8.5f [us]\n", t_null / ntrial);
+  printf("computation time pose                                            = %8.5f [us]\n", t_pose_eigen / ntrial);
+  printf("computation time jacobian                                        = %8.5f [us]\n", t_jac_eigen / ntrial);
+  printf("computation time velocity twists for all links                   = %8.5f [us]\n", t_vel_eigen / ntrial);
+  printf("computation time linear raceleration twists for all links        = %8.5f [us]\n", t_linacc_eigen / ntrial);
+  printf("computation time non linear acceleration twists for all links    = %8.5f [us]\n", t_nonlinacc_eigen / ntrial);
+  printf("computation time acceleration twists for all links               = %8.5f [us]\n", t_acc_eigen  / ntrial);
+  printf("computation time jerk twists for all links                       = %8.5f [us]\n", t_jerk_eigen / ntrial);
+  printf("computation time joint torque                                    = %8.5f [us]\n", t_torque_eigen / ntrial);
+  printf("computation time joint inertia                                   = %8.5f [us]\n", t_inertia_eigen / ntrial);
 
   chain.reset();
 }
 
 
-TEST(Suite, staticlTest)
+TEST(Suite, staticChainTest)
 {
   std::string base_frame = "base_link";
   std::string tool_frame = "tool0";
@@ -219,15 +223,15 @@ TEST(Suite, staticlTest)
   js.name.at(5) = "wrist_3_joint";
 
   urdf::Model model;
-  model.initParam("robot_description");
+  model.initFile("/home/feymann/ctrl_ws/src/nicola_simulation_stuff/ur/ur_description/urdf/ur5.urdf");
 
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
 
   rosdyn::Chain chain;
   std::string error;
-  rosdyn::LinkPtr root_link(new rosdyn::Link());
-  root_link->fromUrdf(model.root_link_);
+  rosdyn::Link* root_link=new rosdyn::Link();
+  root_link->fromUrdf(model.root_link_.get());
   chain.init(error,root_link, base_frame, tool_frame, grav);
 //  chain->setInputJointsName(js.name);
 
@@ -267,7 +271,7 @@ TEST(Suite, staticlTest)
   double t_nonlinacc_eigen = 0;
   double t_torque_eigen = 0;
   double t_inertia_eigen = 0;
-  ros::Time t0;
+  auto t0 = std::chrono::steady_clock::now();
   int ntrial = 1e4;
 
 
@@ -278,76 +282,76 @@ TEST(Suite, staticlTest)
     DDq.setRandom();
     DDDq.setRandom();
 
-    t0 = ros::Time::now();
-    t_null += (ros::Time::now() - t0).toSec() * 1e6;
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
+    t_null += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
+    t0 = std::chrono::steady_clock::now();
 
     T_base_tool = chain.getTransformation(q);
-    t_pose_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_pose_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     jacobian_of_tool_in_base = chain.getJacobian(q);
-    t_jac_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_jac_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     twists = chain.getTwist(q, Dq);
-    t_vel_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_vel_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     linacc_twists = chain.getDTwistLinearPart(q, DDq);
-    t_linacc_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_linacc_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     nonlinacc_twists = chain.getDTwistNonLinearPart(q, Dq);
-    t_nonlinacc_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_nonlinacc_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     acc_twists = chain.getDTwist(q, Dq, DDq);
-    t_acc_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_acc_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     jerk_twists = chain.getDDTwist(q, Dq, DDq, DDDq);
-    t_jerk_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_jerk_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     tau = chain.getJointTorque(q, Dq, DDq);
-    t_torque_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_torque_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     q.setRandom();
     Dq.setRandom();
     DDq.setRandom();
     DDDq.setRandom();
-    t0 = ros::Time::now();
+    t0 = std::chrono::steady_clock::now();
     joint_inertia = chain.getJointInertia(q);
-    t_inertia_eigen += (ros::Time::now() - t0).toSec() * 1e6;
+    t_inertia_eigen += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
 
     twist_of_tool_in_base = chain.getTwistTool(q, Dq);
     linacc_twist_of_tool_in_base = chain.getDTwistLinearPartTool(q, DDq);
@@ -356,26 +360,26 @@ TEST(Suite, staticlTest)
     jerk_twist_of_tool_in_base = chain.getDDTwistTool(q, Dq, DDq, DDDq);
   }
 
-  ROS_INFO("average on %d trials: \nnote:\ncompute torque implies computing acceleration,\ncompute acceleration implies computing velocity,\ncompute velocity implies computing pose", ntrial);  // NOLINT(whitespace/line_length)
-  ROS_INFO("computation time No operation                                    = %8.5f [us]", t_null / ntrial);
-  ROS_INFO("computation time pose                                            = %8.5f [us]", t_pose_eigen / ntrial);
-  ROS_INFO("computation time jacobian                                        = %8.5f [us]", t_jac_eigen / ntrial);
-  ROS_INFO("computation time velocity twists for all links                   = %8.5f [us]", t_vel_eigen / ntrial);
-  ROS_INFO("computation time linear raceleration twists for all links        = %8.5f [us]", t_linacc_eigen / ntrial);
-  ROS_INFO("computation time non linear acceleration twists for all links    = %8.5f [us]", t_nonlinacc_eigen / ntrial);
-  ROS_INFO("computation time acceleration twists for all links               = %8.5f [us]", t_acc_eigen  / ntrial);
-  ROS_INFO("computation time jerk twists for all links                       = %8.5f [us]", t_jerk_eigen / ntrial);
-  ROS_INFO("computation time joint torque                                    = %8.5f [us]", t_torque_eigen / ntrial);
-  ROS_INFO("computation time joint inertia                                   = %8.5f [us]", t_inertia_eigen / ntrial);
+  printf("average on %d trials: \nnote:\ncompute torque implies computing acceleration,\ncompute acceleration implies computing velocity,\ncompute velocity implies computing pose\n", ntrial);  // NOLINT(whitespace/line_length)
+  printf("computation time No operation                                    = %8.5f [us]\n", t_null / ntrial);
+  printf("computation time pose                                            = %8.5f [us]\n", t_pose_eigen / ntrial);
+  printf("computation time jacobian                                        = %8.5f [us]\n", t_jac_eigen / ntrial);
+  printf("computation time velocity twists for all links                   = %8.5f [us]\n", t_vel_eigen / ntrial);
+  printf("computation time linear raceleration twists for all links        = %8.5f [us]\n", t_linacc_eigen / ntrial);
+  printf("computation time non linear acceleration twists for all links    = %8.5f [us]\n", t_nonlinacc_eigen / ntrial);
+  printf("computation time acceleration twists for all links               = %8.5f [us]\n", t_acc_eigen  / ntrial);
+  printf("computation time jerk twists for all links                       = %8.5f [us]\n", t_jerk_eigen / ntrial);
+  printf("computation time joint torque                                    = %8.5f [us]\n", t_torque_eigen / ntrial);
+  printf("computation time joint inertia                                   = %8.5f [us]\n", t_inertia_eigen / ntrial);
 }
 
 
 int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "jacobian_speed_test");
-  ros::NodeHandle nh;
-  ros::Rate rate(1);
+  //ros::init(argc, argv, "jacobian_speed_test");
+  //ros::NodeHandle nh;
+  //ros::Rate rate(1);
 
 
   return RUN_ALL_TESTS();

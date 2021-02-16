@@ -79,9 +79,9 @@ inline void Joint::computedTpc()
 }
 
 
-inline void Joint::fromUrdf(const urdf::JointConstPtr& urdf_joint,
-                              rosdyn::LinkPtr parent_link,
-                                const urdf::LinkConstPtr& child_link)
+inline void Joint::fromUrdf(const urdf::Joint* urdf_joint,
+                              rosdyn::Link* parent_link,
+                                const urdf::Link* child_link)
 {
   m_parent_link = parent_link;
 
@@ -133,7 +133,7 @@ inline void Joint::fromUrdf(const urdf::JointConstPtr& urdf_joint,
     m_tau_max = urdf_joint->limits->effort;
   }
 
-  m_child_link.reset(new rosdyn::Link());
+  m_child_link = new rosdyn::Link();
   m_child_link->fromUrdf(child_link, pointer());
   computedTpc();
   computeJacobian();
@@ -205,14 +205,14 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
   return what.length()>0 ? 0 : 1;
 }
 
-inline rosdyn::JointPtr Joint::pointer()
+inline rosdyn::Joint* Joint::pointer()
 {
-  return shared_from_this();
+  return this;//shared_from_this();
 }
 
-inline rosdyn::JointConstPtr Joint::pointer() const
+inline const rosdyn::Joint* Joint::pointer() const
 {
-  return shared_from_this();
+  return this;//shared_from_this();
 }
 
 inline const Eigen::Affine3d& Joint::getTransformation(const double& q)
@@ -232,7 +232,7 @@ inline const Eigen::Vector6d& Joint::getScrew_of_child_in_parent()
 }
 
 
-inline void Link::fromUrdf(const urdf::LinkConstPtr& urdf_link, JointPtr parent_joint)
+inline void Link::fromUrdf(const urdf::Link* urdf_link, rosdyn::Joint* parent_joint)
 {
   m_parent_joint = parent_joint;
   m_name = urdf_link->name;
@@ -240,8 +240,8 @@ inline void Link::fromUrdf(const urdf::LinkConstPtr& urdf_link, JointPtr parent_
   m_child_joints.resize(urdf_link->child_joints.size());
   for (unsigned int idx = 0; idx < urdf_link->child_joints.size(); idx++)
   {
-    m_child_joints.at(idx).reset(new rosdyn::Joint());
-    m_child_joints.at(idx)->fromUrdf(urdf_link->child_joints.at(idx), pointer(), urdf_link->child_links.at(idx));
+    m_child_joints.at(idx)= new rosdyn::Joint();
+    m_child_joints.at(idx)->fromUrdf(urdf_link->child_joints.at(idx).get(),pointer(),urdf_link->child_links.at(idx).get());
     m_child_links.push_back(m_child_joints.at(idx)->getChildLink());
   }
 
@@ -376,20 +376,20 @@ inline Eigen::VectorXd Link::getNominalParameters()
   return nominal_parameters;
 }
 
-inline rosdyn::LinkPtr Link::pointer()
+inline rosdyn::Link* Link::pointer()
 {
-  return shared_from_this();
+  return this;//shared_from_this();
 }
 
-inline rosdyn::LinkConstPtr Link::pointer() const
+inline const rosdyn::Link* Link::pointer() const
 {
-  return shared_from_this();
+  return this;//shared_from_this();
 }
 
 
-inline rosdyn::LinkPtr Link::findChild(const std::string& name)
+inline rosdyn::Link* Link::findChild(const std::string& name)
 {
-  rosdyn::LinkPtr ptr;
+  rosdyn::Link* ptr = nullptr;
   if(!m_name.compare(name))
   {
     return pointer();
@@ -409,7 +409,7 @@ inline rosdyn::LinkPtr Link::findChild(const std::string& name)
   return ptr;
 }
 
-inline rosdyn::LinkConstPtr Link::findChild(const std::string& name) const
+inline const rosdyn::Link* Link::findChild(const std::string& name) const
 {
   if(!m_name.compare(name))
   {
@@ -433,9 +433,9 @@ inline rosdyn::LinkConstPtr Link::findChild(const std::string& name) const
   return nullptr;
 }
 
-inline rosdyn::JointPtr Link::findChildJoint(const std::string& name)
+inline rosdyn::Joint* Link::findChildJoint(const std::string& name)
 {
-  rosdyn::JointPtr ptr;
+  rosdyn::Joint* ptr;
   if (m_child_joints.size() == 0)
     return ptr;
   for (unsigned int idx = 0; idx < m_child_joints.size(); idx++)
@@ -449,7 +449,7 @@ inline rosdyn::JointPtr Link::findChildJoint(const std::string& name)
   return ptr;
 }
 
-inline rosdyn::JointConstPtr Link::findChildJoint(const std::string& name) const
+inline const rosdyn::Joint* Link::findChildJoint(const std::string& name) const
 {
   if (m_child_joints.size() == 0)
   {
@@ -469,7 +469,7 @@ inline rosdyn::JointConstPtr Link::findChildJoint(const std::string& name) const
   return nullptr;
 }
 
-inline Chain::Chain(LinkPtr root_link,
+inline Chain::Chain(rosdyn::Link* root_link,
                       const std::string& base_link_name,
                         const std::string& ee_link_name,
                           const Eigen::Vector3d& gravity)
@@ -483,7 +483,7 @@ inline Chain::Chain(LinkPtr root_link,
 }
 
 inline bool Chain::init(std::string& error,
-                          rosdyn::LinkPtr root_link,
+                          rosdyn::Link* root_link,
                             const std::string& base_link_name,
                               const std::string& ee_link_name,
                                 const Eigen::Vector3d& gravity)
@@ -502,20 +502,20 @@ inline bool Chain::init(std::string& error,
                         false;
 
   m_gravity = gravity;
-  rosdyn::LinkPtr base_link = root_link->findChild(base_link_name);
+  rosdyn::Link* base_link = root_link->findChild(base_link_name);
   if (!base_link)
   {
     error = "Base link '"+base_link_name+ "'not found";
     return false;
   }
-  rosdyn::LinkPtr ee_link = base_link->findChild(ee_link_name);
+  rosdyn::Link* ee_link = base_link->findChild(ee_link_name);
   if (!ee_link)
   {
     error = "Tool link '"+ee_link_name+ "'not found";
     return false;
   }
 
-  rosdyn::LinkPtr act_link(ee_link);
+  rosdyn::Link* act_link(ee_link);
   while (1)
   {
     m_links.insert(m_links.begin(), act_link);
@@ -623,8 +623,8 @@ inline Chain::Chain(const urdf::Model& model,
                           const Eigen::Vector3d& gravity)
 : Chain()
 {
-  rosdyn::LinkPtr root_link(new rosdyn::Link());
-  root_link->fromUrdf(model.root_link_);
+  rosdyn::Link* root_link=new rosdyn::Link();
+  root_link->fromUrdf(model.root_link_.get());
   std::string error;
   if(!init(error,root_link, base_link_name, ee_link_name, gravity))
   {
@@ -640,8 +640,8 @@ inline Chain::Chain(const std::string& robot_description,
 {
   urdf::Model model;
   model.initParam(robot_description);
-  rosdyn::LinkPtr root_link(new rosdyn::Link());
-  root_link->fromUrdf(model.root_link_);
+  rosdyn::Link* root_link=new rosdyn::Link();
+  root_link->fromUrdf(model.root_link_.get());
   std::string error;
   if(!init(error, root_link, base_link_name, ee_link_name, gravity))
   {
@@ -649,8 +649,9 @@ inline Chain::Chain(const std::string& robot_description,
   }
 }
 
-inline void Chain::setInputJointsName(const std::vector<std::string> joints_name)
+inline int Chain::setInputJointsName(const std::vector<std::string> joints_name)
 {
+  int ret = 1;
   m_input_to_chain_joint.resize(m_joints_number, joints_name.size());
 
   m_active_joints.clear();
@@ -664,8 +665,9 @@ inline void Chain::setInputJointsName(const std::vector<std::string> joints_name
       m_active_joints.push_back(m_joints_name.find(joints_name.at(idx))->second);
       m_active_joints_name.push_back(m_joints_name.find(joints_name.at(idx))->first);
     }
-    else
-      ROS_WARN("Joint named '%s' not found", joints_name.at(idx).c_str());
+    ret = 0;
+//    else
+//      ROS_WARN("Joint named '%s' not found", joints_name.at(idx).c_str());
   }
 
   m_active_joints_number = m_active_joints.size();
@@ -715,11 +717,12 @@ inline void Chain::setInputJointsName(const std::vector<std::string> joints_name
     m_DDq_max(idx) = jnt->getDDQMax();
     m_tau_max(idx) = jnt->getTauMax();
   }
-  ROS_DEBUG_STREAM("limits:\n q max= " << m_q_max.transpose()
-                   << "\nq min = " << m_q_min.transpose()
-                   << "\nDq max = " << m_Dq_max.transpose()
-                   << "\nDDq max = " << m_DDq_max.transpose()
-                   << "\ntau max = " << m_tau_max.transpose());
+//  ROS_DEBUG_STREAM("limits:\n q max= " << m_q_max.transpose()
+//                   << "\nq min = " << m_q_min.transpose()
+//                   << "\nDq max = " << m_Dq_max.transpose()
+//                   << "\nDDq max = " << m_DDq_max.transpose()
+//                   << "\ntau max = " << m_tau_max.transpose());
+  return ret;
 }
 
 inline int Chain::enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error)
@@ -1159,17 +1162,18 @@ inline const VectorXd& Chain::getJointTorqueNonLinearPart(const Eigen::MatrixBas
 template<typename Derived>
 inline const MatrixXd& Chain::getRegressor(const Eigen::MatrixBase<Derived>& q,
                                             const Eigen::MatrixBase<Derived>& Dq,
-                                              const Eigen::MatrixBase<Derived>& DDq)
+                                              const Eigen::MatrixBase<Derived>& DDq,
+                                                int* status)
 {
   if (q.rows() != Dq.rows())
   {
-    ROS_ERROR("Input data dimensions mismatch");
+    if(status) *status = -1;
     throw std::invalid_argument("Input data dimensions mismatch");
   }
 
   if (Dq.rows() != DDq.rows())
   {
-    ROS_ERROR("Input data dimensions mismatch");
+    if(status) *status = -1;
     throw std::invalid_argument("Input data dimensions mismatch");
   }
 
@@ -1177,11 +1181,14 @@ inline const MatrixXd& Chain::getRegressor(const Eigen::MatrixBase<Derived>& q,
 
   if (m_is_regressor_computed)
   {
-    static bool verbose_ = true;
-    if (verbose_)
-      ROS_DEBUG("Regressor input element equals to the previous call. Returned the same dynamics Regressor");
+    if (status)
+    {
+      *status = 0;
+      //ROS_DEBUG("Regressor input element equals to the previous call. Returned the same dynamics Regressor");
+    }
 
-    return m_chain_to_input_joint * m_regressor_extended;
+    m_regressor_extended_purged = m_chain_to_input_joint * m_regressor_extended;
+    return m_regressor_extended_purged;
   }
   for (int nl = (m_links_number - 1); nl > 0; nl--)
   {
@@ -1212,11 +1219,12 @@ inline const MatrixXd& Chain::getRegressor(const Eigen::MatrixBase<Derived>& q,
     }
   }
 
-  Eigen::MatrixXd result;
+  //Eigen::MatrixXd result;
   // result=m_chain_to_input_joint*result;    //BUG
-  result = (m_regressor_extended.transpose() * m_chain_to_input_joint.transpose()).transpose();
+  m_regressor_extended_purged = (m_regressor_extended.transpose() * m_chain_to_input_joint.transpose()).transpose();
   m_is_regressor_computed = true;
-  return result;
+  if(status) *status = 1;
+  return m_regressor_extended_purged;
 }
 
 template<typename Derived>
@@ -1350,8 +1358,8 @@ inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_inter
   rosdyn::ChainPtr chain;
   try
   {
-    rosdyn::LinkPtr root_link(new rosdyn::Link());
-    root_link->fromUrdf(urdf_model_interface.root_link_);
+    rosdyn::Link* root_link(new rosdyn::Link());
+    root_link->fromUrdf(urdf_model_interface.root_link_.get());
     chain.reset(new rosdyn::Chain(root_link, base_frame, tool_frame, gravity));
   }
   catch(std::exception& e)

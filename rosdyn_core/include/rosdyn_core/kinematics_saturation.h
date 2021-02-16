@@ -3,36 +3,41 @@
 
 #include <Eigen/Dense>
 #include <eigen_matrix_utils/eigen_matrix_utils.h>
+#include <eigen_matrix_utils/overloads.h>
 #include <rosdyn_core/primitives.h>
 
 namespace rosdyn
 {
 
 
+template<typename D1,typename D2,typename D3>
 bool saturateSpeed(const rosdyn::Chain& chain,
-                   Eigen::Ref<Eigen::VectorXd> qd_target,
-                   const Eigen::Ref<const Eigen::VectorXd> qd_actual,
-                   const Eigen::Ref<const Eigen::VectorXd> q_actual,
+                   Eigen::MatrixBase<D1>& qd_target,
+                   const Eigen::MatrixBase<D2>& qd_actual,
+                   const Eigen::MatrixBase<D3>& q_actual,
                    double dt,
                    double max_velocity_multiplier,
                    bool preserve_direction,
                    std::stringstream* report);
 
+template<typename D1,typename D2>
 bool saturateSpeed(const rosdyn::Chain& chain,
-                   Eigen::Ref<Eigen::VectorXd> qd_target,
-                   const Eigen::Ref<const Eigen::VectorXd> qd_actual,
+                   Eigen::MatrixBase<D1>& qd_target,
+                   const Eigen::MatrixBase<D2>& qd_actual,
                    double dt,
                    double max_velocity_multiplier,
                    bool preserve_direction,
                    std::stringstream* report);
 
+template<typename D1>
 bool saturateSpeed(const rosdyn::Chain& chain,
-                   Eigen::Ref<Eigen::VectorXd> qd_target,
+                   Eigen::MatrixBase<D1>& qd_target,
                    double max_velocity_multiplier,
                    bool preserve_direction,
                    std::stringstream* report);
 
-bool saturatePosition(Eigen::Ref<Eigen::VectorXd> q_target, std::stringstream* report);
+template<typename D1>
+bool saturatePosition(const rosdyn::Chain& chain, Eigen::MatrixBase<D1>& q_target, std::stringstream* report);
 
 
 //! SPECIAL CASE 1DOF
@@ -72,8 +77,15 @@ bool saturatePosition(const rosdyn::Chain& chain,double& q_target, std::stringst
 namespace rosdyn
 {
 
+template <typename D>
+using MatD = Eigen::Matrix<double,
+                Eigen::MatrixBase<D>::RowsAtCompileTime, Eigen::MatrixBase<D>::ColsAtCompileTime, Eigen::ColMajor,
+                  Eigen::MatrixBase<D>::MaxRowsAtCompileTime, Eigen::MatrixBase<D>::MaxColsAtCompileTime>;
+
+
+template<typename D1>
 inline bool saturateSpeed(const rosdyn::Chain& chain,
-                            Eigen::Ref<Eigen::VectorXd> qd_next,
+                            Eigen::MatrixBase<D1>& qd_next,
                               double max_velocity_multiplier,
                                 bool preserve_direction,
                                   std::stringstream* report)
@@ -82,13 +94,16 @@ inline bool saturateSpeed(const rosdyn::Chain& chain,
   {
     *report << "[-----][SPEED SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next) << "\n";
   }
-  Eigen::VectorXd scale(chain.getActiveJointsNumber());
+  MatD<D1> scale;
+  eigen_utils::resize(scale, chain.getActiveJointsNumber());
+
   for(size_t iAx=0;iAx<chain.getActiveJointsNumber();iAx++)
   {
     scale(iAx) = std::fabs(qd_next(iAx)) > chain.getDQMax(iAx) * max_velocity_multiplier
                ? chain.getDQMax(iAx) * max_velocity_multiplier/ std::fabs(qd_next(iAx) )
                : 1.0;
   }
+
   if(preserve_direction)
   {
     qd_next = scale.minCoeff() * qd_next;
@@ -107,10 +122,10 @@ inline bool saturateSpeed(const rosdyn::Chain& chain,
   return scale.minCoeff()<1;
 }
 
-
+template<typename D1, typename D2>
 inline bool saturateSpeed(const rosdyn::Chain& chain,
-                            Eigen::Ref<Eigen::VectorXd> qd_next,
-                               const Eigen::Ref<const Eigen::VectorXd> qd_actual,
+                            Eigen::MatrixBase<D1>& qd_next,
+                               const Eigen::MatrixBase<D2>& qd_actual,
                                  double dt,
                                    double max_velocity_multiplier,
                                      bool preserve_direction,
@@ -122,37 +137,49 @@ inline bool saturateSpeed(const rosdyn::Chain& chain,
   {
     *report<<"[-----][ACC   SATURATION] INPUT  qd: "<<eigen_utils::to_string(qd_next)<<"\n";
   }
-  Eigen::VectorXd qd_sup  = qd_actual + chain.getDDQMax() * dt;
-  Eigen::VectorXd qd_inf  = qd_actual - chain.getDDQMax() * dt;
-  Eigen::VectorXd dqd(chain.getActiveJointsNumber()); dqd.setZero();
+  MatD<D1> qd_sup, qd_inf, dqd;
+  eigen_utils::resize(qd_sup, chain.getActiveJointsNumber());
+  eigen_utils::resize(qd_inf, chain.getActiveJointsNumber());
+  eigen_utils::resize(dqd   , chain.getActiveJointsNumber());
+
+  qd_sup = qd_actual + chain.getDDQMax() * dt;
+  qd_inf  = qd_actual - chain.getDDQMax() * dt;
+  eigen_utils::setZero(dqd);
   for(size_t iAx=0;iAx<chain.getActiveJointsNumber();iAx++)
   {
     dqd(iAx) = qd_next(iAx) > qd_sup(iAx) ? (qd_sup(iAx) - qd_next(iAx))
-             : qd_next(iAx) < qd_inf(iAx) ? (qd_inf(iAx) + qd_next(iAx))
+             : qd_next(iAx) < qd_inf(iAx) ? (qd_inf(iAx) - qd_next(iAx))
              : 0.0;
   }
-  saturated |= dqd.cwiseAbs().maxCoeff()>0.0;
-  if( preserve_direction )
+  saturated |= dqd.cwiseAbs().maxCoeff()>1e-5;
+  if(saturated)
   {
-    Eigen::VectorXd dqd_dir = (qd_next - qd_actual).normalized();
-    if(dqd.norm() < 1e-5)
+    if(preserve_direction)
     {
-      dqd_dir.setZero();
-    }
+      Eigen::VectorXd dqd_dir = (qd_next - qd_actual).normalized();
+      if(dqd.norm() < 1e-5)
+      {
+        dqd_dir.setZero();
+      }
 
-    if(dqd.minCoeff() * dqd.maxCoeff() >= 0.0)
-    {
-      qd_next = qd_next + (dqd.dot(dqd_dir) * dqd_dir);
+      if(dqd.minCoeff() * dqd.maxCoeff() >= 0.0)
+      {
+        qd_next = qd_next + (dqd.dot(dqd_dir) * dqd_dir);
+      }
+      else
+      {
+        *report << "[-----][ACC   SATURATION] Target vel     : " << eigen_utils::to_string(qd_next) << "\n";
+        *report << "[-----][ACC   SATURATION] Prev target vel: " << eigen_utils::to_string(qd_actual) << "\n";
+        *report << "[-----][ACC   SATURATION] qd_sup         : " << eigen_utils::to_string(qd_sup) << "\n";
+        *report << "[-----][ACC   SATURATION] qd_inf         : " << eigen_utils::to_string(qd_inf) << "\n";
+        *report << "[-----][ACC   SATURATION] Calc correction: " << eigen_utils::to_string(dqd) << "\n";
+        qd_next = qd_next + dqd;
+      }
     }
-    else
-    {
-      *report << "Target vel     : " << eigen_utils::to_string(qd_next) << "\n";
-      *report << "Prev target vel: " << eigen_utils::to_string(qd_actual) << "\n";
-      *report << "qd_sup         : " << eigen_utils::to_string(qd_sup) << "\n";
-      *report << "qd_inf         : " << eigen_utils::to_string(qd_inf) << "\n";
-      *report << "Calc correction: " << eigen_utils::to_string(dqd) << "\n";
-      qd_next = qd_next + dqd;
-    }
+  }
+  else
+  {
+    // do nothing
   }
 
   if(report)
@@ -163,11 +190,11 @@ inline bool saturateSpeed(const rosdyn::Chain& chain,
   return saturated;
 }
 
-
+template<typename D1, typename D2, typename D3>
 inline bool saturateSpeed(const rosdyn::Chain& chain,
-                            Eigen::Ref<Eigen::VectorXd> qd_next,
-                              const Eigen::Ref<const Eigen::VectorXd> qd_actual,
-                                const Eigen::Ref<const Eigen::VectorXd> q_actual,
+                            Eigen::MatrixBase<D1>&  qd_next,
+                              const Eigen::MatrixBase<D2>& qd_actual,
+                                const Eigen::MatrixBase<D3>& q_actual,
                                   double dt,
                                     double max_velocity_multiplier,
                                       bool preserve_direction,
@@ -179,14 +206,16 @@ inline bool saturateSpeed(const rosdyn::Chain& chain,
   {
     *report << "[-----][BRK   SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next) << "\n";
   }
-  Eigen::VectorXd braking_distance(chain.getActiveJointsNumber());
+  MatD<D1> braking_distance, q_saturated_qd;
+  eigen_utils::resize(braking_distance, chain.getActiveJointsNumber());
+  eigen_utils::resize(q_saturated_qd  , chain.getActiveJointsNumber());
   for(size_t iAx=0; iAx<chain.getActiveJointsNumber();iAx++)
   {
     braking_distance(iAx)  = 0.5 * chain.getDDQMax(iAx)
                              * std::pow(std::abs(qd_next(iAx))/chain.getDDQMax(iAx) , 2.0);
   }
 
-  Eigen::VectorXd q_saturated_qd = q_actual + qd_actual* dt;
+  q_saturated_qd = q_actual + qd_actual* dt;
   for(size_t iAx=0; iAx<chain.getActiveJointsNumber();iAx++)
   {
     if ((q_saturated_qd(iAx) > (chain.getQMax(iAx) - braking_distance(iAx))) && (qd_next(iAx)>0))
@@ -207,27 +236,28 @@ inline bool saturateSpeed(const rosdyn::Chain& chain,
             << "[BRK   SATURATION] OUTPUT qd: " << eigen_utils::to_string(qd_next) << "\n";
   }
   return saturated;
-
 }
 
-
-inline bool saturatePosition(const rosdyn::Chain& chain, Eigen::Ref<Eigen::VectorXd> q_next, std::stringstream* report)
+template<typename D1>
+inline bool saturatePosition(const rosdyn::Chain& chain, Eigen::MatrixBase<D1>& q_next, std::stringstream* report)
 {
   if(report)
   {
-    *report << "[POS   SATURATION] INPUT  q: " << eigen_utils::to_string(q_next) << "\n";
+    *report << "[-----][POS   SATURATION] INPUT  q: " << eigen_utils::to_string(q_next) << "\n";
+    *report << "[-----][POS   SATURATION] MAX    q: " << eigen_utils::to_string(chain.getQMax()) << "\n";
+    *report << "[-----][POS   SATURATION] MIN    q: " << eigen_utils::to_string(chain.getQMin()) << "\n";
   }
 
-  Eigen::VectorXd dq(q_next.rows());
+  MatD<D1> dq;
+  eigen_utils::resize(dq, q_next.rows());
   for(size_t iAx=0;iAx<chain.getActiveJointsNumber();iAx++)
   {
     dq(iAx)  = q_next(iAx) > chain.getQMax(iAx) ? (chain.getQMax(iAx) - q_next(iAx))
-             : q_next(iAx) < chain.getQMin(iAx) ? (chain.getQMin(iAx) + q_next(iAx))
+             : q_next(iAx) < chain.getQMin(iAx) ? (chain.getQMin(iAx) - q_next(iAx))
              : 0.0;
   }
 
   q_next += dq;
-
   if(report)
   {
     *report << (dq.cwiseAbs().maxCoeff()>0.0 ? "[TRUE ]": "[FALSE]" )
@@ -335,7 +365,9 @@ inline bool saturatePosition(const rosdyn::Chain& chain, double& q_next, std::st
 {
   if(report)
   {
-    *report << "[POS   SATURATION] INPUT  q: " << eigen_utils::to_string(q_next) << "\n";
+    *report << "[-----][POS   SATURATION] INPUT  q: " << eigen_utils::to_string(q_next) << "\n";
+    *report << "[-----][POS   SATURATION] MAX    q: " << eigen_utils::to_string(chain.getQMax(0)) << "\n";
+    *report << "[-----][POS   SATURATION] MIN    q: " << eigen_utils::to_string(chain.getQMin(0)) << "\n";
   }
 
   double dq;
