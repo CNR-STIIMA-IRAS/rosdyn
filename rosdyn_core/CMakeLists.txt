@@ -10,8 +10,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(MAX_NUM_AXES "Enter debug mode" 40)
-add_compile_definitions(MAX_NUM_AXES=${MAX_NUM_AXES})
-#add_compile_options(-funroll-loops -Wall -Ofast)
+if(${CMAKE_VERSION} VERSION_GREATER  "3.16.0")
+  add_compile_definitions(MAX_NUM_AXES=${MAX_NUM_AXES})
+else()
+  add_compile_options(-DMAX_NUM_AXES)
+endif()
 
 find_package(catkin REQUIRED COMPONENTS
   std_msgs roscpp urdf eigen_matrix_utils roslint
