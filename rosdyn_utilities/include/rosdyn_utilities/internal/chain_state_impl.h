@@ -58,32 +58,6 @@ inline ChainStateN<N,MN>::ChainStateN(Chain& kin)
 template<int N, int MN>
 inline bool ChainStateN<N,MN>::init(ChainPtr kin)
 {
-  /*size_t l = __LINE__;
-  try
-  {
-    l = __LINE__;
-    if(!kin)
-    {
-      return false;
-    }
-    l = __LINE__;
-    if(int(kin->getActiveJointsNumber())!=N)
-    {
-      return false;
-    }
-    l = __LINE__;
-    //kin_ = kin;
-    joint_names_ = kin->getActiveJointsName();
-    l = __LINE__;
-    this->setZero(kin);
-  }
-  catch(std::exception& e)
-  {
-    std::cerr <<  __PRETTY_FUNCTION__ << ":" << __LINE__ << ": " ;
-    std::cerr << "Exception at line: "
-              << std::to_string(l) << " error: " + std::string(e.what())
-              << std::endl;
-  }*/
   return init(*kin);
 }
 
@@ -91,7 +65,6 @@ template<int N, int MN>
 inline bool ChainStateN<N,MN>::init(Chain& kin)
 {
   size_t l = __LINE__;
-  std::cout << __PRETTY_FUNCTION__<<":"<<__LINE__<< kin.getActiveJointsNumber() << std::endl;
   try
   {
     if(kin.getActiveJointsNumber()<=0)
@@ -116,7 +89,6 @@ inline bool ChainStateN<N,MN>::init(Chain& kin)
     //kin_ = kin;
     joint_names_ = kin.getActiveJointsName();
     l = __LINE__;
-    std::cout << __PRETTY_FUNCTION__<<":"<<__LINE__<< eigen_utils::to_string(q_.value()) << std::endl;
     this->setZero(kin);
   }
   catch(std::exception& e)
