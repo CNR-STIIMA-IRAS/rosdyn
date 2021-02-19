@@ -91,6 +91,7 @@ template<int N, int MN>
 inline bool ChainStateN<N,MN>::init(Chain& kin)
 {
   size_t l = __LINE__;
+  std::cout << __PRETTY_FUNCTION__<<":"<<__LINE__<< kin.getActiveJointsNumber() << std::endl;
   try
   {
     if(kin.getActiveJointsNumber()<=0)
@@ -115,6 +116,7 @@ inline bool ChainStateN<N,MN>::init(Chain& kin)
     //kin_ = kin;
     joint_names_ = kin.getActiveJointsName();
     l = __LINE__;
+    std::cout << __PRETTY_FUNCTION__<<":"<<__LINE__<< eigen_utils::to_string(q_.value()) << std::endl;
     this->setZero(kin);
   }
   catch(std::exception& e)

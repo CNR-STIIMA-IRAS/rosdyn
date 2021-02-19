@@ -665,8 +665,8 @@ inline int Chain::setInputJointsName(const std::vector<std::string> joints_name)
       m_active_joints.push_back(m_joints_name.find(joints_name.at(idx))->second);
       m_active_joints_name.push_back(m_joints_name.find(joints_name.at(idx))->first);
     }
-    ret = 0;
-//    else
+    else
+      ret = 0;
 //      ROS_WARN("Joint named '%s' not found", joints_name.at(idx).c_str());
   }
 
@@ -782,7 +782,7 @@ inline void Chain::computeScrews()
 template<typename Derived>
 inline const Eigen::Affine3d& Chain::getTransformation(const Eigen::MatrixBase<Derived>& q)
 {
-  if ((q == m_last_q) || (m_joints_number == 0))
+  if((q.derived()-m_last_q).norm()<1e-6 || (m_joints_number == 0))
     return m_T_bt;
 
   m_last_q = Eigen::Map<const Eigen::VectorXd>(q.derived().data(), q.derived().rows());
