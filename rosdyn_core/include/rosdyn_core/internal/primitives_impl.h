@@ -169,6 +169,9 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
     {
       has_acceleration_limits = false;
     }
+    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+    std::cout << joint_limits_param +  "/has_acceleration_limits: " << has_acceleration_limits << std::endl;
+    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
 
     if (has_velocity_limits)
     {
@@ -184,9 +187,9 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
       }
     }
 
+    double acc=0.0;
     if (has_acceleration_limits)
     {
-      double acc;
       if (!ros::param::get(joint_limits_param +  "/max_acceleration", acc))
       {
         what += (what.length()>0 ? "\n" : "")
@@ -197,6 +200,10 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
         m_DDq_max = acc >0 ? acc : m_DDq_max;
       }
     }
+
+    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+    std::cout << joint_limits_param +  "/max_acceleration: " << acc << "/" << m_DDq_max << std::endl;
+    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
   }
   catch (...)
   {
@@ -737,11 +744,6 @@ inline int Chain::setInputJointsName(const std::vector<std::string> joints_name)
     m_DDq_max(idx) = jnt->getDDQMax();
     m_tau_max(idx) = jnt->getTauMax();
   }
-//  ROS_DEBUG_STREAM("limits:\n q max= " << m_q_max.transpose()
-//                   << "\nq min = " << m_q_min.transpose()
-//                   << "\nDq max = " << m_Dq_max.transpose()
-//                   << "\nDDq max = " << m_DDq_max.transpose()
-//                   << "\ntau max = " << m_tau_max.transpose());
   return ret;
 }
 
@@ -762,6 +764,21 @@ inline int Chain::enforceLimitsFromRobotDescriptionParam(const std::string& full
       error += (error.length()>0? "\n":"") + what;
     }
   }
+
+  for (unsigned int idx = 0; idx < m_active_joints_number; idx++)
+  {
+    auto& jnt = m_joints.at(m_active_joints.at(idx));
+    m_q_max(idx) = jnt->getQMax();
+    m_q_min(idx) = jnt->getQMin();
+    m_Dq_max(idx) = jnt->getDQMax();
+    m_DDq_max(idx) = jnt->getDDQMax();
+    m_tau_max(idx) = jnt->getTauMax();
+  }
+  std::cout << "limits:\n q max= " << m_q_max.transpose()
+                   << "\nq min = " << m_q_min.transpose()
+                   << "\nDq max = " << m_Dq_max.transpose()
+                   << "\nDDq max = " << m_DDq_max.transpose()
+                   << "\ntau max = " << m_tau_max.transpose()<<std::endl;
   return error.length()>0 ? 0 : 1;
 }
 

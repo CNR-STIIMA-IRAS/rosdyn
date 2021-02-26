@@ -92,7 +92,8 @@ inline bool saturateSpeed(const rosdyn::Chain& chain,
 {
   if(report)
   {
-    *report << "[-----][SPEED SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next) << "\n";
+    *report << "[-----][SPEED SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next)
+               <<" max multiplier: " << max_velocity_multiplier<<"\n";
   }
   MatD<D1> scale;
   eigen_utils::resize(scale, chain.getActiveJointsNumber());
@@ -135,7 +136,8 @@ inline bool saturateSpeed(const rosdyn::Chain& chain,
 
   if(report)
   {
-    *report<<"[-----][ACC   SATURATION] INPUT  qd: "<<eigen_utils::to_string(qd_next)<<"\n";
+    *report<<"[-----][ACC   SATURATION] INPUT  qd: "<<eigen_utils::to_string(qd_next)
+              <<" qd actual: " << eigen_utils::to_string(qd_actual)<<"\n";
   }
   MatD<D1> qd_sup, qd_inf, dqd;
   eigen_utils::resize(qd_sup, chain.getActiveJointsNumber());
@@ -272,7 +274,8 @@ inline bool saturateSpeed(const rosdyn::Chain& chain, double& qd_next, double ma
 {
   if(report)
   {
-    *report << "[-----][SPEED SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next) << "\n";
+    *report << "[-----][SPEED SATURATION] INPUT  qd: " << eigen_utils::to_string(qd_next)
+                  <<" max multiplier: " << max_velocity_multiplier<<"\n";
   }
   double scale = std::fabs(qd_next) > chain.getDQMax(0) * max_velocity_multiplier
                ? chain.getDQMax(0) * max_velocity_multiplier/ std::fabs(qd_next)
