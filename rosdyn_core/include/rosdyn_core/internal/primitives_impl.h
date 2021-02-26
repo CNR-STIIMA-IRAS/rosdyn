@@ -169,9 +169,6 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
     {
       has_acceleration_limits = false;
     }
-    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-    std::cout << joint_limits_param +  "/has_acceleration_limits: " << has_acceleration_limits << std::endl;
-    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
 
     if (has_velocity_limits)
     {
@@ -187,9 +184,9 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
       }
     }
 
-    double acc=0.0;
     if (has_acceleration_limits)
     {
+      double acc;
       if (!ros::param::get(joint_limits_param +  "/max_acceleration", acc))
       {
         what += (what.length()>0 ? "\n" : "")
@@ -200,10 +197,6 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
         m_DDq_max = acc >0 ? acc : m_DDq_max;
       }
     }
-
-    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-    std::cout << joint_limits_param +  "/max_acceleration: " << acc << "/" << m_DDq_max << std::endl;
-    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
   }
   catch (...)
   {
@@ -774,11 +767,6 @@ inline int Chain::enforceLimitsFromRobotDescriptionParam(const std::string& full
     m_DDq_max(idx) = jnt->getDDQMax();
     m_tau_max(idx) = jnt->getTauMax();
   }
-  std::cout << "limits:\n q max= " << m_q_max.transpose()
-                   << "\nq min = " << m_q_min.transpose()
-                   << "\nDq max = " << m_Dq_max.transpose()
-                   << "\nDDq max = " << m_DDq_max.transpose()
-                   << "\ntau max = " << m_tau_max.transpose()<<std::endl;
   return error.length()>0 ? 0 : 1;
 }
 
