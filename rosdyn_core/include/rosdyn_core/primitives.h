@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 
+
 #include <urdf/model.h>
 #include <urdf_model/model.h>
 #include <ros/console.h>
@@ -54,9 +55,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace rosdyn
 {
 
-class Joint : public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
+class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
 {
 protected:
+  enum
+  {
+    REVOLUTE, PRISMATIC, FIXED
+  } m_type;  // NOLINT(whitespace/braces)
+
+  double m_q_max;
+  double m_q_min;
+  double m_Dq_max;
+  double m_tau_max;
 
   Eigen::Affine3d m_T_pj;           // transformation parent <- joint
   Eigen::Affine3d m_last_T_pc;      // transformation parent <- child
@@ -74,28 +84,17 @@ protected:
   Eigen::Matrix3d m_square_skew_axis_in_p;
   Eigen::Matrix3d m_R_pj;
 
-  double m_q_max;
-  double m_q_min;
-  double m_Dq_max;
-  double m_DDq_max;
-  double m_tau_max;
+
   double m_last_q;  // last value of q
 
   std::string m_name;
   rosdyn::LinkPtr m_parent_link;
   rosdyn::LinkPtr m_child_link;
 
-  enum
-  {
-    REVOLUTE, PRISMATIC, FIXED
-  } m_type;  // NOLINT(whitespace/braces)
-
   void computedTpc();
   void computeJacobian();
-
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
   Joint();
   ~Joint() = default;
 
@@ -164,18 +163,17 @@ public:
  */
 class Link : public shared_ptr_namespace::enable_shared_from_this<rosdyn::Link>
 {
-private:
+protected:
+  rosdyn::JointPtr m_parent_joint;
+  std::vector<rosdyn::JointPtr> m_child_joints;
+  std::vector<rosdyn::LinkPtr> m_child_links;
+  std::string m_name;
+
+  double m_mass;
   Eigen::Vector3d m_cog_in_c;
   rosdyn::Matrix66d m_Inertia_cc;
   rosdyn::VectorOfMatrix66d m_Inertia_cc_single_term;
 
-  rosdyn::JointPtr m_parent_joint;
-
-  std::vector<rosdyn::JointPtr > m_child_joints;
-  std::vector<rosdyn::LinkPtr > m_child_links;
-  std::string m_name;
-
-  double m_mass;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -241,9 +239,104 @@ public:
  */
 class Chain
 {
+protected:
+  std::vector<rosdyn::LinkPtr> m_links;
+  std::vector<rosdyn::JointPtr> m_joints;
+  unsigned int m_joints_number;
+  unsigned int m_active_joints_number;
+  unsigned int m_links_number;
+
+  std::vector<std::string> m_links_name;
+  std::map<std::string, unsigned int> m_joints_name;
+  std::vector<std::string> m_moveable_joints_name;
+  std::vector<std::string> m_active_joints_name;
+
+  Matrix6Xd m_jacobian;
+
+  Eigen::Affine3d m_T_bt;                               // base <- tool
+
+  VectorXd m_last_q;
+  VectorXd m_sorted_q;
+
+  VectorXd m_last_Dq;
+  VectorXd m_sorted_Dq;
+
+  VectorXd m_last_DDq;
+  VectorXd m_sorted_DDq;
+
+  VectorXd m_last_DDDq;
+  VectorXd m_sorted_DDDq;
+
+  VectorXd m_q_max;
+  VectorXd m_q_min;
+  VectorXd m_Dq_max;
+  VectorXd m_DDq_max;
+  VectorXd m_tau_max;
+
+  // for QP local ik solver
+  MatrixXd m_CE;
+  VectorXd m_ce0;
+  MatrixXd m_CI;
+  VectorXd m_ci0;
+  MatrixXd m_H;
+  VectorXd m_f;
+  VectorXd m_joint_error;
+  Eigen::Vector6d m_cart_error_in_b;
+
+
+  VectorXd m_joint_torques;
+  VectorXd m_active_joint_torques;
+  ExtendedMatrixXd m_regressor_extended;
+  MatrixXd         m_regressor_extended_purged;
+
+  MatrixXd m_input_to_chain_joint;
+  MatrixXd m_chain_to_input_joint;
+  std::vector<unsigned int> m_active_joints;
+
+  VectorOfAffine3d m_T_bl;
+  bool m_is_screws_computed;
+  bool m_is_jac_computed;
+  bool m_is_vel_computed;
+  bool m_is_acc_computed;
+  bool m_is_linacc_computed;
+  bool m_is_nonlinacc_computed;
+  bool m_is_jerk_computed;
+  bool m_is_linjerk_computed;
+  bool m_is_nonlinjerk_computed;
+  bool m_is_wrench_computed;
+  bool m_is_regressor_computed;
+  bool m_is_chain_ok = true;
+
+  VectorOfVector6d m_screws_of_c_in_b;
+
+  VectorOfVector6d m_Ds;
+
+  // twists of c in b
+  VectorOfVector6d m_twists;
+  // Dtwists of c in b
+  VectorOfVector6d m_Dtwists;
+  VectorOfVector6d m_Dtwists_linear_part;
+  VectorOfVector6d m_Dtwists_nonlinear_part;
+
+  VectorOfVector6d m_DDtwists;
+  VectorOfVector6d m_DDtwists_linear_part;
+  VectorOfVector6d m_DDtwists_nonlinear_part;
+
+  VectorOfVector6d m_wrenches;
+  VectorOfVector6d m_inertial_wrenches;
+  VectorOfVector6d m_gravity_wrenches;
+  VectorOfMatrix610d m_wrenches_regressor;
+
+
+  Eigen::Vector3d m_gravity;
+  MatrixXd m_joint_inertia;
+  ExtendedMatrixXd m_joint_inertia_extended;
+
+  void computeScrews();
+  void computeFrames();
+
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
   Chain() = default;
   ~Chain() = default;
   Chain(const Chain&) = delete;
@@ -521,100 +614,6 @@ public:
 
   Eigen::VectorXd getNominalParameters();
 
-protected:
-  std::vector<rosdyn::LinkPtr> m_links;
-  std::vector<rosdyn::JointPtr> m_joints;
-  unsigned int m_joints_number;
-  unsigned int m_active_joints_number;
-  unsigned int m_links_number;
-
-  std::vector<std::string> m_links_name;
-  std::map<std::string, unsigned int> m_joints_name;
-  std::vector<std::string> m_moveable_joints_name;
-  std::vector<std::string> m_active_joints_name;
-
-  Matrix6Xd       m_jacobian;
-
-  Eigen::Affine3d m_T_bt;                               // base <- tool
-
-  VectorXd        m_last_q;
-  VectorXd        m_sorted_q;
-
-  VectorXd        m_last_Dq;
-  VectorXd        m_sorted_Dq;
-
-  VectorXd        m_last_DDq;
-  VectorXd        m_sorted_DDq;
-
-  VectorXd        m_last_DDDq;
-  VectorXd        m_sorted_DDDq;
-
-  VectorXd        m_q_max;
-  VectorXd        m_q_min;
-  VectorXd        m_Dq_max;
-  VectorXd        m_DDq_max;
-  VectorXd        m_tau_max;
-
-  // for QP local ik solver
-  MatrixXd        m_CE;
-  VectorXd        m_ce0;
-  MatrixXd        m_CI;
-  VectorXd        m_ci0;
-  MatrixXd        m_H;
-  VectorXd        m_f;
-  VectorXd        m_joint_error;
-  Eigen::Vector6d m_cart_error_in_b;
-
-  VectorXd         m_joint_torques;
-  VectorXd         m_active_joint_torques;
-  ExtendedMatrixXd m_regressor_extended;
-
-  MatrixXd         m_input_to_chain_joint;
-  MatrixXd         m_chain_to_input_joint;
-
-  Eigen::Vector3d    m_gravity;
-  MatrixXd           m_joint_inertia;
-  ExtendedMatrixXd   m_joint_inertia_extended;
-
-
-  VectorOfAffine3d m_T_bl;
-  VectorOfVector6d m_screws_of_c_in_b;
-  VectorOfVector6d m_Ds;
-
-  VectorOfVector6d m_twists;    // twists of c in b
-
-  VectorOfVector6d m_Dtwists; // Dtwists of c in b
-  VectorOfVector6d m_Dtwists_linear_part;
-  VectorOfVector6d m_Dtwists_nonlinear_part;
-
-  VectorOfVector6d m_DDtwists;
-  VectorOfVector6d m_DDtwists_linear_part;
-  VectorOfVector6d m_DDtwists_nonlinear_part;
-
-  VectorOfVector6d m_wrenches;
-  VectorOfVector6d m_inertial_wrenches;
-  VectorOfVector6d m_gravity_wrenches;
-  VectorOfMatrix610d m_wrenches_regressor;
-
-  MatrixXd         m_regressor_extended_purged;
-
-  std::vector<unsigned int> m_active_joints;
-
-  bool m_is_screws_computed;
-  bool m_is_jac_computed;
-  bool m_is_vel_computed;
-  bool m_is_acc_computed;
-  bool m_is_linacc_computed;
-  bool m_is_nonlinacc_computed;
-  bool m_is_jerk_computed;
-  bool m_is_linjerk_computed;
-  bool m_is_nonlinjerk_computed;
-  bool m_is_wrench_computed;
-  bool m_is_regressor_computed;
-  bool m_is_chain_ok = true;
-
-  void computeScrews();
-  void computeFrames();
 };
 
 
