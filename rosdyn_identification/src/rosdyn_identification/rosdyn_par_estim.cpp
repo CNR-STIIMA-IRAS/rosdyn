@@ -70,9 +70,10 @@ MetoParEstim::MetoParEstim(ros::NodeHandle& nh, const std::string& robot_descrip
   Eigen::Vector3d grav;
   grav << grav_stl.at(0), grav_stl.at(1), grav_stl.at(2);
 
-  m_root_link.fromUrdf(m_model->root_link_.get());
+  NEW_HEAP(m_root_link, rosdyn::Link() );
+  m_root_link->fromUrdf(GET(m_model->root_link_));
 
-  m_chain.reset(new rosdyn::Chain(&m_root_link, base_frame, tool_frame, grav));
+  NEW_HEAP(m_chain, rosdyn::Chain(m_root_link, base_frame, tool_frame, grav));
   m_chain->setInputJointsName(js_name);
 
   m_joints_names = js_name;

@@ -41,17 +41,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace rosdyn
 {
 
-inline const Eigen::Affine3d& urdfPoseToAffine(const urdf::Pose& pose)
+inline Eigen::Affine3d urdfPoseToAffine(const urdf::Pose& pose)
 {
-  static Eigen::Affine3d affine;
+  Eigen::Affine3d affine;
   affine = Eigen::Quaterniond(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z);
   affine.translation() << pose.position.x, pose.position.y, pose.position.z;
   return affine;
 }
 
-inline const Eigen::Vector3d& urdfVectorToEigen(const urdf::Vector3& vector)
+inline Eigen::Vector3d urdfVectorToEigen(const urdf::Vector3& vector)
 {
-  static Eigen::Vector3d eigen_vector;
+  Eigen::Vector3d eigen_vector;
   eigen_vector  << vector.x, vector.y, vector.z;
   return eigen_vector;
 }
