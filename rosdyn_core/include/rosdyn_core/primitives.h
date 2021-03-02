@@ -66,6 +66,7 @@ protected:
   double m_q_max;
   double m_q_min;
   double m_Dq_max;
+  double m_DDq_max;
   double m_tau_max;
 
   Eigen::Affine3d m_T_pj;           // transformation parent <- joint
