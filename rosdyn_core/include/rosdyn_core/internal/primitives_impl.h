@@ -168,10 +168,6 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
     {
       has_acceleration_limits = false;
     }
-    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-    std::cout << joint_limits_param +  "/has_acceleration_limits: " << has_acceleration_limits << std::endl;
-    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-
     if (has_velocity_limits)
     {
       double vel;
@@ -199,10 +195,6 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
         m_DDq_max = acc >0 ? acc : m_DDq_max;
       }
     }
-
-    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-    std::cout << joint_limits_param +  "/max_acceleration: " << acc << "/" << m_DDq_max << std::endl;
-    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
   }
   catch (...)
   {
@@ -754,11 +746,6 @@ inline int Chain::enforceLimitsFromRobotDescriptionParam(const std::string& full
     m_DDq_max(idx) = jnt->getDDQMax();
     m_tau_max(idx) = jnt->getTauMax();
   }
-  std::cout << "limits:\n q max= " << m_q_max.transpose()
-                   << "\nq min = " << m_q_min.transpose()
-                   << "\nDq max = " << m_Dq_max.transpose()
-                   << "\nDDq max = " << m_DDq_max.transpose()
-                   << "\ntau max = " << m_tau_max.transpose()<<std::endl;
   return error.length()>0 ? 0 : 1;
 }
 
@@ -775,14 +762,10 @@ inline void Chain::computeFrames()
   for (unsigned int nl = 1; nl < m_links_number; nl++)
   {
     unsigned int nj = nl - 1;
-//    std::cout << "nl:" << nl <<", nj:" << nj
-//                << " [links: "<< m_links_number << ", T_bl.size(): " << m_T_bl.size() << ", joints:"
-//                  << m_joints.size() <<"]"<< std::endl;
     auto temp = m_T_bl.at(nl - 1) * m_joints.at(nj)->getTransformation(m_sorted_q(nj));
     m_T_bl.at(nl) = temp;
 
   }
-//  std::cout << m_T_bl.size() << std::endl;
   m_T_bt = m_T_bl.at(m_links_number - 1);
 }
 
