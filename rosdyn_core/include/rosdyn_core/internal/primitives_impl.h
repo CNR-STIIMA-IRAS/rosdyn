@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <exception>
 #include <rosdyn_core/primitives.h>
+#include <rosdyn_core/internal/types.h>
 
 namespace rosdyn
 {
@@ -79,9 +80,9 @@ inline void Joint::computedTpc()
 }
 
 
-inline void Joint::fromUrdf(const urdf::Joint* urdf_joint,
-                              rosdyn::Link* parent_link,
-                                const urdf::Link* child_link)
+inline void Joint::fromUrdf(urdf::JointConstPtr urdf_joint,
+                              rosdyn::LinkPtr parent_link,
+                                urdf::LinkConstPtr child_link)
 {
   m_parent_link = parent_link;
 
@@ -133,7 +134,7 @@ inline void Joint::fromUrdf(const urdf::Joint* urdf_joint,
     m_tau_max = urdf_joint->limits->effort;
   }
 
-  m_child_link = new rosdyn::Link();
+  NEW_HEAP(m_child_link, rosdyn::Link() );
   m_child_link->fromUrdf(child_link, pointer());
   computedTpc();
   computeJacobian();
@@ -182,9 +183,9 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
       }
     }
 
-    double acc=0.0;
     if (has_acceleration_limits)
     {
+      double acc;
       if (!ros::param::get(joint_limits_param +  "/max_acceleration", acc))
       {
         what += (what.length()>0 ? "\n" : "")
@@ -204,14 +205,22 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
   return what.length()>0 ? 0 : 1;
 }
 
-inline rosdyn::Joint* Joint::pointer()
+inline rosdyn::JointPtr Joint::pointer()
 {
+#if defined(USE_RAW_POINTERS)
   return this;//shared_from_this();
+#else
+  return shared_from_this();
+#endif
 }
 
-inline const rosdyn::Joint* Joint::pointer() const
+inline rosdyn::JointConstPtr Joint::pointer() const
 {
+#if defined(USE_RAW_POINTERS)
   return this;//shared_from_this();
+#else
+  return shared_from_this();
+#endif
 }
 
 inline const Eigen::Affine3d& Joint::getTransformation(const double& q)
@@ -231,7 +240,7 @@ inline const Eigen::Vector6d& Joint::getScrew_of_child_in_parent()
 }
 
 
-inline void Link::fromUrdf(const urdf::Link* urdf_link, rosdyn::Joint* parent_joint)
+inline void Link::fromUrdf(urdf::LinkConstPtr urdf_link, rosdyn::JointPtr parent_joint)
 {
   m_parent_joint = parent_joint;
   m_name = urdf_link->name;
@@ -239,8 +248,9 @@ inline void Link::fromUrdf(const urdf::Link* urdf_link, rosdyn::Joint* parent_jo
   m_child_joints.resize(urdf_link->child_joints.size());
   for (unsigned int idx = 0; idx < urdf_link->child_joints.size(); idx++)
   {
-    m_child_joints.at(idx)= new rosdyn::Joint();
-    m_child_joints.at(idx)->fromUrdf(urdf_link->child_joints.at(idx).get(),pointer(),urdf_link->child_links.at(idx).get());
+    NEW_HEAP( m_child_joints.at(idx), rosdyn::Joint() );
+    m_child_joints.at(idx)->fromUrdf(GET(urdf_link->child_joints.at(idx)),pointer(),
+                                      GET(urdf_link->child_links.at(idx)));
     m_child_links.push_back(m_child_joints.at(idx)->getChildLink());
   }
 
@@ -375,20 +385,28 @@ inline Eigen::VectorXd Link::getNominalParameters()
   return nominal_parameters;
 }
 
-inline rosdyn::Link* Link::pointer()
+inline rosdyn::LinkPtr Link::pointer()
 {
+#if defined(USE_RAW_POINTERS)
   return this;//shared_from_this();
+#else
+  return shared_from_this();
+#endif
 }
 
-inline const rosdyn::Link* Link::pointer() const
+inline rosdyn::LinkConstPtr Link::pointer() const
 {
+#if defined(USE_RAW_POINTERS)
   return this;//shared_from_this();
+#else
+  return shared_from_this();
+#endif
 }
 
 
-inline rosdyn::Link* Link::findChild(const std::string& name)
+inline rosdyn::LinkPtr Link::findChild(const std::string& name)
 {
-  rosdyn::Link* ptr = nullptr;
+  rosdyn::LinkPtr ptr = nullptr;
   if(!m_name.compare(name))
   {
     return pointer();
@@ -408,7 +426,7 @@ inline rosdyn::Link* Link::findChild(const std::string& name)
   return ptr;
 }
 
-inline const rosdyn::Link* Link::findChild(const std::string& name) const
+inline rosdyn::LinkConstPtr Link::findChild(const std::string& name) const
 {
   if(!m_name.compare(name))
   {
@@ -432,9 +450,9 @@ inline const rosdyn::Link* Link::findChild(const std::string& name) const
   return nullptr;
 }
 
-inline rosdyn::Joint* Link::findChildJoint(const std::string& name)
+inline rosdyn::JointPtr Link::findChildJoint(const std::string& name)
 {
-  rosdyn::Joint* ptr;
+  rosdyn::JointPtr ptr;
   if (m_child_joints.size() == 0)
     return ptr;
   for (unsigned int idx = 0; idx < m_child_joints.size(); idx++)
@@ -448,7 +466,7 @@ inline rosdyn::Joint* Link::findChildJoint(const std::string& name)
   return ptr;
 }
 
-inline const rosdyn::Joint* Link::findChildJoint(const std::string& name) const
+inline rosdyn::JointConstPtr Link::findChildJoint(const std::string& name) const
 {
   if (m_child_joints.size() == 0)
   {
@@ -468,7 +486,7 @@ inline const rosdyn::Joint* Link::findChildJoint(const std::string& name) const
   return nullptr;
 }
 
-inline Chain::Chain(rosdyn::Link* root_link,
+inline Chain::Chain(rosdyn::LinkPtr root_link,
                       const std::string& base_link_name,
                         const std::string& ee_link_name,
                           const Eigen::Vector3d& gravity)
@@ -482,7 +500,7 @@ inline Chain::Chain(rosdyn::Link* root_link,
 }
 
 inline bool Chain::init(std::string& error,
-                          rosdyn::Link* root_link,
+                          rosdyn::LinkPtr root_link,
                             const std::string& base_link_name,
                               const std::string& ee_link_name,
                                 const Eigen::Vector3d& gravity)
@@ -501,20 +519,20 @@ inline bool Chain::init(std::string& error,
                         false;
 
   m_gravity = gravity;
-  rosdyn::Link* base_link = root_link->findChild(base_link_name);
+  rosdyn::LinkPtr base_link = root_link->findChild(base_link_name);
   if (!base_link)
   {
     error = "Base link '"+base_link_name+ "'not found";
     return false;
   }
-  rosdyn::Link* ee_link = base_link->findChild(ee_link_name);
+  rosdyn::LinkPtr ee_link = base_link->findChild(ee_link_name);
   if (!ee_link)
   {
     error = "Tool link '"+ee_link_name+ "'not found";
     return false;
   }
 
-  rosdyn::Link* act_link(ee_link);
+  rosdyn::LinkPtr act_link(ee_link);
   while (1)
   {
     m_links.insert(m_links.begin(), act_link);
@@ -622,8 +640,9 @@ inline Chain::Chain(const urdf::Model& model,
                           const Eigen::Vector3d& gravity)
 : Chain()
 {
-  rosdyn::Link* root_link=new rosdyn::Link();
-  root_link->fromUrdf(model.root_link_.get());
+  rosdyn::LinkPtr root_link;
+  NEW_HEAP(root_link, rosdyn::Link());
+  root_link->fromUrdf(GET(model.root_link_));
   std::string error;
   if(!init(error,root_link, base_link_name, ee_link_name, gravity))
   {
@@ -639,8 +658,9 @@ inline Chain::Chain(const std::string& robot_description,
 {
   urdf::Model model;
   model.initParam(robot_description);
-  rosdyn::Link* root_link=new rosdyn::Link();
-  root_link->fromUrdf(model.root_link_.get());
+  rosdyn::LinkPtr root_link;
+  NEW_HEAP(root_link, rosdyn::Link());
+  root_link->fromUrdf(GET(model.root_link_));
   std::string error;
   if(!init(error, root_link, base_link_name, ee_link_name, gravity))
   {
@@ -1358,14 +1378,15 @@ inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_inter
   rosdyn::ChainPtr chain;
   try
   {
-    rosdyn::Link* root_link(new rosdyn::Link());
-    root_link->fromUrdf(urdf_model_interface.root_link_.get());
-    chain.reset(new rosdyn::Chain(root_link, base_frame, tool_frame, gravity));
+    rosdyn::LinkPtr root_link;
+    NEW_HEAP(root_link, rosdyn::Link());
+    root_link->fromUrdf(GET(urdf_model_interface.root_link_));
+    NEW_HEAP(chain, rosdyn::Chain(root_link, base_frame, tool_frame, gravity));
   }
   catch(std::exception& e)
   {
     std::cerr << __PRETTY_FUNCTION__ << ":" << __LINE__ << " Exception: " << e.what() << std::endl;
-    chain.reset();
+    DELETE_HEAP(chain);
   }
   return chain;
 }

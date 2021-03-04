@@ -55,7 +55,7 @@ namespace rosdyn
 class MetoParEstim
 {
 private:
-  rosdyn::Link m_root_link;
+  rosdyn::LinkPtr m_root_link;
 protected:
   //! NodeHandle pointer.
   ros::NodeHandle                           m_nh;

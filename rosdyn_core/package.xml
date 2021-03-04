@@ -40,14 +40,12 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>std_msgs</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>urdf</build_depend>
   <build_depend>eigen_matrix_utils</build_depend>
   <build_depend>roslint</build_depend>
 
   
-  <run_depend>std_msgs</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>urdf</run_depend>
   <run_depend>eigen_matrix_utils</run_depend>

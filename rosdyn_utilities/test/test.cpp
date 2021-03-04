@@ -145,14 +145,15 @@ TEST(TestSuite, chainInit)
 
   rosdyn::Chain chain;
   std::string error;
-  rosdyn::Link root_link;
-  root_link.fromUrdf(model.root_link_.get());
+  rosdyn::LinkPtr root_link;
+  NEW_HEAP(root_link, rosdyn::Link());
+  root_link->fromUrdf(GET(model.root_link_));
 
   std::stringstream report;
   int ret = -1;
-  ASSERT_NO_THROW(kin1->init(error, &root_link, "base_link","shoulder_link"););
-  ASSERT_NO_THROW(kin3->init(error, &root_link, "base_link","forearm_link") ;);
-  ASSERT_NO_THROW(kin6->init(error, &root_link, "base_link","tool0")        ;);
+  ASSERT_NO_THROW(kin1->init(error, root_link, "base_link","shoulder_link"););
+  ASSERT_NO_THROW(kin3->init(error, root_link, "base_link","forearm_link") ;);
+  ASSERT_NO_THROW(kin6->init(error, root_link, "base_link","tool0")        ;);
 
   if(ret==-1)
     std::cerr << "ERROR: " << report.str() << std::endl;

@@ -2,8 +2,8 @@
     local-name: common/binary_logger
     uri: https://github.com/CNR-STIIMA-IRAS/binary_logger.git
 - git:
-    local-name: common/eigen_control_toolbox
-    uri: https://github.com/CNR-STIIMA-IRAS/eigen_control_toolbox
+    local-name: common/cnr_control_toolbox
+    uri: https://github.com/CNR-STIIMA-IRAS/cnr_control_toolbox
 - git:
     local-name: common/eigen_utils
     uri: https://github.com/CNR-STIIMA-IRAS/eigen_utils

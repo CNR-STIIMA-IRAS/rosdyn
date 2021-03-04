@@ -32,83 +32,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string>
 #include <vector>
-# include <assert.h>
+#include <assert.h>
 
-# include <eigen3/Eigen/Geometry>
-# include <eigen3/Eigen/StdVector>
+#include <Eigen/Geometry>
+#include <Eigen/StdVector>
 
 
-# include <urdf/model.h>
-# include <urdf_model/model.h>
-# include <ros/console.h>
+#include <urdf/model.h>
+#include <urdf_model/model.h>
+#include <ros/console.h>
 
-# include <rosdyn_core/urdf_parser.h>
-# include <rosdyn_core/spacevect_algebra.h>
-# include <rosdyn_core/ideal_spring.h>
-# include <rosdyn_core/friction_polynomial2.h>
-# include <rosdyn_core/friction_polynomial1.h>
-# include <rosdyn_core/frame_distance.h>
-# include <Eigen/Geometry>
-# include <Eigen/StdVector>
-# include <eigen_matrix_utils/eiquadprog.hpp>
+#include <rosdyn_core/urdf_parser.h>
+#include <rosdyn_core/spacevect_algebra.h>
+#include <rosdyn_core/ideal_spring.h>
+#include <rosdyn_core/friction_polynomial2.h>
+#include <rosdyn_core/friction_polynomial1.h>
+#include <rosdyn_core/frame_distance.h>
+#include <eigen_matrix_utils/eiquadprog.hpp>
 
-#if ROS_VERSION_MINIMUM(1, 14, 1)
-# include <memory>
-namespace shared_ptr_namespace = std;
-#else
-# include <boost/concept_check.hpp>
-# include <boost/graph/graph_concepts.hpp>
-# include <boost/enable_shared_from_this.hpp>
-namespace shared_ptr_namespace = boost;
-#endif
-
-namespace urdf
-{
-  typedef shared_ptr_namespace::shared_ptr< urdf::Joint      > JointPtr;
-  typedef shared_ptr_namespace::shared_ptr< urdf::Link       > LinkPtr;
-  typedef shared_ptr_namespace::shared_ptr< urdf::Joint const> JointConstPtr;
-  typedef shared_ptr_namespace::shared_ptr< urdf::Link  const> LinkConstPtr;
-}
+#include <rosdyn_core/internal/types.h>
 
 namespace rosdyn
 {
-class Joint;
-class Link;
-class Chain;
 
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Joint   > JointPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Link    > LinkPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Chain   > ChainPtr;
-
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Joint const> JointConstPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Link  const> LinkConstPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Chain const> ChainConstPtr;
-
-#if defined(MAX_NUM_AXES) && (MAX_NUM_AXES!=0)
-  #define STR_HELPER(x) #x
-  #define STR(x) STR_HELPER(x)
-  #pragma message "ROSDYN MAX NUM AXES: " STR(MAX_NUM_AXES)
-  #define NUM_MAX_AXES MAX_NUM_AXES
-#else
-  #define NUM_MAX_AXES 40
-#endif
-
-constexpr int max_num_axes = NUM_MAX_AXES;
-constexpr int max_num_extended_axes = (NUM_MAX_AXES > 0 ? NUM_MAX_AXES * 10 : -1);
-typedef Eigen::Matrix<double,-1, 1,Eigen::ColMajor,max_num_axes> VectorXd;
-typedef Eigen::Matrix<double,-1,-1,Eigen::ColMajor,max_num_axes,max_num_axes> MatrixXd;
-typedef Eigen::Matrix<double, 6,-1,Eigen::ColMajor,           6,max_num_axes> Matrix6Xd;
-typedef Eigen::Matrix<double, 6, 6>                                           Matrix66d;
-typedef Eigen::Matrix<double,-1,-1,Eigen::ColMajor,max_num_axes,max_num_extended_axes> ExtendedMatrixXd;
-typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorOfAffine3d;
-typedef std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> VectorOfVector6d;
-typedef std::vector< Matrix66d, Eigen::aligned_allocator< Matrix66d > >         VectorOfMatrix66d;
-typedef Eigen::Matrix<double, 6, 10>                                            Matrix610d;
-typedef std::vector< Matrix610d, Eigen::aligned_allocator< Matrix610d > >       VectorOfMatrix610d;
-
-class Joint //: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
+class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
 {
 protected:
+  enum
+  {
+    REVOLUTE, PRISMATIC, FIXED
+  } m_type;  // NOLINT(whitespace/braces)
+
+  double m_q_max;
+  double m_q_min;
+  double m_Dq_max;
+  double m_DDq_max;
+  double m_tau_max;
 
   Eigen::Affine3d m_T_pj;           // transformation parent <- joint
   Eigen::Affine3d m_last_T_pc;      // transformation parent <- child
@@ -126,56 +85,45 @@ protected:
   Eigen::Matrix3d m_square_skew_axis_in_p;
   Eigen::Matrix3d m_R_pj;
 
-  double m_q_max;
-  double m_q_min;
-  double m_Dq_max;
-  double m_DDq_max;
-  double m_tau_max;
+
   double m_last_q;  // last value of q
 
   std::string m_name;
-  rosdyn::Link* m_parent_link;
-  rosdyn::Link* m_child_link;
-
-  enum
-  {
-    REVOLUTE, PRISMATIC, FIXED
-  } m_type;  // NOLINT(whitespace/braces)
+  rosdyn::LinkPtr m_parent_link;
+  rosdyn::LinkPtr m_child_link;
 
   void computedTpc();
   void computeJacobian();
-
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
   Joint();
   ~Joint() = default;
 
-  void fromUrdf(const urdf::Joint* urdf_joint, Link* parent_link, const urdf::Link* child_link);
+  void fromUrdf(urdf::JointConstPtr urdf_joint, rosdyn::LinkPtr parent_link, urdf::LinkConstPtr child_link);
   int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
-  rosdyn::Joint* pointer();
-  const rosdyn::Joint* pointer() const;
+  rosdyn::JointPtr pointer();
+  rosdyn::JointConstPtr pointer() const;
   const std::string& getName() const
   {
     return m_name;
   }
 
-  rosdyn::Link* getChildLink()
+  rosdyn::LinkPtr getChildLink()
   {
     return m_child_link;
   }
 
-  const rosdyn::Link* getChildLink() const
+  rosdyn::LinkConstPtr getChildLink() const
   {
     return m_child_link;
   }
 
-  rosdyn::Link* getParentLink()
+  rosdyn::LinkPtr getParentLink()
   {
     return m_parent_link;
   }
 
-  const rosdyn::Link*  getParentLink() const
+  rosdyn::LinkConstPtr  getParentLink() const
   {
     return m_parent_link;
   }
@@ -214,20 +162,19 @@ public:
 /**
  * @brief The Link class
  */
-class Link // : public shared_ptr_namespace::enable_shared_from_this<rosdyn::Link>
+class Link : public shared_ptr_namespace::enable_shared_from_this<rosdyn::Link>
 {
-private:
+protected:
+  rosdyn::JointPtr m_parent_joint;
+  std::vector<rosdyn::JointPtr> m_child_joints;
+  std::vector<rosdyn::LinkPtr> m_child_links;
+  std::string m_name;
+
+  double m_mass;
   Eigen::Vector3d m_cog_in_c;
   rosdyn::Matrix66d m_Inertia_cc;
   rosdyn::VectorOfMatrix66d m_Inertia_cc_single_term;
 
-  rosdyn::Joint* m_parent_joint;
-
-  std::vector<rosdyn::Joint* > m_child_joints;
-  std::vector<rosdyn::Link* > m_child_links;
-  std::string m_name;
-
-  double m_mass;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -235,35 +182,35 @@ public:
   Link() = default;
   ~Link() = default;
 
-  void fromUrdf(const urdf::Link* urdf_link, rosdyn::Joint* parent_joint = nullptr);
-  rosdyn::Link* pointer();
-  const rosdyn::Link* pointer() const;
+  void fromUrdf(urdf::LinkConstPtr urdf_link, rosdyn::JointPtr parent_joint = nullptr);
+  rosdyn::LinkPtr pointer();
+  rosdyn::LinkConstPtr pointer() const;
 
   std::string getName() const
   {
     return m_name;
   }
 
-  rosdyn::Joint* getParentJoint()
+  rosdyn::JointPtr getParentJoint()
   {
     return m_parent_joint;
   }
 
-  const rosdyn::Joint* getParentJoint() const
+  rosdyn::JointConstPtr getParentJoint() const
   {
     return m_parent_joint;
   }
 
-  const std::vector<rosdyn::Joint*>& getChildrenJoints() const
+  const std::vector<rosdyn::JointPtr>& getChildrenJoints() const
   {
     return m_child_joints;
   }
 
-  rosdyn::Link* findChild(const std::string& name);
-  rosdyn::Joint* findChildJoint(const std::string& name);
+  rosdyn::LinkPtr findChild(const std::string& name);
+  rosdyn::JointPtr findChildJoint(const std::string& name);
 
-  const rosdyn::Link*  findChild(const std::string& name) const;
-  const rosdyn::Joint* findChildJoint(const std::string& name) const;
+  rosdyn::LinkConstPtr  findChild(const std::string& name) const;
+  rosdyn::JointConstPtr findChildJoint(const std::string& name) const;
 
   const Eigen::Matrix66d& getSpatialInertia()
   {
@@ -293,9 +240,104 @@ public:
  */
 class Chain
 {
+protected:
+  std::vector<rosdyn::LinkPtr> m_links;
+  std::vector<rosdyn::JointPtr> m_joints;
+  unsigned int m_joints_number;
+  unsigned int m_active_joints_number;
+  unsigned int m_links_number;
+
+  std::vector<std::string> m_links_name;
+  std::map<std::string, unsigned int> m_joints_name;
+  std::vector<std::string> m_moveable_joints_name;
+  std::vector<std::string> m_active_joints_name;
+
+  Matrix6Xd m_jacobian;
+
+  Eigen::Affine3d m_T_bt;                               // base <- tool
+
+  VectorXd m_last_q;
+  VectorXd m_sorted_q;
+
+  VectorXd m_last_Dq;
+  VectorXd m_sorted_Dq;
+
+  VectorXd m_last_DDq;
+  VectorXd m_sorted_DDq;
+
+  VectorXd m_last_DDDq;
+  VectorXd m_sorted_DDDq;
+
+  VectorXd m_q_max;
+  VectorXd m_q_min;
+  VectorXd m_Dq_max;
+  VectorXd m_DDq_max;
+  VectorXd m_tau_max;
+
+  // for QP local ik solver
+  MatrixXd m_CE;
+  VectorXd m_ce0;
+  MatrixXd m_CI;
+  VectorXd m_ci0;
+  MatrixXd m_H;
+  VectorXd m_f;
+  VectorXd m_joint_error;
+  Eigen::Vector6d m_cart_error_in_b;
+
+
+  VectorXd m_joint_torques;
+  VectorXd m_active_joint_torques;
+  ExtendedMatrixXd m_regressor_extended;
+  MatrixXd         m_regressor_extended_purged;
+
+  MatrixXd m_input_to_chain_joint;
+  MatrixXd m_chain_to_input_joint;
+  std::vector<unsigned int> m_active_joints;
+
+  VectorOfAffine3d m_T_bl;
+  bool m_is_screws_computed;
+  bool m_is_jac_computed;
+  bool m_is_vel_computed;
+  bool m_is_acc_computed;
+  bool m_is_linacc_computed;
+  bool m_is_nonlinacc_computed;
+  bool m_is_jerk_computed;
+  bool m_is_linjerk_computed;
+  bool m_is_nonlinjerk_computed;
+  bool m_is_wrench_computed;
+  bool m_is_regressor_computed;
+  bool m_is_chain_ok = true;
+
+  VectorOfVector6d m_screws_of_c_in_b;
+
+  VectorOfVector6d m_Ds;
+
+  // twists of c in b
+  VectorOfVector6d m_twists;
+  // Dtwists of c in b
+  VectorOfVector6d m_Dtwists;
+  VectorOfVector6d m_Dtwists_linear_part;
+  VectorOfVector6d m_Dtwists_nonlinear_part;
+
+  VectorOfVector6d m_DDtwists;
+  VectorOfVector6d m_DDtwists_linear_part;
+  VectorOfVector6d m_DDtwists_nonlinear_part;
+
+  VectorOfVector6d m_wrenches;
+  VectorOfVector6d m_inertial_wrenches;
+  VectorOfVector6d m_gravity_wrenches;
+  VectorOfMatrix610d m_wrenches_regressor;
+
+
+  Eigen::Vector3d m_gravity;
+  MatrixXd m_joint_inertia;
+  ExtendedMatrixXd m_joint_inertia_extended;
+
+  void computeScrews();
+  void computeFrames();
+
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
   Chain() = default;
   ~Chain() = default;
   Chain(const Chain&) = delete;
@@ -303,7 +345,7 @@ public:
   Chain& operator=(const Chain&) = delete;
   Chain& operator=(Chain&&) = delete;
 
-  Chain(rosdyn::Link* root_link,
+  Chain(rosdyn::LinkPtr root_link,
           const std::string& base_link_name,
             const std::string& ee_link_name,
               const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
@@ -319,7 +361,7 @@ public:
               const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
 
   bool init(std::string& error,
-              rosdyn::Link* root_link,
+              rosdyn::LinkPtr root_link,
                 const std::string& base_link_name,
                   const std::string& ee_link_name,
                     const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
@@ -573,100 +615,6 @@ public:
 
   Eigen::VectorXd getNominalParameters();
 
-protected:
-  std::vector<rosdyn::Link*> m_links;
-  std::vector<rosdyn::Joint*> m_joints;
-  unsigned int m_joints_number;
-  unsigned int m_active_joints_number;
-  unsigned int m_links_number;
-
-  std::vector<std::string> m_links_name;
-  std::map<std::string, unsigned int> m_joints_name;
-  std::vector<std::string> m_moveable_joints_name;
-  std::vector<std::string> m_active_joints_name;
-
-  Matrix6Xd       m_jacobian;
-
-  Eigen::Affine3d m_T_bt;                               // base <- tool
-
-  VectorXd        m_last_q;
-  VectorXd        m_sorted_q;
-
-  VectorXd        m_last_Dq;
-  VectorXd        m_sorted_Dq;
-
-  VectorXd        m_last_DDq;
-  VectorXd        m_sorted_DDq;
-
-  VectorXd        m_last_DDDq;
-  VectorXd        m_sorted_DDDq;
-
-  VectorXd        m_q_max;
-  VectorXd        m_q_min;
-  VectorXd        m_Dq_max;
-  VectorXd        m_DDq_max;
-  VectorXd        m_tau_max;
-
-  // for QP local ik solver
-  MatrixXd        m_CE;
-  VectorXd        m_ce0;
-  MatrixXd        m_CI;
-  VectorXd        m_ci0;
-  MatrixXd        m_H;
-  VectorXd        m_f;
-  VectorXd        m_joint_error;
-  Eigen::Vector6d m_cart_error_in_b;
-
-  VectorXd         m_joint_torques;
-  VectorXd         m_active_joint_torques;
-  ExtendedMatrixXd m_regressor_extended;
-
-  MatrixXd         m_input_to_chain_joint;
-  MatrixXd         m_chain_to_input_joint;
-
-  Eigen::Vector3d    m_gravity;
-  MatrixXd           m_joint_inertia;
-  ExtendedMatrixXd   m_joint_inertia_extended;
-
-
-  VectorOfAffine3d m_T_bl;
-  VectorOfVector6d m_screws_of_c_in_b;
-  VectorOfVector6d m_Ds;
-
-  VectorOfVector6d m_twists;    // twists of c in b
-
-  VectorOfVector6d m_Dtwists; // Dtwists of c in b
-  VectorOfVector6d m_Dtwists_linear_part;
-  VectorOfVector6d m_Dtwists_nonlinear_part;
-
-  VectorOfVector6d m_DDtwists;
-  VectorOfVector6d m_DDtwists_linear_part;
-  VectorOfVector6d m_DDtwists_nonlinear_part;
-
-  VectorOfVector6d m_wrenches;
-  VectorOfVector6d m_inertial_wrenches;
-  VectorOfVector6d m_gravity_wrenches;
-  VectorOfMatrix610d m_wrenches_regressor;
-
-  MatrixXd         m_regressor_extended_purged;
-
-  std::vector<unsigned int> m_active_joints;
-
-  bool m_is_screws_computed;
-  bool m_is_jac_computed;
-  bool m_is_vel_computed;
-  bool m_is_acc_computed;
-  bool m_is_linacc_computed;
-  bool m_is_nonlinacc_computed;
-  bool m_is_jerk_computed;
-  bool m_is_linjerk_computed;
-  bool m_is_nonlinjerk_computed;
-  bool m_is_wrench_computed;
-  bool m_is_regressor_computed;
-  bool m_is_chain_ok = true;
-
-  void computeScrews();
-  void computeFrames();
 };
 
 

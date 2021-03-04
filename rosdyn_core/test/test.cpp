@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <gtest/gtest.h>
 
-shared_ptr_namespace::shared_ptr<rosdyn::Chain> chain;
+rosdyn::ChainPtr chain;
 
 
 TEST(Suite, chainPtrTest)
@@ -202,7 +202,7 @@ TEST(Suite, chainPtrTest)
   printf("computation time joint torque                                    = %8.5f [us]\n", t_torque_eigen / ntrial);
   printf("computation time joint inertia                                   = %8.5f [us]\n", t_inertia_eigen / ntrial);
 
-  chain.reset();
+  DELETE_HEAP(chain);
 }
 
 
@@ -230,8 +230,9 @@ TEST(Suite, staticChainTest)
 
   rosdyn::Chain chain;
   std::string error;
-  rosdyn::Link* root_link=new rosdyn::Link();
-  root_link->fromUrdf(model.root_link_.get());
+  rosdyn::LinkPtr root_link;
+  NEW_HEAP(root_link, rosdyn::Link());
+  root_link->fromUrdf(GET(model.root_link_));
   chain.init(error,root_link, base_frame, tool_frame, grav);
 //  chain->setInputJointsName(js.name);
 
