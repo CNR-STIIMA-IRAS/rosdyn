@@ -67,8 +67,10 @@ if(CATKIN_ENABLE_TESTING)
   target_link_libraries(${PROJECT_NAME}_test_vectorization ${catkin_LIBRARIES} ${rostest_LIBRARIES} )
   target_compile_options(${PROJECT_NAME}_test_vectorization PUBLIC
       $<$<CONFIG:Release>:-Ofast -shared -ffunction-sections -fdata-sections -funroll-loops -ffast-math -march=native -m64 -DEIGEN_NO_MALLOC>)
-  target_link_options(${PROJECT_NAME}_test_vectorization PUBLIC
-        $<$<CONFIG:Release>:-Wl,--gc-sections>)
+  if(${CMAKE_VERSION} VERSION_GREATER "3.16.0")
+    target_link_options(${PROJECT_NAME}_test_vectorization PUBLIC
+                                           $<$<CONFIG:Release>:-Wl,--gc-sections>)
+  endif()
   if(ENABLE_COVERAGE_TESTING)
     set(COVERAGE_EXCLUDES "*/${PROJECT_NAME}/test*")
     add_code_coverage(
