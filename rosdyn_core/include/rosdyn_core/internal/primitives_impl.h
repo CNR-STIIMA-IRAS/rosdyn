@@ -100,6 +100,72 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
   computeJacobian();
 }
 
+
+inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& what)
+{
+  //=============================================================
+  if(!ros::param::has(full_param_path))
+  {
+    what = "Parameter '" + full_param_path + "' is not in rosparam server.\n";
+    return -1;
+  }
+
+  std::string joint_limits_param = full_param_path +"/joint_limits/" + m_name;
+  if(!ros::param::has(joint_limits_param))
+  {
+    what = "Parameter '" + joint_limits_param + "' is not in rosparam server.\n";
+    return -1;
+  }
+  //=============================================================
+
+  try
+  {
+    bool has_velocity_limits;
+    if(!ros::param::get(joint_limits_param + "/has_velocity_limits", has_velocity_limits))
+    {
+      has_velocity_limits = false;
+    }
+    bool has_acceleration_limits;
+    if (!ros::param::get(joint_limits_param +  "/has_acceleration_limits", has_acceleration_limits))
+    {
+      has_acceleration_limits = false;
+    }
+    if (has_velocity_limits)
+    {
+      double vel;
+      if(!ros::param::get(joint_limits_param + "/max_velocity", vel))
+      {
+        what += (what.length()>0 ? "\n" : "")
+             + joint_limits_param + "/max_velocity is not defined. URDF value is superimposed";
+      }
+      else
+      {
+        m_Dq_max = vel >0 ? vel : m_Dq_max;
+      }
+    }
+
+    if (has_acceleration_limits)
+    {
+      double acc;
+      if (!ros::param::get(joint_limits_param +  "/max_acceleration", acc))
+      {
+        what += (what.length()>0 ? "\n" : "")
+             + joint_limits_param + "/max_acceleration is not defined. The superimposed value is ten times the max vel";
+      }
+      else
+      {
+        m_DDq_max = acc >0 ? acc : m_DDq_max;
+      }
+    }
+  }
+  catch (...)
+  {
+    what +="Unknown excpetion in getting data from joint ''" + m_name + "'.";
+    return -1;
+  }
+  return what.length()>0 ? 0 : 1;
+}
+
 inline rosdyn::JointPtr Joint::pointer()
 {
   return shared_from_this();
@@ -583,6 +649,38 @@ inline void Chain::setInputJointsName(const std::vector< std::string >& joints_n
     }
   }
 }
+
+
+inline int Chain::enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error)
+{
+  for(auto const & name : m_moveable_joints_name)
+  {
+    auto & joint = m_joints.at( m_joints_name.at(name) );
+    std::string what;
+    int res = joint->enforceLimitsFromRobotDescriptionParam(full_param_path, what);
+    if(res==-1)
+    {
+      error += what;
+      return -1;
+    }
+    else if(res==0)
+    {
+      error += (error.length()>0? "\n":"") + what;
+    }
+  }
+
+  for (unsigned int idx = 0; idx < m_active_joints_number; idx++)
+  {
+    auto& jnt = m_joints.at(m_active_joints.at(idx));
+    m_q_max(idx) = jnt->getQMax();
+    m_q_min(idx) = jnt->getQMin();
+    m_Dq_max(idx) = jnt->getDQMax();
+    m_DDq_max(idx) = jnt->getDDQMax();
+    m_tau_max(idx) = jnt->getTauMax();
+  }
+  return error.length()>0 ? 0 : 1;
+}
+
 
 inline void Chain::computeFrames()
 {

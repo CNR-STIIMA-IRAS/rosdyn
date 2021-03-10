@@ -119,6 +119,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Joint();
   void fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::LinkPtr& parent_link, const urdf::LinkPtr& child_link);
+  int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
   rosdyn::JointPtr pointer();
   std::string getName()
   {
@@ -346,6 +347,7 @@ public:
                   const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
 
   void setInputJointsName(const std::vector<std::string>& joints_name);
+  int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
   const std::vector<std::string>& getMoveableJointNames() const
   {
     return m_moveable_joints_name;
