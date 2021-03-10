@@ -333,7 +333,7 @@ public:
   {
     return m_moveable_joints_name;
   }
-  const std::string& getMoveableJointName(const size_t iAx) const
+  const std::string& getMoveableJointName(const size_t& iAx) const
   {
     return getMoveableJointNames().at(iAx);
   }
@@ -352,6 +352,10 @@ public:
   const std::vector<std::string>& getActiveJointsName() const
   {
     return m_active_joints_name;
+  }
+  const std::string& getActiveJointName(const size_t& iAx) const
+  {
+    return m_active_joints_name.at(iAx);
   }
   const std::vector<std::string>& getLinksName() const
   {
