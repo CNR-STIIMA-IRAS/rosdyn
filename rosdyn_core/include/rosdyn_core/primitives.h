@@ -327,7 +327,8 @@ public:
                 const std::string& ee_link_name,
                   const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
 
-  void setInputJointsName(const std::vector<std::string>& joints_name);
+  // true: all the joints are in the chain descriptor (from urdf), false: at least one joint is not listed
+  bool setInputJointsName(const std::vector<std::string>& joints_name);
   int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
   const std::vector<std::string>& getMoveableJointNames() const
   {
@@ -337,15 +338,15 @@ public:
   {
     return getMoveableJointNames().at(iAx);
   }
-  unsigned int getLinksNumber() const
+  const unsigned int& getLinksNumber() const
   {
     return m_links_number;
   }
-  unsigned int getJointsNumber() const
+  const unsigned int& getJointsNumber() const
   {
     return m_joints_number;
   }
-  unsigned int getActiveJointsNumber() const
+  const unsigned int& getActiveJointsNumber() const
   {
     return m_active_joints_number;
   }
@@ -361,12 +362,10 @@ public:
   {
     return m_links_name;
   }
-  
-  bool isOk() const
+  const bool& isOk() const
   {
     return m_is_chain_ok;
   }
-
   const Eigen::VectorXd& getQMax() const
   {
     return m_q_max;
@@ -407,44 +406,44 @@ public:
   /*
    * Kinematics methods
    */
-  Eigen::Affine3d getTransformation(const Eigen::VectorXd& q);
-  Eigen::Affine3d getTransformationLink(const Eigen::VectorXd& q, const std::string& link_name);
-  std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> getTransformations(const Eigen::VectorXd& q);
-  Eigen::Matrix6Xd getJacobian(const Eigen::VectorXd& q);
+  const Eigen::Affine3d& getTransformation(const Eigen::VectorXd& q);
+  const Eigen::Affine3d& getTransformationLink(const Eigen::VectorXd& q, const std::string& link_name);
+  const std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>>& getTransformations(const Eigen::VectorXd& q);
+  const Eigen::Matrix6Xd& getJacobian(const Eigen::VectorXd& q);
   Eigen::Matrix6Xd getJacobianLink(const Eigen::VectorXd& q,const std::string& link_name);
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
-  Eigen::Vector6d getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name);
-  Eigen::Vector6d getTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
+  const Eigen::Vector6d& getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name);
+  const Eigen::Vector6d& getTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
   {
     return getTwist(q, Dq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  Eigen::Vector6d getDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
+  const Eigen::Vector6d& getDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
   {
     return getDTwist(q, Dq, DDq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq);
-  Eigen::Vector6d getDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq);
+  const Eigen::Vector6d& getDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
   {
     return getDTwistLinearPart(q, DDq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
-  Eigen::Vector6d getDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
+  const Eigen::Vector6d& getDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
   {
     return getDTwistNonLinearPart(q, Dq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq);
-  Eigen::Vector6d getDDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq);
+  const Eigen::Vector6d& getDDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
   {
     return getDDTwistLinearPart(q, DDDq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  Eigen::Vector6d getDDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
+  const Eigen::Vector6d& getDDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
   {
     return getDDTwistNonLinearPart(q, Dq, DDq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq);
-  Eigen::Vector6d getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq);
+  const Eigen::Vector6d& getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
   {
     return getDDTwist(q, Dq, DDq, DDDq).back();
   }
@@ -486,20 +485,20 @@ public:
   /*
    * Dynamics methods
    */
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame);
-  Eigen::Vector6d getWrenchTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame);
+  const Eigen::Vector6d& getWrenchTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
   {
     return getWrench(q, DDq, DDq, ext_wrenches_in_link_frame).back();
   }
-  Eigen::VectorXd getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame);
-  Eigen::VectorXd getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  Eigen::VectorXd getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
+  const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame);
+  const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
+  const Eigen::VectorXd& getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
 
   Eigen::MatrixXd getRegressor(const Eigen::VectorXd& q,
                                const Eigen::VectorXd& Dq,
                                const Eigen::VectorXd& DDq);
 
-  Eigen::MatrixXd getJointInertia(const Eigen::VectorXd& q);
+  const Eigen::MatrixXd& getJointInertia(const Eigen::VectorXd& q);
   Eigen::VectorXd getNominalParameters();
 
 };
@@ -1038,8 +1037,9 @@ inline bool Chain::init(std::string& error,
   return true;
 }
 
-inline void Chain::setInputJointsName(const std::vector< std::string >& joints_name)
+inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_name)
 {
+  bool ok = true;
   m_input_to_chain_joint.resize(m_joints_number, joints_name.size());
 
   // NICOLA m_active_joints_number = joints_name.size();BUG? nel caso in cui un giunto non sia trovato cosa succede?
@@ -1065,7 +1065,10 @@ inline void Chain::setInputJointsName(const std::vector< std::string >& joints_n
       m_active_joints_name.push_back( m_joints_name.find(joints_name.at(idx))->first );
     }
     else
+    {
       ROS_WARN("Joint named '%s' not found", joints_name.at(idx).c_str());
+      ok = false;
+    }
   }
 
   m_active_joints_number = m_active_joints.size();
@@ -1155,6 +1158,7 @@ inline void Chain::setInputJointsName(const std::vector< std::string >& joints_n
       throw  std::invalid_argument("unable to find link "+link->getName());
     }
   }
+  return ok;
 }
 
 
@@ -1210,7 +1214,7 @@ inline void Chain::computeScrews()
   m_is_screws_computed = true;
 }
 
-inline Eigen::Affine3d Chain::getTransformation(const Eigen::VectorXd& q)
+inline const Eigen::Affine3d& Chain::getTransformation(const Eigen::VectorXd& q)
 {
   if ((q == m_last_q) || (m_joints_number == 0))
     return m_T_bt;
@@ -1234,13 +1238,13 @@ inline Eigen::Affine3d Chain::getTransformation(const Eigen::VectorXd& q)
   return m_T_bt;
 }
 
-inline std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> Chain::getTransformations(const Eigen::VectorXd& q)
+inline const std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d> >& Chain::getTransformations(const Eigen::VectorXd& q)
 {
   getTransformation(q);
   return m_T_bl;
 }
 
-inline Eigen::Affine3d Chain::getTransformationLink(const Eigen::VectorXd &q, const std::string &link_name)
+inline const Eigen::Affine3d& Chain::getTransformationLink(const Eigen::VectorXd &q, const std::string &link_name)
 {
   getTransformation(q);
   std::vector<std::string>::iterator it=std::find(m_links_name.begin(), m_links_name.end(), link_name);
@@ -1253,7 +1257,7 @@ inline Eigen::Affine3d Chain::getTransformationLink(const Eigen::VectorXd &q, co
   return m_T_bl.at(link_idx);
 }
 
-inline Eigen::Matrix6Xd Chain::getJacobian(const Eigen::VectorXd& q)
+inline const Eigen::Matrix6Xd& Chain::getJacobian(const Eigen::VectorXd& q)
 {
   getTransformation(q);
   if (m_joints_number == 0)
@@ -1306,7 +1310,7 @@ inline Eigen::Matrix6Xd Chain::getJacobianLink(const Eigen::VectorXd& q, const s
   return jac;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> Chain::getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
 {
   getTransformation(q);
   m_sorted_Dq = m_input_to_chain_joint * Dq;
@@ -1341,7 +1345,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> 
 }
 
 
-inline Eigen::Vector6d Chain::getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name)
+inline const Eigen::Vector6d& Chain::getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name)
 {
   getTwist(q,Dq);
   std::vector<std::string>::iterator it=std::find(m_links_name.begin(), m_links_name.end(), link_name);
@@ -1354,7 +1358,7 @@ inline Eigen::Vector6d Chain::getTwistLink(const Eigen::VectorXd& q, const Eigen
   return m_twists.at(link_idx);
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
 {
   getTransformation(q);
   m_sorted_DDq = m_input_to_chain_joint * DDq;
@@ -1388,7 +1392,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_Dtwists_linear_part;
 }
 
-inline std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> Chain::getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
 {
   getTransformation(q);
   if (!m_is_vel_computed)
@@ -1407,7 +1411,7 @@ inline std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> C
   return m_Dtwists_nonlinear_part;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+inline const std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
 {
   getTransformation(q);
 
@@ -1451,7 +1455,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_Dtwists;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
+inline const std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
 {
   getTransformation(q);
 
@@ -1481,7 +1485,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_DDtwists_linear_part;
 }
 
-inline std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> Chain::getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
 {
   getTransformation(q);
   if (!m_is_acc_computed)
@@ -1510,7 +1514,7 @@ inline std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> C
   return m_DDtwists_nonlinear_part;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
 {
   getTransformation(q);
   m_sorted_DDDq = m_input_to_chain_joint * DDDq;
@@ -1550,7 +1554,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_DDtwists;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
 {
   getDTwist(q, Dq, DDq);
   if (m_is_wrench_computed)
@@ -1588,7 +1592,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_wrenches;
 }
 
-inline Eigen::VectorXd Chain::getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
+inline const Eigen::VectorXd& Chain::getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
 {
   getWrench(q, Dq, DDq, ext_wrenches_in_link_frame);
   for (unsigned int nj = 0; nj < m_joints_number; nj++)
@@ -1601,7 +1605,7 @@ inline Eigen::VectorXd Chain::getJointTorque(const Eigen::VectorXd& q, const Eig
 }
 
 
-inline Eigen::VectorXd Chain::getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+inline const Eigen::VectorXd& Chain::getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
 {
   std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame(m_links_number);
   for (unsigned int iL = 0; iL < m_links_number; iL++)
@@ -1609,7 +1613,7 @@ inline Eigen::VectorXd Chain::getJointTorque(const Eigen::VectorXd& q, const Eig
   return getJointTorque(q, Dq, DDq, ext_wrenches_in_link_frame);
 }
 
-inline Eigen::VectorXd Chain::getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+inline const Eigen::VectorXd& Chain::getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
 {
   Eigen::VectorXd DDq(m_active_joints_number);
   DDq.setZero();
@@ -1681,7 +1685,7 @@ inline Eigen::MatrixXd Chain::getRegressor(const Eigen::VectorXd& q,
   return result;
 }
 
-inline Eigen::MatrixXd Chain::getJointInertia(const Eigen::VectorXd& q)
+inline const Eigen::MatrixXd& Chain::getJointInertia(const Eigen::VectorXd& q)
 {
   getTransformation(q);
   computeScrews();
