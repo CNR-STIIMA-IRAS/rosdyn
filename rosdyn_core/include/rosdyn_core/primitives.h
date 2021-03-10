@@ -507,7 +507,7 @@ inline Joint::Joint()
 {
   m_last_q = 0;
 
-  m_last_T_pc.Identity();
+  m_last_T_pc.setIdentity();
   m_last_R_jc.setIdentity();
 
   m_identity.setIdentity();
