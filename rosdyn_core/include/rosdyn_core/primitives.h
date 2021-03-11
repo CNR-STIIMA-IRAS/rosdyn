@@ -30,6 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string>
 #include <vector>
+#include <cmath>
+#include <cstdint>
 # include <assert.h>
 
 # include <eigen3/Eigen/Geometry>
@@ -632,30 +634,27 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
     }
     if (has_velocity_limits)
     {
-      double vel;
+      double vel = NAN;
       if(!ros::param::get(joint_limits_param + "/max_velocity", vel))
       {
         what += (what.length()>0 ? "\n" : "")
-             + joint_limits_param + "/max_velocity is not defined. URDF value is superimposed";
+             + joint_limits_param + "/max_velocity is not defined. URDF value is superimposed"
+            + " (vel max=" + std::to_string(m_Dq_max)+ ")";
       }
-      else
-      {
-        m_Dq_max = vel >0 ? vel : m_Dq_max;
-      }
+      m_Dq_max = std::isnan(vel) || (vel<=0) ? m_Dq_max : vel;
+
     }
 
     if (has_acceleration_limits)
     {
-      double acc;
+      double acc = NAN;
       if (!ros::param::get(joint_limits_param +  "/max_acceleration", acc))
       {
         what += (what.length()>0 ? "\n" : "")
-             + joint_limits_param + "/max_acceleration is not defined. The superimposed value is ten times the max vel";
+             + joint_limits_param + "/max_acceleration is not defined. The superimposed value is ten times the max vel"
+             + "(acc max = " + std::to_string(10 * m_Dq_max)+ ")";
       }
-      else
-      {
-        m_DDq_max = acc >0 ? acc : m_DDq_max;
-      }
+      m_DDq_max = std::isnan(acc) || (acc<=0) ?  10 * m_Dq_max : acc;
     }
   }
   catch (...)
