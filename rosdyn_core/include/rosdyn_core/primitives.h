@@ -25,9 +25,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once  // NOLINT(build/header_guard)
+#ifndef ROSDYN_CORE_PRIMITIVES_H
+#define ROSDYN_CORE_PRIMITIVES_H
+
 #include <string>
 #include <vector>
+#include <cmath>
+#include <cstdint>
 # include <assert.h>
 
 # include <eigen3/Eigen/Geometry>
@@ -48,31 +52,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # include<Eigen/StdVector>
 # include <eigen_matrix_utils/eiquadprog.hpp>
 
-#if ROS_VERSION_MINIMUM(1, 14, 1)
-# include <memory>
-namespace shared_ptr_namespace = std;
-#else
-# include <boost/concept_check.hpp>
-# include <boost/graph/graph_concepts.hpp>
-# include <boost/enable_shared_from_this.hpp>
-namespace shared_ptr_namespace = boost;
-#endif
-
-namespace urdf
-{
-  typedef shared_ptr_namespace::shared_ptr< urdf::Joint     > JointPtr;
-  typedef shared_ptr_namespace::shared_ptr< urdf::Link      > LinkPtr;
-}
+#include <rosdyn_core/internal/types.h>
 
 namespace rosdyn
 {
-class Joint;
-class Link;
-class Chain;
 
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Joint   > JointPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Link    > LinkPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Chain   > ChainPtr;
 
 class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
 {
@@ -85,6 +69,7 @@ protected:
   double m_q_max;
   double m_q_min;
   double m_Dq_max;
+  double m_DDq_max;
   double m_tau_max;
 
   Eigen::Affine3d m_T_pj;           // transformation parent <- joint
@@ -116,8 +101,9 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Joint();
   void fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::LinkPtr& parent_link, const urdf::LinkPtr& child_link);
+  int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
   rosdyn::JointPtr pointer();
-  std::string getName()
+  const std::string& getName() const
   {
     return m_name;
   }
@@ -137,24 +123,28 @@ public:
   const Eigen::Affine3d& getTransformation(const double& q = 0);
   const Eigen::Vector6d& getScrew_of_child_in_parent();
 
-  double getQMax()
+  const double& getQMax() const
   {
     return m_q_max;
   }
-  double getQMin()
+  const double& getQMin() const
   {
     return m_q_min;
   }
-  double getDQMax()
+  const double& getDQMax() const
   {
     return m_Dq_max;
   }
-  double getTauMax()
+  const double& getDDQMax() const
+  {
+    return m_DDq_max;
+  }
+  const double& getTauMax() const
   {
     return m_tau_max;
   }
 
-  const bool isFixed()
+  bool isFixed() const
   {
     return (m_type == FIXED);
   }
@@ -182,7 +172,7 @@ public:
                 const rosdyn::JointPtr& parent_joint = 0);
   rosdyn::LinkPtr pointer();
 
-  std::string getName()
+  const std::string& getName() const
   {
     return m_name;
   }
@@ -199,27 +189,27 @@ public:
 
   rosdyn::LinkPtr findChild(const std::string& name);
   rosdyn::JointPtr findChildJoint(const std::string& name);
-  const Eigen::Matrix66d& getSpatialInertia()
+  const Eigen::Matrix66d& getSpatialInertia() const
   {
     return m_Inertia_cc;
   }
 
-  const std::vector< Eigen::Matrix<double, 6, 6>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>> >& getSpatialInertiaTerms()
+  const std::vector< Eigen::Matrix<double, 6, 6>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>> >& getSpatialInertiaTerms() const
   {
     return m_Inertia_cc_single_term;
   }
 
-  const double& getMass()
+  const double& getMass() const
   {
     return m_mass;
   }
 
-  const Eigen::Vector3d& getCog()
+  const Eigen::Vector3d& getCog() const
   {
     return m_cog_in_c;
   }
 
-  Eigen::VectorXd getNominalParameters();
+  Eigen::VectorXd getNominalParameters() const;
 };
 
 class Chain
@@ -234,6 +224,7 @@ protected:
   std::vector<std::string> m_links_name;
   std::map<std::string, unsigned int> m_joints_name;
   std::vector<std::string> m_moveable_joints_name;
+  std::vector<std::string> m_active_joints_name;
 
   std::map<std::string, std::vector<unsigned int>> m_parent_moveable_joints_of_link;
 
@@ -256,6 +247,7 @@ protected:
   Eigen::VectorXd m_q_max;
   Eigen::VectorXd m_q_min;
   Eigen::VectorXd m_Dq_max;
+  Eigen::VectorXd m_DDq_max;
   Eigen::VectorXd m_tau_max;
 
   // for QP local ik solver
@@ -320,92 +312,140 @@ protected:
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  Chain() = default;
+  ~Chain() = default;
+  Chain(const Chain&) = delete;
+  Chain(Chain&&) = delete;
+  Chain& operator=(const Chain&) = delete;
+  Chain& operator=(Chain&&) = delete;
+
   Chain(const rosdyn::LinkPtr& root_link, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
   Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
   Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
-  void setInputJointsName(const std::vector<std::string>& joints_name);
-  std::vector<std::string> getMoveableJointNames()
+  bool init(std::string& error,
+            rosdyn::LinkPtr root_link,
+              const std::string& base_link_name,
+                const std::string& ee_link_name,
+                  const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
+
+  // true: all the joints are in the chain descriptor (from urdf), false: at least one joint is not listed
+  bool setInputJointsName(const std::vector<std::string>& joints_name);
+  int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
+  const std::vector<std::string>& getMoveableJointNames() const
   {
     return m_moveable_joints_name;
   }
-  unsigned int getLinksNumber()
+  const std::string& getMoveableJointName(const size_t& iAx) const
+  {
+    return getMoveableJointNames().at(iAx);
+  }
+  const unsigned int& getLinksNumber() const
   {
     return m_links_number;
   }
-  unsigned int getJointsNumber()
+  const unsigned int& getJointsNumber() const
   {
     return m_joints_number;
   }
-  unsigned int getActiveJointsNumber()
+  const unsigned int& getActiveJointsNumber() const
   {
     return m_active_joints_number;
   }
-  std::vector<std::string> getLinksName()
+  const std::vector<std::string>& getActiveJointsName() const
+  {
+    return m_active_joints_name;
+  }
+  const std::string& getActiveJointName(const size_t& iAx) const
+  {
+    return m_active_joints_name.at(iAx);
+  }
+  const std::vector<std::string>& getLinksName() const
   {
     return m_links_name;
   }
-  const bool& isOk()
+  const bool& isOk() const
   {
     return m_is_chain_ok;
   }
-
-  Eigen::VectorXd getQMax()
+  const Eigen::VectorXd& getQMax() const
   {
     return m_q_max;
   }
-  Eigen::VectorXd getQMin()
+  const Eigen::VectorXd& getQMin() const
   {
     return m_q_min;
   }
-  Eigen::VectorXd getDQMax()
+  const Eigen::VectorXd& getDQMax() const
   {
     return m_Dq_max;
   }
-  Eigen::VectorXd getTauMax()
+  const Eigen::VectorXd& getDDQMax() const
+  {
+    return m_DDq_max;
+  }
+  const Eigen::VectorXd& getTauMax() const
   {
     return m_tau_max;
   }
+  const double& getQMax   (int iAx) const { return m_q_max(iAx); }
+  const double& getQMin   (int iAx) const { return m_q_min(iAx); }
+  const double& getDQMax  (int iAx) const { return m_Dq_max(iAx);    }
+  const double& getDDQMax (int iAx) const { return m_DDq_max(iAx);   }
+  const double& getTauMax (int iAx) const { return m_tau_max(iAx);   }
+
+  double getQMax   (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_q_max(idx); }
+  double getQMin   (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_q_min(idx); }
+  double getDQMax  (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_Dq_max(idx); }
+  double getDDQMax (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_DDq_max(idx); }
+  double getTauMax (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_tau_max(idx); }
+  int jointIndex (const std::string& name) const
+  {
+    auto it = std::find(m_moveable_joints_name.begin(),m_moveable_joints_name.end(), name);
+    return it == m_moveable_joints_name.end() ? -1 : std::distance(m_moveable_joints_name.begin(), it);
+  }
+
   /*
    * Kinematics methods
    */
-  Eigen::Affine3d getTransformation(const Eigen::VectorXd& q);
-  Eigen::Affine3d getTransformationLink(const Eigen::VectorXd& q, const std::string& link_name);
-  std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> getTransformations(const Eigen::VectorXd& q);
-  Eigen::Matrix6Xd getJacobian(const Eigen::VectorXd& q);
+  const Eigen::Affine3d& getTransformation(const Eigen::VectorXd& q);
+  const Eigen::Affine3d& getTransformationLink(const Eigen::VectorXd& q, const std::string& link_name);
+  const std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>>& getTransformations(const Eigen::VectorXd& q);
+  const Eigen::Matrix6Xd& getJacobian(const Eigen::VectorXd& q);
   Eigen::Matrix6Xd getJacobianLink(const Eigen::VectorXd& q,const std::string& link_name);
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
-  Eigen::Vector6d getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name);
-  Eigen::Vector6d getTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
+  const Eigen::Vector6d& getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name);
+  const Eigen::Vector6d& getTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
   {
     return getTwist(q, Dq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  Eigen::Vector6d getDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
+  const Eigen::Vector6d& getDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
   {
     return getDTwist(q, Dq, DDq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq);
-  Eigen::Vector6d getDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq);
+  const Eigen::Vector6d& getDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
   {
     return getDTwistLinearPart(q, DDq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
-  Eigen::Vector6d getDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
+  const Eigen::Vector6d& getDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
   {
     return getDTwistNonLinearPart(q, Dq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq);
-  Eigen::Vector6d getDDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq);
+  const Eigen::Vector6d& getDDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
   {
     return getDDTwistLinearPart(q, DDDq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  Eigen::Vector6d getDDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
+  const Eigen::Vector6d& getDDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
   {
     return getDDTwistNonLinearPart(q, Dq, DDq).back();
   }
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq);
-  Eigen::Vector6d getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq);
+  const Eigen::Vector6d& getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
   {
     return getDDTwist(q, Dq, DDq, DDDq).back();
   }
@@ -447,23 +487,26 @@ public:
   /*
    * Dynamics methods
    */
-  std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame);
-  Eigen::Vector6d getWrenchTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
+  const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>>& getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame);
+  const Eigen::Vector6d& getWrenchTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
   {
     return getWrench(q, DDq, DDq, ext_wrenches_in_link_frame).back();
   }
-  Eigen::VectorXd getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame);
-  Eigen::VectorXd getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  Eigen::VectorXd getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
+  const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame);
+  const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
+  const Eigen::VectorXd& getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
 
   Eigen::MatrixXd getRegressor(const Eigen::VectorXd& q,
                                const Eigen::VectorXd& Dq,
                                const Eigen::VectorXd& DDq);
 
-  Eigen::MatrixXd getJointInertia(const Eigen::VectorXd& q);
+  const Eigen::MatrixXd& getJointInertia(const Eigen::VectorXd& q);
   Eigen::VectorXd getNominalParameters();
 
 };
+
+
+///////////////////////////////////////////////////
 
 inline Joint::Joint()
 {
@@ -557,6 +600,69 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
   m_child_link->fromUrdf(child_link, pointer());
   computedTpc();
   computeJacobian();
+}
+
+
+inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& what)
+{
+  //=============================================================
+  if(!ros::param::has(full_param_path))
+  {
+    what = "Parameter '" + full_param_path + "' is not in rosparam server.\n";
+    return -1;
+  }
+
+  std::string joint_limits_param = full_param_path +"/joint_limits/" + m_name;
+  if(!ros::param::has(joint_limits_param))
+  {
+    what = "Parameter '" + joint_limits_param + "' is not in rosparam server.\n";
+    return -1;
+  }
+  //=============================================================
+
+  try
+  {
+    bool has_velocity_limits;
+    if(!ros::param::get(joint_limits_param + "/has_velocity_limits", has_velocity_limits))
+    {
+      has_velocity_limits = false;
+    }
+    bool has_acceleration_limits;
+    if (!ros::param::get(joint_limits_param +  "/has_acceleration_limits", has_acceleration_limits))
+    {
+      has_acceleration_limits = false;
+    }
+    if (has_velocity_limits)
+    {
+      double vel = NAN;
+      if(!ros::param::get(joint_limits_param + "/max_velocity", vel))
+      {
+        what += (what.length()>0 ? "\n" : "")
+             + joint_limits_param + "/max_velocity is not defined. URDF value is superimposed"
+            + " (vel max=" + std::to_string(m_Dq_max)+ ")";
+      }
+      m_Dq_max = std::isnan(vel) || (vel<=0) ? m_Dq_max : vel;
+
+    }
+
+    if (has_acceleration_limits)
+    {
+      double acc = NAN;
+      if (!ros::param::get(joint_limits_param +  "/max_acceleration", acc))
+      {
+        what += (what.length()>0 ? "\n" : "")
+             + joint_limits_param + "/max_acceleration is not defined. The superimposed value is ten times the max vel"
+             + "(acc max = " + std::to_string(10 * m_Dq_max)+ ")";
+      }
+      m_DDq_max = std::isnan(acc) || (acc<=0) ?  10 * m_Dq_max : acc;
+    }
+  }
+  catch (...)
+  {
+    what +="Unknown excpetion in getting data from joint ''" + m_name + "'.";
+    return -1;
+  }
+  return what.length()>0 ? 0 : 1;
 }
 
 inline rosdyn::JointPtr Joint::pointer()
@@ -704,7 +810,7 @@ inline void Link::fromUrdf(const urdf::LinkPtr& urdf_link, const rosdyn::JointPt
   m_Inertia_cc_single_term.at(9)(5, 5) = 1;
 }
 
-inline Eigen::VectorXd Link::getNominalParameters()
+inline Eigen::VectorXd Link::getNominalParameters() const
 {
   Eigen::VectorXd nominal_parameters(10);
 
@@ -768,6 +874,45 @@ inline Chain::Chain(const rosdyn::LinkPtr& root_link,
                     const std::string& base_link_name,
                     const std::string& ee_link_name,
                     const Eigen::Vector3d& gravity)
+  : Chain()
+{
+  std::string error;
+  if(!init(error, root_link, base_link_name,ee_link_name,gravity))
+  {
+    throw std::runtime_error(error.c_str());
+  }
+}
+
+inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
+{
+  rosdyn::LinkPtr root_link(new rosdyn::Link());
+  root_link->fromUrdf(model.root_link_);
+  std::string error;
+  if(!init(error, root_link, base_link_name,ee_link_name,gravity))
+  {
+    throw std::runtime_error(error.c_str());
+  }
+}
+
+inline Chain::Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
+{
+  urdf::Model model;
+  model.initParam(robot_description);
+  rosdyn::LinkPtr root_link(new rosdyn::Link());
+  root_link->fromUrdf(model.root_link_);
+  std::string error;
+  if(!init(error, root_link, base_link_name,ee_link_name,gravity))
+  {
+    throw std::runtime_error(error.c_str());
+  }
+}
+
+//! ADDED TO INIT ALSO STATIC Chain!
+inline bool Chain::init(std::string& error,
+              rosdyn::LinkPtr root_link,
+                const std::string& base_link_name,
+                  const std::string& ee_link_name,
+                    const Eigen::Vector3d& gravity)
 {
   m_is_screws_computed =
     m_is_jac_computed =
@@ -786,16 +931,16 @@ inline Chain::Chain(const rosdyn::LinkPtr& root_link,
   rosdyn::LinkPtr base_link = root_link->findChild(base_link_name);
   if (!base_link)
   {
-    ROS_ERROR("Base link not found");
+    error = "Base link not found";
     m_is_chain_ok = false;
-    return;
+    return false;
   }
   rosdyn::LinkPtr ee_link = base_link->findChild(ee_link_name);
   if (!ee_link)
   {
-    ROS_ERROR("Tool link not found");
+    error = "Tool link not found";
     m_is_chain_ok = false;
-    return;
+    return false;
   }
 
   rosdyn::LinkPtr act_link(ee_link);
@@ -888,38 +1033,26 @@ inline Chain::Chain(const rosdyn::LinkPtr& root_link,
 
   setInputJointsName(m_moveable_joints_name);
 
+  return true;
 }
 
-inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
+inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_name)
 {
-  rosdyn::LinkPtr root_link(new rosdyn::Link());
-  root_link->fromUrdf(model.root_link_);
-  Chain(root_link, base_link_name, ee_link_name, gravity);
-}
-
-inline Chain::Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
-{
-  urdf::Model model;
-  model.initParam(robot_description);
-  rosdyn::LinkPtr root_link(new rosdyn::Link());
-  root_link->fromUrdf(model.root_link_);
-  Chain(root_link, base_link_name, ee_link_name, gravity);
-}
-
-
-inline void Chain::setInputJointsName(const std::vector< std::string >& joints_name)
-{
+  bool ok = true;
   m_input_to_chain_joint.resize(m_joints_number, joints_name.size());
 
-  m_active_joints_number = joints_name.size();
+  // NICOLA m_active_joints_number = joints_name.size();BUG? nel caso in cui un giunto non sia trovato cosa succede?
   m_input_to_chain_joint.setZero();
-  m_active_joints.resize(joints_name.size(), 0);
+  // NICOLA m_active_joints.resize(joints_name.size(), 0); BUG? nel caso in cui un giunto non sia trovato cosa succede?
+
+  m_active_joints.clear();
+  m_active_joints_name.clear();
 
   //   m_regressor_extended.resize(m_active_joints_number, m_joints_number*10);
   m_regressor_extended.setZero();
 
-  m_joint_inertia.resize(m_active_joints_number, m_active_joints_number);
-  m_joint_inertia.setZero();
+//  m_joint_inertia.resize(m_active_joints_number, m_active_joints_number); NICOLA RIPETUTI SOTTO; e m_active_joints_number potrebbe essere sbagliato
+//  m_joint_inertia.setZero();
 
 
   for (unsigned int idx = 0; idx < joints_name.size(); idx++)
@@ -927,11 +1060,17 @@ inline void Chain::setInputJointsName(const std::vector< std::string >& joints_n
     if (m_joints_name.find(joints_name.at(idx)) != m_joints_name.end())
     {
       m_input_to_chain_joint(m_joints_name.find(joints_name.at(idx))->second, idx) = 1;
-      m_active_joints.at(idx) = m_joints_name.find(joints_name.at(idx))->second;
+      m_active_joints.push_back( m_joints_name.find(joints_name.at(idx))->second );
+      m_active_joints_name.push_back( m_joints_name.find(joints_name.at(idx))->first );
     }
     else
+    {
       ROS_WARN("Joint named '%s' not found", joints_name.at(idx).c_str());
+      ok = false;
+    }
   }
+
+  m_active_joints_number = m_active_joints.size();
 
   m_active_joint_torques.resize(m_active_joints_number);
   m_chain_to_input_joint = m_input_to_chain_joint.transpose();
@@ -1018,7 +1157,40 @@ inline void Chain::setInputJointsName(const std::vector< std::string >& joints_n
       throw  std::invalid_argument("unable to find link "+link->getName());
     }
   }
+  return ok;
 }
+
+
+inline int Chain::enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error)
+{
+  for(auto const & name : m_moveable_joints_name)
+  {
+    auto & joint = m_joints.at( m_joints_name.at(name) );
+    std::string what;
+    int res = joint->enforceLimitsFromRobotDescriptionParam(full_param_path, what);
+    if(res==-1)
+    {
+      error += what;
+      return -1;
+    }
+    else if(res==0)
+    {
+      error += (error.length()>0? "\n":"") + what;
+    }
+  }
+
+  for (unsigned int idx = 0; idx < m_active_joints_number; idx++)
+  {
+    auto& jnt = m_joints.at(m_active_joints.at(idx));
+    m_q_max(idx) = jnt->getQMax();
+    m_q_min(idx) = jnt->getQMin();
+    m_Dq_max(idx) = jnt->getDQMax();
+    m_DDq_max(idx) = jnt->getDDQMax();
+    m_tau_max(idx) = jnt->getTauMax();
+  }
+  return error.length()>0 ? 0 : 1;
+}
+
 
 inline void Chain::computeFrames()
 {
@@ -1041,7 +1213,7 @@ inline void Chain::computeScrews()
   m_is_screws_computed = true;
 }
 
-inline Eigen::Affine3d Chain::getTransformation(const Eigen::VectorXd& q)
+inline const Eigen::Affine3d& Chain::getTransformation(const Eigen::VectorXd& q)
 {
   if ((q == m_last_q) || (m_joints_number == 0))
     return m_T_bt;
@@ -1065,13 +1237,13 @@ inline Eigen::Affine3d Chain::getTransformation(const Eigen::VectorXd& q)
   return m_T_bt;
 }
 
-inline std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> Chain::getTransformations(const Eigen::VectorXd& q)
+inline const std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d> >& Chain::getTransformations(const Eigen::VectorXd& q)
 {
   getTransformation(q);
   return m_T_bl;
 }
 
-inline Eigen::Affine3d Chain::getTransformationLink(const Eigen::VectorXd &q, const std::string &link_name)
+inline const Eigen::Affine3d& Chain::getTransformationLink(const Eigen::VectorXd &q, const std::string &link_name)
 {
   getTransformation(q);
   std::vector<std::string>::iterator it=std::find(m_links_name.begin(), m_links_name.end(), link_name);
@@ -1084,7 +1256,7 @@ inline Eigen::Affine3d Chain::getTransformationLink(const Eigen::VectorXd &q, co
   return m_T_bl.at(link_idx);
 }
 
-inline Eigen::Matrix6Xd Chain::getJacobian(const Eigen::VectorXd& q)
+inline const Eigen::Matrix6Xd& Chain::getJacobian(const Eigen::VectorXd& q)
 {
   getTransformation(q);
   if (m_joints_number == 0)
@@ -1137,7 +1309,7 @@ inline Eigen::Matrix6Xd Chain::getJacobianLink(const Eigen::VectorXd& q, const s
   return jac;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> Chain::getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
 {
   getTransformation(q);
   m_sorted_Dq = m_input_to_chain_joint * Dq;
@@ -1172,7 +1344,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> 
 }
 
 
-inline Eigen::Vector6d Chain::getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name)
+inline const Eigen::Vector6d& Chain::getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name)
 {
   getTwist(q,Dq);
   std::vector<std::string>::iterator it=std::find(m_links_name.begin(), m_links_name.end(), link_name);
@@ -1185,7 +1357,7 @@ inline Eigen::Vector6d Chain::getTwistLink(const Eigen::VectorXd& q, const Eigen
   return m_twists.at(link_idx);
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
 {
   getTransformation(q);
   m_sorted_DDq = m_input_to_chain_joint * DDq;
@@ -1219,7 +1391,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_Dtwists_linear_part;
 }
 
-inline std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> Chain::getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
 {
   getTransformation(q);
   if (!m_is_vel_computed)
@@ -1238,7 +1410,7 @@ inline std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> C
   return m_Dtwists_nonlinear_part;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+inline const std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
 {
   getTransformation(q);
 
@@ -1282,7 +1454,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_Dtwists;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
+inline const std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
 {
   getTransformation(q);
 
@@ -1312,7 +1484,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_DDtwists_linear_part;
 }
 
-inline std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> Chain::getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
 {
   getTransformation(q);
   if (!m_is_acc_computed)
@@ -1341,7 +1513,7 @@ inline std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> C
   return m_DDtwists_nonlinear_part;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
 {
   getTransformation(q);
   m_sorted_DDDq = m_input_to_chain_joint * DDDq;
@@ -1381,7 +1553,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_DDtwists;
 }
 
-inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > Chain::getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
+inline const std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >& Chain::getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
 {
   getDTwist(q, Dq, DDq);
   if (m_is_wrench_computed)
@@ -1419,7 +1591,7 @@ inline std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   return m_wrenches;
 }
 
-inline Eigen::VectorXd Chain::getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
+inline const Eigen::VectorXd& Chain::getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame)
 {
   getWrench(q, Dq, DDq, ext_wrenches_in_link_frame);
   for (unsigned int nj = 0; nj < m_joints_number; nj++)
@@ -1432,7 +1604,7 @@ inline Eigen::VectorXd Chain::getJointTorque(const Eigen::VectorXd& q, const Eig
 }
 
 
-inline Eigen::VectorXd Chain::getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
+inline const Eigen::VectorXd& Chain::getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
 {
   std::vector< Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> > ext_wrenches_in_link_frame(m_links_number);
   for (unsigned int iL = 0; iL < m_links_number; iL++)
@@ -1440,7 +1612,7 @@ inline Eigen::VectorXd Chain::getJointTorque(const Eigen::VectorXd& q, const Eig
   return getJointTorque(q, Dq, DDq, ext_wrenches_in_link_frame);
 }
 
-inline Eigen::VectorXd Chain::getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
+inline const Eigen::VectorXd& Chain::getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
 {
   Eigen::VectorXd DDq(m_active_joints_number);
   DDq.setZero();
@@ -1512,7 +1684,7 @@ inline Eigen::MatrixXd Chain::getRegressor(const Eigen::VectorXd& q,
   return result;
 }
 
-inline Eigen::MatrixXd Chain::getJointInertia(const Eigen::VectorXd& q)
+inline const Eigen::MatrixXd& Chain::getJointInertia(const Eigen::VectorXd& q)
 {
   getTransformation(q);
   computeScrews();
@@ -1681,17 +1853,10 @@ inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_inter
   return chain;
 }
 
+///////////////////////////////////////////////////
+
 }  // namespace rosdyn
 
+// **** TO BE DONE **** #include <rosdyn_core/internal/primitives_impl.h>
 
-
-/*
- * W_ii=[S_ii, vi;0 0]
- * T_ji=[R_ji, p_ji;0 1]
- * W_jj=T_ji*W_ii*T_ij
- *
- * T_ij=[R_ji', -R_ji'*p_ji;0 1]
- * W_ii*T_ij = [S_ii*R_ji', -S_ii*R_ji'*p_ji+vi;0 0]
- * Rji*W_ii*T_ij = [R_ji*S_ii*R_ji', -R_ji*S_ii*R_ji'*p_ji+R_ji*vi;0 0]
- * Rji*W_ii*T_ij = [S_jj, -S_jj*p_ji+R_ji*vi;0 0]
- */
+#endif  // ROSDYN_CORE_PRIMITIVES_H 
