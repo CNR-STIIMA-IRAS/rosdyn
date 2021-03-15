@@ -586,6 +586,7 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
     m_q_max   = urdf_joint->limits->upper;
     m_q_min   = urdf_joint->limits->lower;
     m_Dq_max  = urdf_joint->limits->velocity;
+    m_DDq_max = 10.0 * m_Dq_max;
     m_tau_max = urdf_joint->limits->effort;
   }
   else if (urdf_joint->type == urdf::Joint::CONTINUOUS)
@@ -593,6 +594,7 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
     m_q_max   = 1e10;
     m_q_min   = -1e10;
     m_Dq_max  = urdf_joint->limits->velocity;
+    m_DDq_max = 10.0 * m_Dq_max;
     m_tau_max = urdf_joint->limits->effort;
   }
 
@@ -1096,6 +1098,7 @@ inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_n
   m_q_max.resize(m_active_joints_number);
   m_q_min.resize(m_active_joints_number);
   m_Dq_max.resize(m_active_joints_number);
+  m_DDq_max.resize(m_active_joints_number);
   m_tau_max.resize(m_active_joints_number);
 
   for (unsigned int idx = 0; idx < m_active_joints_number; idx++)
@@ -1104,6 +1107,7 @@ inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_n
     m_q_max(idx) = jnt->getQMax();
     m_q_min(idx) = jnt->getQMin();
     m_Dq_max(idx) = jnt->getDQMax();
+    m_DDq_max(idx) = jnt->getDDQMax();
     m_tau_max(idx) = jnt->getTauMax();
   }
   ROS_DEBUG_STREAM("limits:\n q max= " << m_q_max.transpose()
