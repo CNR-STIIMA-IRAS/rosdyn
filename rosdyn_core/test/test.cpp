@@ -57,7 +57,8 @@ TEST(Suite, chainPtrTest)
   js.name.at(5) = "wrist_3_joint";
 
   urdf::Model model;
-  model.initFile("/home/feymann/ctrl_ws/src/nicola_simulation_stuff/ur/ur_description/urdf/ur5.urdf");
+  model.initParam("robot_description");
+  //model.initFile("/home/feymann/ctrl_ws/src/nicola_simulation_stuff/ur/ur_description/urdf/ur5.urdf");
 
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
