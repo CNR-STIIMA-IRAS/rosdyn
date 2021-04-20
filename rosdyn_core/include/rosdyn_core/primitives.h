@@ -258,7 +258,7 @@ protected:
   Eigen::MatrixXd m_H;
   Eigen::VectorXd m_f;
   Eigen::VectorXd m_joint_error;
-  Eigen::VectorXd m_cart_error_in_b;
+  Eigen::Vector6d m_cart_error_in_b;
 
 
   Eigen::VectorXd m_joint_torques;
