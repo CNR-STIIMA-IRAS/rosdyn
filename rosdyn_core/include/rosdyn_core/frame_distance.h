@@ -96,7 +96,7 @@ inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affi
 [[deprecated("Use the getFrameDistanceQuat(const Eigen::Affine3d&,const Eigen::Affine3d&,Eigen::Matrix<double,6,1>&")]]
 inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance)
 {
-  static Eigen::Matrix<double,6,1> distance_;
+  Eigen::Matrix<double,6,1> distance_;
   distance.resize(6);
   getFrameDistanceQuat(T_wa,T_wb,distance_);
   distance = distance_;
@@ -141,13 +141,11 @@ inline void getFrameDistanceQuatJac(const Eigen::Affine3d& T_wa,  const Eigen::A
   distance.resize(6);
   jacobian.resize(6, 6);
   jacobian.setIdentity();
-  static Eigen::Matrix<double,6,1> distance_;
-  static Eigen::Matrix<double,6,6> jacobian_;
-  distance.resize(6);
+  Eigen::Matrix<double,6,1> distance_;
+  Eigen::Matrix<double,6,6> jacobian_;
   getFrameDistanceQuatJac(T_wa,T_wb,distance_,jacobian_);
   distance = distance_;
   jacobian = jacobian_;
-
 }
 
 }  // namespace rosdyn
