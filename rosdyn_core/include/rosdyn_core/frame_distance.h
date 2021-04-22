@@ -41,14 +41,27 @@ namespace rosdyn
  *   - the distance between origins (namely, origin_b_in_w - origin_a_in_w)
  *   - the product between the angle and unit vector  (AngleAxis)  expressed in frame w
  */
-inline void getFrameDistance(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance)
+inline void getFrameDistance(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::Matrix<double,6,1>& distance)
 {
-  distance.resize(6);
   distance.block(0, 0, 3, 1) = T_wa.translation() - T_wb.translation();
   Eigen::AngleAxisd aa_ab(T_wa.linear().inverse() * T_wb.linear());
-
-
   distance.block(3, 0, 3, 1) = -T_wa.linear() * (aa_ab.angle() * aa_ab.axis());
+}
+
+/*
+ * Distance between frames.
+ * return a vector representing the distance of frame b w.r.t. to frame a expressed in frame w
+ * the distance are defined as a vector containing:
+ *   - the distance between origins (namely, origin_b_in_w - origin_a_in_w)
+ *   - the product between the angle and unit vector  (AngleAxis)  expressed in frame w
+ */
+[[deprecated("Use the getFrameDistance(const Eigen::Affine3d&,const Eigen::Affine3d&,Eigen::Matrix<double,6,1>&")]]
+inline void getFrameDistance(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance)
+{
+  static Eigen::Matrix<double,6,1> distance_;
+  distance.resize(6);
+  getFrameDistance(T_wa,T_wb,distance_);
+  distance = distance_;
 }
 
 /*
@@ -58,9 +71,8 @@ inline void getFrameDistance(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d
  *   - the distance between origins (namely, origin_b_in_w - origin_a_in_w)
  *   - the double of vector part of the quaternion q_ab expressed in frame w (namely R_wa * 2*imag(q_ab) ~= angle*axis)
  */
-inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance)
+inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb, Eigen::Matrix<double,6,1>& distance)
 {
-  distance.resize(6);
   distance.block(0, 0, 3, 1) = T_wa.translation() - T_wb.translation();
   Eigen::Quaterniond q_ab(T_wa.linear().inverse() * T_wb.linear());
 
@@ -71,8 +83,23 @@ inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affi
     q_ab.z() = -q_ab.z();
     q_ab.w() = -q_ab.w();
   }
-
   distance.block(3, 0, 3, 1) = -2.0 * T_wa.linear() * q_ab.vec();
+}
+
+/*
+ * Distance between frames.
+ * return a vector representing the distance of frame b w.r.t. to frame a expressed in frame w
+ * the distance are defined as a vector containing:
+ *   - the distance between origins (namely, origin_b_in_w - origin_a_in_w)
+ *   - the double of vector part of the quaternion q_ab expressed in frame w (namely R_wa * 2*imag(q_ab) ~= angle*axis)
+ */
+[[deprecated("Use the getFrameDistanceQuat(const Eigen::Affine3d&,const Eigen::Affine3d&,Eigen::Matrix<double,6,1>&")]]
+inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance)
+{
+  Eigen::Matrix<double,6,1> distance_;
+  distance.resize(6);
+  getFrameDistanceQuat(T_wa,T_wb,distance_);
+  distance = distance_;
 }
 
 /*
@@ -84,12 +111,9 @@ inline void getFrameDistanceQuat(const Eigen::Affine3d& T_wa,  const Eigen::Affi
  * and the jacobian of the distance error defined as
  * J=[eye(3) zeros(3, 3);zeros(3, 3) R_wa*(eye(3)*real(q_ab)-skew(imag(q_ab)))*R_wa']
  */
-inline void getFrameDistanceQuatJac(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance,  Eigen::MatrixXd& jacobian)
+inline void getFrameDistanceQuatJac(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::Matrix<double,6,1>& distance, Eigen::Matrix<double,6,6>& jacobian)
 {
-  distance.resize(6);
-  jacobian.resize(6, 6);
   jacobian.setIdentity();
-
   distance.block(0, 0, 3, 1) = T_wb.translation() - T_wa.translation();
   Eigen::Quaterniond q_ab(T_wa.linear().inverse() * T_wb.linear());
 
@@ -99,10 +123,29 @@ inline void getFrameDistanceQuatJac(const Eigen::Affine3d& T_wa,  const Eigen::A
     q_ab.vec() = -q_ab.vec();
   }
 
-
   distance.block(3, 0, 3, 1) = -2.0 * T_wa.linear() * q_ab.vec();
-
   jacobian.block(3, 3, 3, 3) = T_wa.linear() * (q_ab.w() * Eigen::MatrixXd::Identity(3, 3) - skew(q_ab.vec())) * T_wa.linear().inverse();
+}
+/*
+ * Distance between frames and its jacobian.
+ * return a vector representing the distance of frame b w.r.t. to frame a expressed in frame w
+ * the distance are defined as a vector containing:
+ *   - the distance between origins (namely, origin_b_in_w - origin_a_in_w)
+ *   - the double of vector part of the quaternion q_ab expressed in frame w (namely R_wa * 2*imag(q_ab) ~= angle*axis)
+ * and the jacobian of the distance error defined as
+ * J=[eye(3) zeros(3, 3);zeros(3, 3) R_wa*(eye(3)*real(q_ab)-skew(imag(q_ab)))*R_wa']
+ */
+[[deprecated("Use the getFrameDistanceQuatJac(const Eigen::Affine3d&,const Eigen::Affine3d&,Eigen::Matrix<double,6,1>&,Eigen::Matrix<double,6,6>&")]]
+inline void getFrameDistanceQuatJac(const Eigen::Affine3d& T_wa,  const Eigen::Affine3d& T_wb,  Eigen::VectorXd& distance,  Eigen::MatrixXd& jacobian)
+{
+  distance.resize(6);
+  jacobian.resize(6, 6);
+  jacobian.setIdentity();
+  Eigen::Matrix<double,6,1> distance_;
+  Eigen::Matrix<double,6,6> jacobian_;
+  getFrameDistanceQuatJac(T_wa,T_wb,distance_,jacobian_);
+  distance = distance_;
+  jacobian = jacobian_;
 }
 
 }  // namespace rosdyn
