@@ -238,7 +238,7 @@ In order to use RosDyn identification tools, you need to do the following prelim
 
 >> In the *Trajectory* visualization, select as Trajectory topic */rosdyn/simulated_trajectory*
 
->> be sure that the MoveIt! scene contains all the ostacles!
+>> be sure that the MoveIt! scene contains all the obstacles!
 
 Now you are ready to generate a trajectory by clicking of *1) Generate Trajectory*, it will required seconds or minutes depending on the desired trajectory duration
 
