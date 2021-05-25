@@ -372,11 +372,22 @@ inline rosdyn::JointPtr Link::findChildJoint(const std::string& name)
   return ptr;
 }
 
+inline Chain::Chain(const Chain& cpy)
+{
+  rosdyn::LinkPtr root_link = cpy.getLinks().front();
+  std::string base_link_name = cpy.getLinksName().front();
+  std::string ee_link_name = cpy.getLinksName().back();
+  Eigen::Vector3d gravity = cpy.getGravity();
+  std::string error;
+  if(!init(error, root_link, base_link_name,ee_link_name,gravity))
+  {
+    throw std::runtime_error(error.c_str());
+  }
+}
+
 
 inline Chain::Chain(const rosdyn::LinkPtr& root_link,
-                    const std::string& base_link_name,
-                    const std::string& ee_link_name,
-                    const Eigen::Vector3d& gravity)
+            const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
   : Chain()
 {
   std::string error;
@@ -386,7 +397,8 @@ inline Chain::Chain(const rosdyn::LinkPtr& root_link,
   }
 }
 
-inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
+inline Chain::Chain(const urdf::Model& model,
+        const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
 {
   rosdyn::LinkPtr root_link(new rosdyn::Link());
   root_link->fromUrdf(model.root_link_);
@@ -397,12 +409,34 @@ inline Chain::Chain(const urdf::Model& model, const std::string& base_link_name,
   }
 }
 
-inline Chain::Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
+inline Chain::Chain(const std::string& robot_description, 
+            const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
 {
   urdf::Model model;
   model.initParam(robot_description);
   rosdyn::LinkPtr root_link(new rosdyn::Link());
   root_link->fromUrdf(model.root_link_);
+  std::string error;
+  if(!init(error, root_link, base_link_name,ee_link_name,gravity))
+  {
+    throw std::runtime_error(error.c_str());
+  }
+}
+
+inline Chain& Chain::operator=(const Chain& rhs)
+{
+  m_links.clear();
+  m_joints.clear();
+  m_links_name.clear();
+  m_joints_name.clear();
+  m_moveable_joints_name.clear();
+  m_active_joints_name.clear();
+  m_parent_moveable_joints_of_link.clear();
+
+  rosdyn::LinkPtr root_link = rhs.getLinks().front();
+  std::string base_link_name = rhs.getLinksName().front();
+  std::string ee_link_name = rhs.getLinksName().back();
+  Eigen::Vector3d gravity = rhs.getGravity();
   std::string error;
   if(!init(error, root_link, base_link_name,ee_link_name,gravity))
   {
@@ -1348,7 +1382,8 @@ inline std::vector<Eigen::VectorXd> Chain::getMultiplicity(const Eigen::VectorXd
 
 }
 
-inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_interface, const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
+inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_interface,
+    const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
 {
   rosdyn::LinkPtr root_link(new rosdyn::Link());
   root_link->fromUrdf(urdf_model_interface.root_link_);

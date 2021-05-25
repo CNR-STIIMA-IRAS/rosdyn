@@ -315,14 +315,23 @@ public:
 
   Chain() = default;
   ~Chain() = default;
-  Chain(const Chain&) = delete;
+  Chain(const Chain&);
   Chain(Chain&&) = delete;
-  Chain& operator=(const Chain&) = delete;
+  Chain& operator=(const Chain&);
   Chain& operator=(Chain&&) = delete;
 
-  Chain(const rosdyn::LinkPtr& root_link, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
-  Chain(const urdf::Model& model, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
-  Chain(const std::string& robot_description, const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
+  Chain(const rosdyn::LinkPtr& root_link,
+          const std::string& base_link_name,
+            const std::string& ee_link_name,
+              const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
+  Chain(const urdf::Model& model,
+          const std::string& base_link_name,
+            const std::string& ee_link_name, 
+              const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
+  Chain(const std::string& robot_description,
+          const std::string& base_link_name,
+            const std::string& ee_link_name,
+              const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
   bool init(std::string& error,
             rosdyn::LinkPtr root_link,
               const std::string& base_link_name,
@@ -363,6 +372,18 @@ public:
   const std::vector<std::string>& getLinksName() const
   {
     return m_links_name;
+  }
+  const std::vector<rosdyn::LinkPtr>& getLinks() const
+  {
+    return m_links;
+  }
+  const std::vector<rosdyn::JointPtr>& getJoints() const
+  {
+    return m_joints;
+  }
+  const Eigen::Vector3d& getGravity() const
+  {
+    return m_gravity;
   }
   const bool& isOk() const
   {
