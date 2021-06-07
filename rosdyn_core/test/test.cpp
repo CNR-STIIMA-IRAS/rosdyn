@@ -58,8 +58,7 @@ TEST(Suite, chainPtrTest)
 
   urdf::Model model;
   model.initParam("robot_description");
-  //model.initFile("/home/feymann/ctrl_ws/src/nicola_simulation_stuff/ur/ur_description/urdf/ur5.urdf");
-
+  
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
 
@@ -225,7 +224,7 @@ TEST(Suite, staticChainTest)
   js.name.at(5) = "wrist_3_joint";
 
   urdf::Model model;
-  model.initFile("/home/feymann/ctrl_ws/src/nicola_simulation_stuff/ur/ur_description/urdf/ur5.urdf");
+  model.initParam("robot_description");
 
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
@@ -380,10 +379,8 @@ TEST(Suite, staticChainTest)
 int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  //ros::init(argc, argv, "jacobian_speed_test");
-  //ros::NodeHandle nh;
-  //ros::Rate rate(1);
-
+  ros::init(argc, argv, "jacobian_speed_test");
+  
 
   return RUN_ALL_TESTS();
 
