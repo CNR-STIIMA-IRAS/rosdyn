@@ -12,40 +12,7 @@
 </rosparam>
 </group>
 
-<group ns="ur10_hw" >
-<rosparam>
-  type: cnr/control/FakeRobotHW
-  appenders: [file, screen]
-  levels: [trace, trace]
-  pattern_layout: "[%5p][%d{HH:mm:ss,SSS}][%50M:%04L][%24c] %m%n"
-  file_name: "ur10_hw"
-  joint_names:
-  - shoulder_pan_joint
-  - shoulder_lift_joint
-  - elbow_joint
-  - wrist_1_joint
-  - wrist_2_joint
-  - wrist_3_joint
-  base_link: base_link
-  tool_link: tool0
-  robot_description_param: /robot_description
-  robot_description_planning_param: /robot_description_planning
-  sampling_period: 0.001
-
-  initial_position: [0, -1.57, 0, 0, 0, 0]
-  fake_controller:
-    type: cnr/control/JointStatePublisher
-    controlled_joint:
-    - shoulder_pan_joint
-    - shoulder_lift_joint
-    - elbow_joint
-    - wrist_1_joint
-    - wrist_2_joint
-    - wrist_3_joint
-</rosparam>
-</group>
-
-<include file="$(find ur_description)/launch/ur10_upload.launch" />
+<include file="$(find ur_description)/launch/load_ur10.launch" />
 
 <group ns="robot_description_planning">
   <rosparam>
