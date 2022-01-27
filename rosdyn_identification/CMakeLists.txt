@@ -82,3 +82,8 @@ target_link_libraries(${PROJECT_NAME}
 set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-build/include_what_you_use,-runtime/references,-build/c++11")
 roslint_cpp()
 
+install(FILES rosdyn_plugins.xml DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+
+
+
