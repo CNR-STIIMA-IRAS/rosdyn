@@ -34,6 +34,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_state_space_systems
   moveit_planning_helper
   roslint
+  name_sorting
 )
 
 

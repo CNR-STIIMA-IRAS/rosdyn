@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include <Eigen/Core>
 #include <pluginlib/class_list_macros.h>
+#include <name_sorting/sort_trajectories.h>
 #include <rosdyn_identification/rosdyn_gen_interface.h>
 #include <boost/bind.hpp>
 
