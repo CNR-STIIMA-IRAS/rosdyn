@@ -30,7 +30,7 @@
   <build_depend>name_sorting</build_depend>
   
   <build_depend>eigen_matrix_utils</build_depend>
-  <build_depend>eigen_state_space_systems</build_depend>
+  <build_depend>state_space_systems</build_depend>
   <build_depend>moveit_planning_helper</build_depend>
   <build_depend>roslint</build_depend>
 
@@ -54,7 +54,7 @@
   <run_depend>trajectory_msgs</run_depend>
   
   <run_depend>eigen_matrix_utils</run_depend>
-  <run_depend>eigen_state_space_systems</run_depend>
+  <run_depend>state_space_systems</run_depend>
   <run_depend>moveit_planning_helper</run_depend>
   <run_depend>roslint</run_depend>
 

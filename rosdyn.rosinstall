@@ -26,3 +26,6 @@
 - git:
     local-name: common/subscription_notifier
     uri: https://github.com/CNR-STIIMA-IRAS/subscription_notifier
+- git:
+    local-name: common/cnr_control_toolbox
+    uri: https://github.com/CNR-STIIMA-IRAS/cnr_control_toolbox

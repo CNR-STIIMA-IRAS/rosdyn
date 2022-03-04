@@ -25,7 +25,7 @@ else()
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
-  std_msgs roscpp urdf eigen_matrix_utils roslint
+  std_msgs roscpp urdf eigen_matrix_utils kinematics_filters roslint
 )
 
 find_package(Eigen3 REQUIRED COMPONENTS)
