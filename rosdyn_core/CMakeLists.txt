@@ -39,7 +39,7 @@ endif()
 
 catkin_package(
   INCLUDE_DIRS include ${EIGEN3_INCLUDE_DIRS}
-  CATKIN_DEPENDS roscpp  std_msgs  urdf eigen_matrix_utils roslint
+  CATKIN_DEPENDS roscpp  std_msgs  urdf eigen_matrix_utils roslint kinematics_filters
   DEPENDS EIGEN3
 )
 

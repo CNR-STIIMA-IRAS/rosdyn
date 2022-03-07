@@ -53,7 +53,7 @@
   <run_depend>urdf</run_depend>
   <run_depend>eigen_matrix_utils</run_depend>
   <run_depend>roslint</run_depend>
-
+  <run_depend>kinematics_filters</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
