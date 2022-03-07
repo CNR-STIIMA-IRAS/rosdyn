@@ -1,18 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rosdyn_identification)
 
-add_compile_options(-std=c++11)
-set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O4")
-# set(CMAKE_BUILD_TYPE Debug)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
-#add_compile_options(-DUBUNTU1404)
-
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Eigen3 REQUIRED COMPONENTS Core Dense)
-
-
-# add_definitions ( -DROSVERSIONNAME=$ENV{ROS_DISTRO} )
 
 find_package(catkin REQUIRED COMPONENTS
   actionlib
@@ -31,7 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   trajectory_msgs
   eigen_matrix_utils
-  eigen_state_space_systems
+  state_space_filters
   moveit_planning_helper
   roslint
   name_sorting
@@ -57,7 +54,7 @@ catkin_package(
                   std_msgs
                   trajectory_msgs
                   eigen_matrix_utils
-                  eigen_state_space_systems
+                  state_space_filters
                   moveit_planning_helper
                   roslint
   DEPENDS

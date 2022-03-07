@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pluginlib/class_list_macros.h>
 #include <rosdyn_identification/rosdyn_par_estim_interface.h>
 
+#include <eigen_matrix_utils/eigen_matrix_utils.h>
+#include <state_space_filters/common_filters.h>
 
 PLUGINLIB_EXPORT_CLASS(rosdyn::MetoParEstimInterfaceNodelet, nodelet::Nodelet)
 
@@ -261,7 +263,6 @@ void MetoParEstimInterfaceNodelet::metoParEstimCB(const rosdyn_identification_ms
 
     Eigen::MatrixXd q(singFile.cols(), number_of_joint_from_xml_),
           Dq(singFile.cols(), number_of_joint_from_xml_),
-          DDq(singFile.cols(), number_of_joint_from_xml_),
           eff(singFile.cols(), number_of_joint_from_xml_);
 
     Eigen::MatrixXd qf(singFile.cols(), number_of_joint_from_xml_),
@@ -271,7 +272,6 @@ void MetoParEstimInterfaceNodelet::metoParEstimCB(const rosdyn_identification_ms
 
     q.setZero();
     Dq.setZero();
-    DDq.setZero();
     eff.setZero();
     qf.setZero();
     Dqf.setZero();
@@ -284,34 +284,31 @@ void MetoParEstimInterfaceNodelet::metoParEstimCB(const rosdyn_identification_ms
       Dq.col(idxJnt) = fileData.row(idxJnt + 1 + number_of_joint_from_xml_).transpose();
       eff.col(idxJnt) = fileData.row(idxJnt + 1 + number_of_joint_from_xml_ * 2).transpose();
 
-      eigen_control_toolbox::FirstOrderLowPass filt_pos;
+      eigen_control_toolbox::FirstOrderLowPass<1> filt_pos;
       filt_pos.importMatricesFromParam(getNodeHandle(), m_namespace + "/filter");
-      filt_pos.setStateFromLastIO(q.col(idxJnt).head(1),   q.col(idxJnt).head(1));
+      filt_pos.setStateFromLastIO(q(1,idxJnt),   q(1,idxJnt));
 
-      eigen_control_toolbox::FirstOrderLowPass filt_vel;
+      eigen_control_toolbox::FirstOrderLowPass<1> filt_vel;
       filt_vel.importMatricesFromParam(getNodeHandle(), m_namespace + "/filter");
-      filt_vel.setStateFromLastIO(Dq.col(idxJnt).head(1),  Dq.col(idxJnt).head(1));
+      filt_vel.setStateFromLastIO(Dq(1,idxJnt),  Dq(1,idxJnt));
 
-      Eigen::VectorXd init_acc(1);
-      init_acc.setZero();
-      eigen_control_toolbox::FirstOrderHighPass filt_acc;
+      double init_acc = 0;
+      eigen_control_toolbox::FirstOrderHighPass<1> filt_acc;
       filt_acc.importMatricesFromParam(getNodeHandle(), m_namespace + "/filter");
-      filt_acc.setStateFromLastIO(init_acc,                Dq.col(idxJnt).head(1));
+      filt_acc.setStateFromLastIO(init_acc, Dq(1,idxJnt));
 
-      eigen_control_toolbox::FirstOrderLowPass filt_eff;
-      filt_eff.setStateFromLastIO(eff.col(idxJnt).head(1), eff.col(idxJnt).head(1));
+      eigen_control_toolbox::FirstOrderLowPass<1> filt_eff;
       filt_eff.importMatricesFromParam(getNodeHandle(), m_namespace + "/filter");
-      filt_eff.setStateFromLastIO(eff.col(idxJnt).head(1), eff.col(idxJnt).head(1));
+      filt_eff.setStateFromLastIO(eff(1,idxJnt), eff(1,idxJnt));
 
       for (unsigned int iStep = 0; iStep < q.rows(); iStep++)
       {
-        qf(iStep, idxJnt)     = filt_pos.update(q(iStep, idxJnt));
-        Dqf(iStep, idxJnt)    = filt_vel.update(Dq(iStep, idxJnt));
-        DDqf(iStep, idxJnt)   = filt_acc.update(Dq(iStep, idxJnt));
-        efff(iStep, idxJnt)   = filt_eff.update(eff(iStep, idxJnt));
+        qf(iStep, idxJnt)   = filt_pos.update(q(iStep, idxJnt)   );
+        Dqf(iStep, idxJnt)  = filt_vel.update(Dq(iStep, idxJnt)  );
+        DDqf(iStep, idxJnt) = filt_acc.update(Dq(iStep, idxJnt)  );
+        efff(iStep, idxJnt) = filt_eff.update(eff(iStep, idxJnt) );
       }
     }
-
 
     size_row_ = qf.rows();
 
