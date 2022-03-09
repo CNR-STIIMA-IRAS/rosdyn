@@ -100,7 +100,7 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
     {
       std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name 
         << "' is malformed in the URDF! The max velocity isn't positive (vel: " 
-          << urdf_joint->limits->velocity <<")" std::endl;
+          << urdf_joint->limits->velocity <<")" << std::endl;
       std::cerr << "Superimposed 2 * M_PI rad / sec" << std::endl;
       m_Dq_max = 2 * M_PI ;
     }
