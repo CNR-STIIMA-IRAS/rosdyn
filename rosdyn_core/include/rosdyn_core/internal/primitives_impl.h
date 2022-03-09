@@ -86,7 +86,24 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
   {
     m_q_max   = urdf_joint->limits->upper;
     m_q_min   = urdf_joint->limits->lower;
+    if(m_q_max<=m_q_min)
+    {
+      std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
+        << "' is malformed in the URDF! The range of motion is not specified properly "
+          << "(upper: " << urdf_joint->limits->upper << ", lower: " << urdf_joint->limits->lower << ")" << std::endl;
+      std::cerr << "Superimposed +/-2 M_PI rad" << std::endl;
+      m_q_max = 2 * M_PI;
+      m_q_min = -2 * M_PI;
+    }
     m_Dq_max  = urdf_joint->limits->velocity;
+    if(m_Dq_max<=0.0)
+    {
+      std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name 
+        << "' is malformed in the URDF! The max velocity isn't positive (vel: " 
+          << urdf_joint->limits->velocity <<")" std::endl;
+      std::cerr << "Superimposed 2 * M_PI rad / sec" << std::endl;
+      m_Dq_max = 2 * M_PI ;
+    }
     m_DDq_max = 10.0 * m_Dq_max;
     m_tau_max = urdf_joint->limits->effort;
   }
