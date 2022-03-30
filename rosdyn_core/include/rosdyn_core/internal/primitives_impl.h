@@ -1,5 +1,5 @@
 #ifndef ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
-#define ROSDYN_CORE_INTERNAL_PRIMITITES_IMPL_H
+#define ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
 
 #include <rosdyn_core/primitives.h>
 
@@ -459,6 +459,7 @@ inline Chain& Chain::operator=(const Chain& rhs)
   {
     throw std::runtime_error(error.c_str());
   }
+  return *this;
 }
 
 //! ADDED TO INIT ALSO STATIC Chain!

@@ -158,7 +158,7 @@ public:
 
   bool setParameters(std::map<std::string, double> parameters)
   {
-    for (const std::pair<std::string, double>& par : parameters)
+    for (const std::pair<const std::string, double>& par : parameters)
     {
       try
       {
