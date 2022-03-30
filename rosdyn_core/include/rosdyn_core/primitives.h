@@ -548,6 +548,14 @@ rosdyn::ChainPtr createChain( const urdf::ModelInterface& urdf_model_interface,
  */
 rosdyn::ChainPtr createChain(const rosdyn::ChainPtr& chain);
 
+/**
+ * @brief construct the shared_ptr of a chain
+ *
+ * @param[in] Chain
+ */
+rosdyn::ChainPtr createChain(const rosdyn::Chain& chain);
+
+
 
 ///////////////////////////////////////////////////
 

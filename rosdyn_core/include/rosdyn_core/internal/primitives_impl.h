@@ -1420,6 +1420,16 @@ inline rosdyn::ChainPtr createChain(const rosdyn::ChainPtr& cpy)
   return chain;
 }
 
+inline rosdyn::ChainPtr createChain(const rosdyn::Chain& cpy)
+{
+  rosdyn::LinkPtr root_link = cpy.getLinks().front();
+  std::string base_link_name = cpy.getLinksName().front();
+  std::string ee_link_name = cpy.getLinksName().back();
+  Eigen::Vector3d gravity = cpy.getGravity();
+  rosdyn::ChainPtr chain(new rosdyn::Chain(root_link, base_link_name, ee_link_name, gravity));
+  return chain;
+}
+
 
 }  // namespace rosdyn
 
