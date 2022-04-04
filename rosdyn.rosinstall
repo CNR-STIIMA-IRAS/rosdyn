@@ -33,3 +33,6 @@
     local-name: test_dependencies/universal_robot
     uri: https://github.com/fmauch/universal_robot.git
     version: calibration_devel
+- git:
+    local-name: common/cnr_logger
+    uri: https://github.com/CNR-STIIMA-IRAS/cnr_logger
