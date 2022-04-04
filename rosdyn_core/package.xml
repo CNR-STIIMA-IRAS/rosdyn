@@ -34,7 +34,7 @@
   <run_depend>eigen_matrix_utils</run_depend>
   <run_depend>kinematics_filters</run_depend>
 
-  <test_depend>universal_robot</test_depend>
+  <test_depend>ur_description</test_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
