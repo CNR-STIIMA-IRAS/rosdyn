@@ -8,7 +8,7 @@ fixes:
   - "src/test/::"
 
 codecov:
-  token: 5bcaff30-b1df-4af2-a1a2-c2656ca76a07
+  token: 68bd2a5f-8203-43a4-a9d3-b832690650a6
   require_ci_to_pass: yes
 
 coverage:
