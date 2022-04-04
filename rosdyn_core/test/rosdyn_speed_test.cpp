@@ -33,6 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
+#include <thread>
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "jacobian_speed_test");
@@ -201,5 +203,9 @@ int main(int argc, char **argv)
   ROS_INFO("computation time joint torque                                    = %8.5f [us]", t_torque_eigen / ntrial);
   ROS_INFO("computation time joint inertia                                   = %8.5f [us]", t_inertia_eigen / ntrial);
 
+  ros::Time st = ros::Time::now();
+  std::thread::id this_id = std::this_thread::get_id();
+  ros::Time et = ros::Time::now();
+  ROS_INFO_STREAM("GET ID " << this_id << " | TIME  = " << (et-st).toSec() * 1e6 << "[us]");
   return 0;
 }

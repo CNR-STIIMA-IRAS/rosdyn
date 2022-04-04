@@ -29,3 +29,7 @@
 - git:
     local-name: common/cnr_control_toolbox
     uri: https://github.com/CNR-STIIMA-IRAS/cnr_control_toolbox
+- git:
+    local-name: test_dependencies/universal_robot
+    uri: https://github.com/fmauch/universal_robot.git
+    version: calibration_devel

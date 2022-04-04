@@ -1,0 +1,57 @@
+# This config uses industrial_ci (https://github.com/ros-industrial/industrial_ci.git).
+# For troubleshooting, see readme (https://github.com/ros-industrial/industrial_ci/blob/master/README.rst)
+
+name: 'ROS INDUSTRIAL CI'
+
+# This determines when this workflow is run
+#on: [push, pull_request] # on all pushes and PRs
+
+# or more fine-grained
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+    - 'docs/**'  # When there is a pull request against master
+    - 'README.md'
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  industrial_ci:
+    strategy:
+      matrix: # matrix is the product of entries
+        ROS_DISTRO: [noetic]
+        ROS_REPO: [main]
+    env:
+      CCACHE_DIR: "/home/runner/target_ws/.ccache"  #/github/home/.ccache # Directory for ccache (and how we enable ccache in industrial_ci)
+      UPSTREAM_WORKSPACE: dependencies.rosinstall
+      ISOLATION: "shell"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2   # clone target repository
+      - uses: actions/cache@v2      # fetch/store the directory used by ccache before/after the ci run
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ matrix.ROS_DISTRO }}-${{ matrix.ROS_REPO }}-${{github.run_id}}
+          restore-keys: |
+            ccache-${{ matrix.ROS_DISTRO }}-${{ matrix.ROS_REPO }}-
+      # Run industrial_ci
+      - name: industrial_ci
+        uses: 'ros-industrial/industrial_ci@master'
+        env: 
+          ROS_DISTRO: ${{ matrix.ROS_DISTRO }}
+          ROS_REPO: ${{ matrix.ROS_REPO }}
+      
+      - name: code_coverage
+        run: './.coverage.sh'
+      
+      - uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          directory:  /home/runner/target_ws/build
+          flags: unittests # optional
+          name: codecov-umbrella # optional
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
+
+      - uses: actions/checkout@master
