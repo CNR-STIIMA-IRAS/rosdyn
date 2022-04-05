@@ -42,16 +42,16 @@ jobs:
           ROS_DISTRO: ${{ matrix.ROS_DISTRO }}
           ROS_REPO: ${{ matrix.ROS_REPO }}
       
-      - name: code_coverage
-        run: './.coverage.sh'
-      
-      - uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          directory:  /home/runner/target_ws/build
-          flags: unittests # optional
-          name: codecov-umbrella # optional
-          fail_ci_if_error: true # optional (default = false)
-          verbose: true # optional (default = false)
+      #- name: code_coverage
+      #  run: './.coverage.sh'
+      #
+      #- uses: codecov/codecov-action@v2
+      #  with:
+      #    token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+      #    directory:  /home/runner/target_ws/build
+      #    flags: unittests # optional
+      #    name: codecov-umbrella # optional
+      #    fail_ci_if_error: true # optional (default = false)
+      #    verbose: true # optional (default = false)
 
       - uses: actions/checkout@master
