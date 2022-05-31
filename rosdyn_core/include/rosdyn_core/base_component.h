@@ -58,10 +58,10 @@ protected:
   std::vector<std::string>  m_joint_names;
 
   // Number of Joints
-  unsigned int m_joints_number;
+  size_t m_joints_number;
 
   // Number of the joint component in the list of joint names
-  unsigned int m_component_joint_number;
+  size_t m_component_joint_number;
 
   Eigen::VectorXd m_torques;
   Eigen::MatrixXd m_regressor;
@@ -124,7 +124,7 @@ public:
 
   virtual Eigen::MatrixXd getRegressor(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq) = 0;
 
-  unsigned int getParametersNumber()
+  size_t getParametersNumber()
   {
     return m_parameters_map.size();
   }
@@ -139,7 +139,7 @@ public:
     return m_component_joint_name;
   }
 
-  unsigned int getJointNumber()
+  size_t getJointNumber()
   {
     return m_component_joint_number;
   }

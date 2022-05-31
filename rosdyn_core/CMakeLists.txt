@@ -1,13 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 project(rosdyn_core)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/cnrConfigMacros.cmake)
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+cnr_set_flags()
 
 option(MAX_NUM_AXES "Change from allocation in heap (MAX_NUM_AXES=-1) to allocation in stack (MAX_NUM_AXES>0)." -1)
 option(USE_RAW_POINTERS "Use raw pointer instead of shared pointer (code optimization)" FALSE)
@@ -56,9 +52,8 @@ include_directories(
 ## example of usage
 add_executable(rosdyn_speed_test test/rosdyn_speed_test.cpp)
 add_dependencies(rosdyn_speed_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(rosdyn_speed_test
-  ${catkin_LIBRARIES}
-)
+target_link_libraries(rosdyn_speed_test ${catkin_LIBRARIES})
+cnr_target_compile_options(rosdyn_speed_test)
 
 #############
 ## Install ##
@@ -85,12 +80,11 @@ if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
   add_rostest_gtest(${PROJECT_NAME}_test test/test.launch test/test.cpp)
   target_link_libraries(${PROJECT_NAME}_test ${catkin_LIBRARIES} ${rostest_LIBRARIES} )
-  target_compile_options(${PROJECT_NAME}_test PUBLIC $<$<CONFIG:Release>:-Ofast -funroll-loops -ffast-math >)
+  cnr_target_compile_options(${PROJECT_NAME}_test)
 
   add_rostest_gtest(${PROJECT_NAME}_test_vectorization test/test_vectorization.launch test/test.cpp)
   target_link_libraries(${PROJECT_NAME}_test_vectorization ${catkin_LIBRARIES} ${rostest_LIBRARIES} )
-  target_compile_options(${PROJECT_NAME}_test_vectorization PUBLIC
-      $<$<CONFIG:Release>:-Ofast -shared -ffunction-sections -fdata-sections -funroll-loops -ffast-math -march=native -m64 -DEIGEN_NO_MALLOC>)
+  cnr_target_compile_options(${PROJECT_NAME}_test_vectorization)
   if(${CMAKE_VERSION} VERSION_GREATER "3.16.0")
     target_link_options(${PROJECT_NAME}_test_vectorization PUBLIC
                                            $<$<CONFIG:Release>:-Wl,--gc-sections>)
