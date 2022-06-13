@@ -43,6 +43,19 @@ namespace shared_ptr_namespace = boost;
 
 namespace rosdyn
 {
+template<typename T>
+void maybe_unused(T const & v) 
+{ 
+  static_cast<void>(v);
+}
+
+template<typename T, typename... Args>
+void maybe_unused(T first, Args... args) {
+  maybe_unused(first);
+  return maybe_unused(args...);
+}
+
+
 class ComponentBase
 {
 protected:
@@ -117,6 +130,7 @@ public:
 
   virtual Eigen::VectorXd getNonAdditiveTorque(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq, const Eigen::Ref<Eigen::VectorXd>& additive_torque)
   {
+    maybe_unused(q,Dq,DDq,additive_torque);
     Eigen::VectorXd t(m_joints_number);
     t.setZero();
     return t;

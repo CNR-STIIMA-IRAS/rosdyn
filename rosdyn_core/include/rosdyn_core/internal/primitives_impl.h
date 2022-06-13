@@ -839,6 +839,7 @@ inline const Eigen::Matrix6Xd& Chain::getJacobian(const Eigen::VectorXd& q)
 
 inline Eigen::Matrix6Xd Chain::getJacobianLink(const Eigen::VectorXd& q, const std::string& link_name)
 {
+  maybe_unused(q);
   if (!m_is_screws_computed)
     computeScrews();
 

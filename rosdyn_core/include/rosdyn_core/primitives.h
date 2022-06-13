@@ -511,7 +511,7 @@ public:
   const rosdyn::VectorOfVector6d& getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame);
   const Eigen::Vector6d& getWrenchTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame)
   {
-    return getWrench(q, DDq, DDq, ext_wrenches_in_link_frame).back();
+    return getWrench(q, Dq, DDq, ext_wrenches_in_link_frame).back();
   }
   const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame);
   const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
