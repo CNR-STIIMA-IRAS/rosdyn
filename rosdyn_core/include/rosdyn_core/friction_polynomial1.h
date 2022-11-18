@@ -88,6 +88,7 @@ public:
 
   virtual Eigen::VectorXd getTorque(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq)
   {
+    maybe_unused(q,DDq);
     computeRegressor(Dq);
     m_torques(m_component_joint_number) = m_regressor.row(m_component_joint_number) * m_nominal_parameters;
     return m_torques;
@@ -95,6 +96,7 @@ public:
 
   virtual Eigen::VectorXd getAdditiveTorque(const Eigen::Ref< Eigen::VectorXd >& q, const Eigen::Ref< Eigen::VectorXd >& Dq, const Eigen::Ref< Eigen::VectorXd >& DDq)
   {
+    maybe_unused(q,DDq);
     computeRegressor(Dq);
     m_torques(m_component_joint_number) = m_regressor.rightCols(1).row(m_component_joint_number) * m_nominal_parameters.tail(1);
     return m_torques;
@@ -102,6 +104,7 @@ public:
 
   virtual Eigen::VectorXd getNonAdditiveTorque(const Eigen::Ref< Eigen::VectorXd >& q, const Eigen::Ref< Eigen::VectorXd >& Dq, const Eigen::Ref< Eigen::VectorXd >& DDq, const Eigen::Ref< Eigen::VectorXd >& additive_torque)
   {
+    maybe_unused(q,DDq);
     Eigen::VectorXd tau = additive_torque;
     if (std::abs(Dq(m_component_joint_number)) < m_Dq_threshold)
     {
@@ -122,6 +125,7 @@ public:
 
   virtual Eigen::MatrixXd getRegressor(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq)
   {
+    maybe_unused(q,DDq);
     computeRegressor(Dq);
     return m_regressor;
   }

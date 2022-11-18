@@ -511,7 +511,7 @@ public:
   const rosdyn::VectorOfVector6d& getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame);
   const Eigen::Vector6d& getWrenchTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame)
   {
-    return getWrench(q, DDq, DDq, ext_wrenches_in_link_frame).back();
+    return getWrench(q, Dq, DDq, ext_wrenches_in_link_frame).back();
   }
   const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame);
   const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
@@ -547,6 +547,14 @@ rosdyn::ChainPtr createChain( const urdf::ModelInterface& urdf_model_interface,
  * @param[in] Chain
  */
 rosdyn::ChainPtr createChain(const rosdyn::ChainPtr& chain);
+
+/**
+ * @brief construct the shared_ptr of a chain
+ *
+ * @param[in] Chain
+ */
+rosdyn::ChainPtr createChain(const rosdyn::Chain& chain);
+
 
 
 ///////////////////////////////////////////////////

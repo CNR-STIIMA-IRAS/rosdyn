@@ -56,12 +56,14 @@ public:
 
   virtual Eigen::VectorXd getTorque(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq)
   {
+    maybe_unused(Dq,DDq);
     m_torques(m_component_joint_number) = m_elasticity * q(m_joints_number) + m_offset;
     return m_torques;
   }
 
   virtual Eigen::MatrixXd getRegressor(const Eigen::Ref<Eigen::VectorXd>& q,  const Eigen::Ref<Eigen::VectorXd>& Dq, const Eigen::Ref<Eigen::VectorXd>& DDq)
   {
+    maybe_unused(Dq,DDq);
     m_regressor(m_component_joint_number, 0) = q(m_component_joint_number);
     m_regressor(m_component_joint_number, 1) = 1;
     return m_regressor;

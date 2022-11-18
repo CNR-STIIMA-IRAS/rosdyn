@@ -37,6 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <gtest/gtest.h>
 
+#include <thread>
+
 rosdyn::ChainPtr chain;
 
 
@@ -103,7 +105,7 @@ TEST(Suite, chainPtrTest)
   double t_inertia_eigen = 0;
   // ros::Time t0;
   auto t0 = std::chrono::steady_clock::now();
-  int ntrial = 1e4;
+  int ntrial = 1e3;
 
 
   for (int idx = 0; idx < ntrial; idx++)
@@ -274,7 +276,7 @@ TEST(Suite, staticChainTest)
   double t_torque_eigen = 0;
   double t_inertia_eigen = 0;
   auto t0 = std::chrono::steady_clock::now();
-  int ntrial = 1e4;
+  int ntrial = 1e3;
 
 
   for (int idx = 0; idx < ntrial; idx++)
@@ -374,6 +376,42 @@ TEST(Suite, staticChainTest)
   printf("computation time joint torque                                    = %8.5f [us]\n", t_torque_eigen / ntrial);
   printf("computation time joint inertia                                   = %8.5f [us]\n", t_inertia_eigen / ntrial);
 }
+
+
+TEST(Suite, threadID)
+{
+
+    auto t0 = std::chrono::steady_clock::now();
+
+    t0 = std::chrono::steady_clock::now();
+    std::thread::id this_id = std::this_thread::get_id();
+    auto t1 = std::chrono::steady_clock::now();
+    double dt = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+    std::cout << "GET ID " << this_id << " | TIME  = " << dt << "[us]" << std::endl;
+    int ntrial = 1e4;
+    double t_null = 0;
+    double t_max = 0;
+
+    std::vector<std::thread> grp;
+    for (int idx = 0; idx < ntrial; idx++)
+    {
+        grp.emplace_back([&t_null, &t_max]()
+        {
+            auto t0 = std::chrono::steady_clock::now();
+            std::thread::id this_id = std::this_thread::get_id();
+            auto t1 = std::chrono::steady_clock::now();
+            double dt = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
+            t_null += dt;
+            t_max = std::max(t_max, dt);
+        });
+    }
+    for (auto& thread : grp)
+        thread.join();
+
+    printf("GET ID MEAN TIME = %8.5f [us]\n", t_null / 1000.0 / ntrial);
+    printf("GET ID MAX TIME = %8.5f [us]\n", t_max / 1000.0);
+}
+
 
 
 int main(int argc, char **argv)

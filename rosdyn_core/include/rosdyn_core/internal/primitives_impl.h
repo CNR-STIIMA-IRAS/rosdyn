@@ -1,5 +1,5 @@
 #ifndef ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
-#define ROSDYN_CORE_INTERNAL_PRIMITITES_IMPL_H
+#define ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
 
 #include <rosdyn_core/primitives.h>
 
@@ -86,7 +86,24 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
   {
     m_q_max   = urdf_joint->limits->upper;
     m_q_min   = urdf_joint->limits->lower;
+    if(m_q_max<=m_q_min)
+    {
+      std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
+        << "' is malformed in the URDF! The range of motion is not specified properly "
+          << "(upper: " << urdf_joint->limits->upper << ", lower: " << urdf_joint->limits->lower << ")" << std::endl;
+      std::cerr << "Superimposed +/-2 M_PI rad" << std::endl;
+      m_q_max = 2 * M_PI;
+      m_q_min = -2 * M_PI;
+    }
     m_Dq_max  = urdf_joint->limits->velocity;
+    if(m_Dq_max<=0.0)
+    {
+      std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name 
+        << "' is malformed in the URDF! The max velocity isn't positive (vel: " 
+          << urdf_joint->limits->velocity <<")" << std::endl;
+      std::cerr << "Superimposed 2 * M_PI rad / sec" << std::endl;
+      m_Dq_max = 2 * M_PI ;
+    }
     m_DDq_max = 10.0 * m_Dq_max;
     m_tau_max = urdf_joint->limits->effort;
   }
@@ -442,6 +459,7 @@ inline Chain& Chain::operator=(const Chain& rhs)
   {
     throw std::runtime_error(error.c_str());
   }
+  return *this;
 }
 
 //! ADDED TO INIT ALSO STATIC Chain!
@@ -821,6 +839,7 @@ inline const Eigen::Matrix6Xd& Chain::getJacobian(const Eigen::VectorXd& q)
 
 inline Eigen::Matrix6Xd Chain::getJacobianLink(const Eigen::VectorXd& q, const std::string& link_name)
 {
+  maybe_unused(q);
   if (!m_is_screws_computed)
     computeScrews();
 
@@ -1401,6 +1420,16 @@ inline rosdyn::ChainPtr createChain(const rosdyn::ChainPtr& cpy)
   std::string base_link_name = cpy->getLinksName().front();
   std::string ee_link_name = cpy->getLinksName().back();
   Eigen::Vector3d gravity = cpy->getGravity();
+  rosdyn::ChainPtr chain(new rosdyn::Chain(root_link, base_link_name, ee_link_name, gravity));
+  return chain;
+}
+
+inline rosdyn::ChainPtr createChain(const rosdyn::Chain& cpy)
+{
+  rosdyn::LinkPtr root_link = cpy.getLinks().front();
+  std::string base_link_name = cpy.getLinksName().front();
+  std::string ee_link_name = cpy.getLinksName().back();
+  Eigen::Vector3d gravity = cpy.getGravity();
   rosdyn::ChainPtr chain(new rosdyn::Chain(root_link, base_link_name, ee_link_name, gravity));
   return chain;
 }
