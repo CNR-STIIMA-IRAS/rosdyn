@@ -1295,6 +1295,8 @@ inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T
                           m_ci0,
                           m_joint_error);
     sol += m_joint_error;
+
+
   }
   return false;
 }
