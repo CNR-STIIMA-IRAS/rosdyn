@@ -14,13 +14,6 @@
     local-name: common/rosparam_utilities
     uri: https://github.com/CNR-STIIMA-IRAS/rosparam_utilities.git
 - git:
-    local-name: motion/moveit/moveit_planning_helper
-    uri: https://github.com/CNR-STIIMA-IRAS/moveit_planning_helper
-- git:
-    local-name: rosdyn
-    uri: https://github.com/CNR-STIIMA-IRAS/rosdyn
-    version: master
-- git:
     local-name: rosdyn_examples
     uri: https://github.com/CNR-STIIMA-IRAS/rosdyn_examples.git
 - git:
@@ -29,10 +22,3 @@
 - git:
     local-name: common/cnr_control_toolbox
     uri: https://github.com/CNR-STIIMA-IRAS/cnr_control_toolbox
-- git:
-    local-name: test_dependencies/universal_robot
-    uri: https://github.com/fmauch/universal_robot.git
-    version: calibration_devel
-- git:
-    local-name: common/cnr_logger
-    uri: https://github.com/CNR-STIIMA-IRAS/cnr_logger
