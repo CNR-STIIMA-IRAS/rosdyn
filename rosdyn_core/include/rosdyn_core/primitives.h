@@ -507,6 +507,9 @@ public:
 
   /*
    * Dynamics methods
+   *
+   * NOTE: ext_wrenches_in_link_frame are intended as wrenches applied TO the the link(s)
+   *
    */
   const rosdyn::VectorOfVector6d& getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame);
   const Eigen::Vector6d& getWrenchTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame)

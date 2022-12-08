@@ -1139,10 +1139,11 @@ inline const rosdyn::VectorOfVector6d& Chain::getWrench(const Eigen::VectorXd& q
       m_gravity_wrenches.at(nl).block(3, 0, 3, 1) = -(m_T_bl.at(nl).linear() * m_links.at(nl)->getCog()).cross(m_links.at(nl)->getMass() * m_gravity);
     }
 
+    // ext_wrenches_in_link_frame are intended as wrenches applied TO the the link(s), that's why we put "minus"
     if (nl < static_cast<int>(m_links_number - 1))
-      m_wrenches.at(nl) = spatialTranformation(ext_wrenches_in_link_frame.at(nl), m_T_bl.at(nl)) + m_inertial_wrenches.at(nl) + m_gravity_wrenches.at(nl) + spatialDualTranslation(m_wrenches.at(nl + 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl + 1).translation());
+      m_wrenches.at(nl) = spatialTranformation(-ext_wrenches_in_link_frame.at(nl), m_T_bl.at(nl)) + m_inertial_wrenches.at(nl) + m_gravity_wrenches.at(nl) + spatialDualTranslation(m_wrenches.at(nl + 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl + 1).translation());
     else
-      m_wrenches.at(nl) = spatialTranformation(ext_wrenches_in_link_frame.at(nl), m_T_bl.at(nl)) + m_inertial_wrenches.at(nl) + m_gravity_wrenches.at(nl);
+      m_wrenches.at(nl) = spatialTranformation(-ext_wrenches_in_link_frame.at(nl), m_T_bl.at(nl)) + m_inertial_wrenches.at(nl) + m_gravity_wrenches.at(nl);
   }
 
   m_is_wrench_computed = true;
