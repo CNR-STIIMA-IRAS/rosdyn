@@ -60,6 +60,12 @@ target_link_libraries(rosdyn_speed_test
   ${catkin_LIBRARIES}
 )
 
+add_executable(bug_test test/bug_test.cpp)
+add_dependencies(bug_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(bug_test
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
