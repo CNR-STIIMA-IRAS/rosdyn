@@ -1114,8 +1114,8 @@ inline const rosdyn::VectorOfVector6d& Chain::getDDTwist(const Eigen::VectorXd& 
 inline const rosdyn::VectorOfVector6d& Chain::getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame)
 {
   getDTwist(q, Dq, DDq);
-  if (m_is_wrench_computed)
-    return m_wrenches;
+  //if (m_is_wrench_computed)
+  //  return m_wrenches;
 
   for (int nl = (m_links_number - 1); nl >= 0; nl--)
   {
