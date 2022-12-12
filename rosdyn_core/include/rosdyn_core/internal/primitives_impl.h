@@ -1464,4 +1464,4 @@ inline rosdyn::ChainPtr createChain(const rosdyn::Chain& cpy)
 
 }  // namespace rosdyn
 
-//#endif  // ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
+#endif  // ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
