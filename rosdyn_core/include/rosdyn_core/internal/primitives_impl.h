@@ -1,13 +1,11 @@
-//#ifndef ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
-//#define ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
+#ifndef ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
+#define ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
 
-//#ifndef ROSDYN_CORE_PRIMITIVES_H
 #include <rosdyn_core/primitives.h>
-//#endif
 
 namespace rosdyn
 {
-    
+
 
 ///////////////////////////////////////////////////
 
@@ -86,36 +84,62 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
 
   if ((urdf_joint->type == urdf::Joint::PRISMATIC) || (urdf_joint->type == urdf::Joint::REVOLUTE))
   {
-    m_q_max   = urdf_joint->limits->upper;
-    m_q_min   = urdf_joint->limits->lower;
-    if(m_q_max<=m_q_min)
+    if (!urdf_joint->limits)
     {
       std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
-        << "' is malformed in the URDF! The range of motion is not specified properly "
-          << "(upper: " << urdf_joint->limits->upper << ", lower: " << urdf_joint->limits->lower << ")" << std::endl;
-      std::cerr << "Superimposed +/-2 M_PI rad" << std::endl;
-      m_q_max = 2 * M_PI;
-      m_q_min = -2 * M_PI;
+                << "' is malformed in the URDF! no limits are found. Using 1e10 as default" << std::endl;
+
+      m_q_max=1e10;
+      m_q_min=-1e10;
+      m_DDq_max = 10.0 * m_Dq_max;
+      m_tau_max = 1e10;
     }
-    m_Dq_max  = urdf_joint->limits->velocity;
-    if(m_Dq_max<=0.0)
+    else
     {
-      std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name 
-        << "' is malformed in the URDF! The max velocity isn't positive (vel: " 
-          << urdf_joint->limits->velocity <<")" << std::endl;
-      std::cerr << "Superimposed 2 * M_PI rad / sec" << std::endl;
-      m_Dq_max = 2 * M_PI ;
+      m_q_max   = urdf_joint->limits->upper;
+      m_q_min   = urdf_joint->limits->lower;
+      if(m_q_max<=m_q_min)
+      {
+        std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
+                  << "' is malformed in the URDF! The range of motion is not specified properly "
+                  << "(upper: " << urdf_joint->limits->upper << ", lower: " << urdf_joint->limits->lower << ")" << std::endl;
+        std::cerr << "Superimposed +/-2 M_PI rad" << std::endl;
+        m_q_max = 2 * M_PI;
+        m_q_min = -2 * M_PI;
+      }
+      m_Dq_max  = urdf_joint->limits->velocity;
+      if(m_Dq_max<=0.0)
+      {
+        std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
+                  << "' is malformed in the URDF! The max velocity isn't positive (vel: "
+                  << urdf_joint->limits->velocity <<")" << std::endl;
+        std::cerr << "Superimposed 2 * M_PI rad / sec" << std::endl;
+        m_Dq_max = 2 * M_PI ;
+      }
+      m_DDq_max = 10.0 * m_Dq_max;
+      m_tau_max = urdf_joint->limits->effort;
     }
-    m_DDq_max = 10.0 * m_Dq_max;
-    m_tau_max = urdf_joint->limits->effort;
   }
   else if (urdf_joint->type == urdf::Joint::CONTINUOUS)
   {
-    m_q_max   = 1e10;
-    m_q_min   = -1e10;
-    m_Dq_max  = urdf_joint->limits->velocity;
-    m_DDq_max = 10.0 * m_Dq_max;
-    m_tau_max = urdf_joint->limits->effort;
+    if (!urdf_joint->limits)
+    {
+      std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
+                << "' is malformed in the URDF! no limits are found. Using 1e10 as default" << std::endl;
+
+      m_q_max=1e10;
+      m_q_min=-1e10;
+      m_DDq_max = 10.0 * m_Dq_max;
+      m_tau_max = 1e10;
+    }
+    else
+    {
+      m_q_max   = 1e10;
+      m_q_min   = -1e10;
+      m_Dq_max  = urdf_joint->limits->velocity;
+      m_DDq_max = 10.0 * m_Dq_max;
+      m_tau_max = urdf_joint->limits->effort;
+    }
   }
 
   m_child_link.reset(new rosdyn::Link());
@@ -160,7 +184,7 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
       if(!ros::param::get(joint_limits_param + "/max_velocity", vel))
       {
         what += (what.length()>0 ? "\n" : "")
-             + joint_limits_param + "/max_velocity is not defined. URDF value is superimposed"
+            + joint_limits_param + "/max_velocity is not defined. URDF value is superimposed"
             + " (vel max=" + std::to_string(m_Dq_max)+ ")";
       }
       m_Dq_max = std::isnan(vel) || (vel<=0) ? m_Dq_max : vel;
@@ -173,8 +197,8 @@ inline int Joint::enforceLimitsFromRobotDescriptionParam(const std::string& full
       if (!ros::param::get(joint_limits_param +  "/max_acceleration", acc))
       {
         what += (what.length()>0 ? "\n" : "")
-             + joint_limits_param + "/max_acceleration is not defined. The superimposed value is ten times the max vel"
-             + "(acc max = " + std::to_string(10 * m_Dq_max)+ ")";
+            + joint_limits_param + "/max_acceleration is not defined. The superimposed value is ten times the max vel"
+            + "(acc max = " + std::to_string(10 * m_Dq_max)+ ")";
       }
       m_DDq_max = std::isnan(acc) || (acc<=0) ?  10 * m_Dq_max : acc;
     }
@@ -406,7 +430,7 @@ inline Chain::Chain(const Chain& cpy)
 
 
 inline Chain::Chain(const rosdyn::LinkPtr& root_link,
-            const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
+                    const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
   : Chain()
 {
   std::string error;
@@ -417,7 +441,7 @@ inline Chain::Chain(const rosdyn::LinkPtr& root_link,
 }
 
 inline Chain::Chain(const urdf::Model& model,
-        const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
+                    const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
 {
   rosdyn::LinkPtr root_link(new rosdyn::Link());
   root_link->fromUrdf(model.root_link_);
@@ -429,7 +453,7 @@ inline Chain::Chain(const urdf::Model& model,
 }
 
 inline Chain::Chain(const std::string& robot_description, 
-            const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
+                    const std::string& base_link_name, const std::string& ee_link_name, const Eigen::Vector3d& gravity)
 {
   urdf::Model model;
   model.initParam(robot_description);
@@ -466,23 +490,23 @@ inline Chain& Chain::operator=(const Chain& rhs)
 
 //! ADDED TO INIT ALSO STATIC Chain!
 inline bool Chain::init(std::string& error,
-              rosdyn::LinkPtr root_link,
-                const std::string& base_link_name,
-                  const std::string& ee_link_name,
-                    const Eigen::Vector3d& gravity)
+                        rosdyn::LinkPtr root_link,
+                        const std::string& base_link_name,
+                        const std::string& ee_link_name,
+                        const Eigen::Vector3d& gravity)
 {
   m_is_screws_computed =
-    m_is_jac_computed =
+      m_is_jac_computed =
       m_is_vel_computed =
-        m_is_acc_computed =
-          m_is_nonlinacc_computed =
-            m_is_linacc_computed =
-              m_is_jerk_computed =
-                m_is_nonlinjerk_computed =
-                  m_is_linjerk_computed =
-                    m_is_wrench_computed =
-                      m_is_regressor_computed =
-                        false;
+      m_is_acc_computed =
+      m_is_nonlinacc_computed =
+      m_is_linacc_computed =
+      m_is_jerk_computed =
+      m_is_nonlinjerk_computed =
+      m_is_linjerk_computed =
+      m_is_wrench_computed =
+      m_is_regressor_computed =
+      false;
 
   m_gravity = gravity;
   rosdyn::LinkPtr base_link = root_link->findChild(base_link_name);
@@ -608,8 +632,8 @@ inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_n
   //   m_regressor_extended.resize(m_active_joints_number, m_joints_number*10);
   m_regressor_extended.setZero();
 
-//  m_joint_inertia.resize(m_active_joints_number, m_active_joints_number); NICOLA RIPETUTI SOTTO; e m_active_joints_number potrebbe essere sbagliato
-//  m_joint_inertia.setZero();
+  //  m_joint_inertia.resize(m_active_joints_number, m_active_joints_number); NICOLA RIPETUTI SOTTO; e m_active_joints_number potrebbe essere sbagliato
+  //  m_joint_inertia.setZero();
 
 
   for (unsigned int idx = 0; idx < joints_name.size(); idx++)
@@ -779,17 +803,17 @@ inline const Eigen::Affine3d& Chain::getTransformation(const Eigen::VectorXd& q)
 
   m_last_q = q;
   m_is_screws_computed =
-    m_is_jac_computed =
+      m_is_jac_computed =
       m_is_vel_computed =
-        m_is_acc_computed =
-          m_is_nonlinacc_computed =
-            m_is_linacc_computed =
-              m_is_jerk_computed =
-                m_is_nonlinjerk_computed =
-                  m_is_linjerk_computed =
-                    m_is_wrench_computed =
-                      m_is_regressor_computed =
-                        false;
+      m_is_acc_computed =
+      m_is_nonlinacc_computed =
+      m_is_linacc_computed =
+      m_is_jerk_computed =
+      m_is_nonlinjerk_computed =
+      m_is_linjerk_computed =
+      m_is_wrench_computed =
+      m_is_regressor_computed =
+      false;
 
   computeFrames();
 
@@ -896,7 +920,7 @@ inline const rosdyn::VectorOfVector6d& Chain::getTwist(const Eigen::VectorXd& q,
   {
     unsigned int nj = nl - 1;
     m_twists.at(nl) = spatialTranslation(m_twists.at(nl - 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl - 1).translation()) +
-                      m_screws_of_c_in_b.at(nl) * m_sorted_Dq(nj);
+        m_screws_of_c_in_b.at(nl) * m_sorted_Dq(nj);
   }
   m_is_vel_computed = true;
 
@@ -944,7 +968,7 @@ inline const rosdyn::VectorOfVector6d& Chain::getDTwistLinearPart(const Eigen::V
   {
     unsigned int nj = nl - 1;
     m_Dtwists_linear_part.at(nl) = spatialTranslation(m_Dtwists_linear_part.at(nl - 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl - 1).translation()) +
-                                   m_screws_of_c_in_b.at(nl) * m_sorted_DDq(nj);
+        m_screws_of_c_in_b.at(nl) * m_sorted_DDq(nj);
   }
   m_is_linacc_computed = true;
 
@@ -963,7 +987,7 @@ inline const rosdyn::VectorOfVector6d& Chain::getDTwistNonLinearPart(const Eigen
   {
     unsigned int nj = nl - 1;
     m_Dtwists_nonlinear_part.at(nl) = spatialTranslation(m_Dtwists_nonlinear_part.at(nl - 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl - 1).translation()) +
-                                      spatialCrossProduct(m_twists.at(nl), m_screws_of_c_in_b.at(nl)) * m_sorted_Dq(nj);
+        spatialCrossProduct(m_twists.at(nl), m_screws_of_c_in_b.at(nl)) * m_sorted_Dq(nj);
   }
   m_is_nonlinacc_computed = true;
 
@@ -1005,7 +1029,7 @@ inline const rosdyn::VectorOfVector6d& Chain::getDTwist(const Eigen::VectorXd& q
     {
       unsigned int nj = nl - 1;
       m_Dtwists.at(nl) = spatialTranslation(m_Dtwists.at(nl - 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl - 1).translation()) +
-                         spatialCrossProduct(m_twists.at(nl), m_screws_of_c_in_b.at(nl)) * m_sorted_Dq(nj) +  m_screws_of_c_in_b.at(nl) * m_sorted_DDq(nj);
+          spatialCrossProduct(m_twists.at(nl), m_screws_of_c_in_b.at(nl)) * m_sorted_Dq(nj) +  m_screws_of_c_in_b.at(nl) * m_sorted_DDq(nj);
     }
   }
 
@@ -1037,7 +1061,7 @@ inline const rosdyn::VectorOfVector6d& Chain::getDDTwistLinearPart(const Eigen::
   {
     unsigned int nj = nl - 1;
     m_DDtwists_linear_part.at(nl) = spatialTranslation(m_DDtwists_linear_part.at(nl - 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl - 1).translation()) +
-                                    m_screws_of_c_in_b.at(nl) * m_sorted_DDDq(nj);
+        m_screws_of_c_in_b.at(nl) * m_sorted_DDDq(nj);
   }
   m_is_linjerk_computed = true;
 
@@ -1064,9 +1088,9 @@ inline const rosdyn::VectorOfVector6d& Chain::getDDTwistNonLinearPart(const Eige
     unsigned int nj = nl - 1;
     spatialCrossProduct(m_twists.at(nl), m_screws_of_c_in_b.at(nl), &v_cross_s);
     m_DDtwists_nonlinear_part.at(nl) =  spatialTranslation(m_DDtwists_nonlinear_part.at(nl - 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl - 1).translation()) +
-                                        v_cross_s * m_sorted_DDq(nj) +   /* v(i) X S(i)*DDq(i) */
-                                        (spatialCrossProduct(m_Dtwists.at(nl), m_screws_of_c_in_b.at(nl)) +    /* a(i) X S(i)*Dq(i) */
-                                         spatialCrossProduct(m_twists.at(nl), v_cross_s)) * m_sorted_Dq(nj);    /* v(i) X v(i) X S(i) * Dq(i) */
+        v_cross_s * m_sorted_DDq(nj) +   /* v(i) X S(i)*DDq(i) */
+        (spatialCrossProduct(m_Dtwists.at(nl), m_screws_of_c_in_b.at(nl)) +    /* a(i) X S(i)*Dq(i) */
+         spatialCrossProduct(m_twists.at(nl), v_cross_s)) * m_sorted_Dq(nj);    /* v(i) X v(i) X S(i) * Dq(i) */
   }
   m_is_nonlinjerk_computed = true;
 
@@ -1103,10 +1127,10 @@ inline const rosdyn::VectorOfVector6d& Chain::getDDTwist(const Eigen::VectorXd& 
       unsigned int nj = nl - 1;
       spatialCrossProduct(m_twists.at(nl), m_screws_of_c_in_b.at(nl), &v_cross_s);
       m_DDtwists.at(nl) = spatialTranslation(m_DDtwists.at(nl - 1), m_T_bl.at(nl).translation() - m_T_bl.at(nl - 1).translation()) +
-                          m_screws_of_c_in_b.at(nl) * m_sorted_DDDq(nj) +
-                          v_cross_s * m_sorted_DDq(nj) +   /* v(i) X S(i)*DDq(i) */
-                          (spatialCrossProduct(m_Dtwists.at(nl), m_screws_of_c_in_b.at(nl)) +    /* a(i) X S(i)*Dq(i) */
-                           spatialCrossProduct(m_twists.at(nl), v_cross_s)) * m_sorted_Dq(nj);    /* v(i) X v(i) X S(i) * Dq(i) */
+          m_screws_of_c_in_b.at(nl) * m_sorted_DDDq(nj) +
+          v_cross_s * m_sorted_DDq(nj) +   /* v(i) X S(i)*DDq(i) */
+          (spatialCrossProduct(m_Dtwists.at(nl), m_screws_of_c_in_b.at(nl)) +    /* a(i) X S(i)*Dq(i) */
+           spatialCrossProduct(m_twists.at(nl), v_cross_s)) * m_sorted_Dq(nj);    /* v(i) X v(i) X S(i) * Dq(i) */
     }
   }
   m_is_jerk_computed = true;
@@ -1129,14 +1153,14 @@ inline const rosdyn::VectorOfVector6d& Chain::getWrench(const Eigen::VectorXd& q
     else
     {
       m_inertial_wrenches.at(nl) = spatialRotation(
-                                     m_links.at(nl)->getSpatialInertia() *
-                                     spatialRotation(m_Dtwists.at(nl), m_T_bl.at(nl).linear().transpose())
-                                     +
-                                     spatialDualCrossProduct(
-                                       spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose()),
-                                       m_links.at(nl)->getSpatialInertia() *
-                                       spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose())),
-                                     m_T_bl.at(nl).linear());
+            m_links.at(nl)->getSpatialInertia() *
+            spatialRotation(m_Dtwists.at(nl), m_T_bl.at(nl).linear().transpose())
+            +
+            spatialDualCrossProduct(
+              spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose()),
+              m_links.at(nl)->getSpatialInertia() *
+              spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose())),
+            m_T_bl.at(nl).linear());
       m_gravity_wrenches.at(nl).block(0, 0, 3, 1) = -m_links.at(nl)->getMass() * m_gravity;
       m_gravity_wrenches.at(nl).block(3, 0, 3, 1) = -(m_T_bl.at(nl).linear() * m_links.at(nl)->getCog()).cross(m_links.at(nl)->getMass() * m_gravity);
     }
@@ -1184,8 +1208,8 @@ inline const Eigen::VectorXd& Chain::getJointTorqueNonLinearPart(const Eigen::Ve
 }
 
 inline Eigen::MatrixXd Chain::getRegressor(const Eigen::VectorXd& q,
-    const Eigen::VectorXd& Dq,
-    const Eigen::VectorXd& DDq)
+                                           const Eigen::VectorXd& Dq,
+                                           const Eigen::VectorXd& DDq)
 {
   if (q.rows() != Dq.rows())
   {
@@ -1215,12 +1239,12 @@ inline Eigen::MatrixXd Chain::getRegressor(const Eigen::VectorXd& q,
     for (unsigned int iPar = 0; iPar < 10; iPar++)
     {
       m_wrenches_regressor.at(nl).col(iPar) = spatialRotation(m_links.at(nl)->getSpatialInertiaTerms().at(iPar) *
-                                              spatialRotation(m_Dtwists.at(nl), m_T_bl.at(nl).linear().transpose()) +
-                                              spatialDualCrossProduct(
-                                                  spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose()),
-                                                  m_links.at(nl)->getSpatialInertiaTerms().at(iPar) *
-                                                  spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose())),
-                                              m_T_bl.at(nl).linear());
+                                                              spatialRotation(m_Dtwists.at(nl), m_T_bl.at(nl).linear().transpose()) +
+                                                              spatialDualCrossProduct(
+                                                                spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose()),
+                                                                m_links.at(nl)->getSpatialInertiaTerms().at(iPar) *
+                                                                spatialRotation(m_twists.at(nl), m_T_bl.at(nl).linear().transpose())),
+                                                              m_T_bl.at(nl).linear());
     }
 
 
@@ -1407,7 +1431,7 @@ inline std::vector<Eigen::VectorXd> Chain::getMultiplicity(const Eigen::VectorXd
 }
 
 inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_interface,
-    const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
+                                    const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)
 {
   rosdyn::LinkPtr root_link(new rosdyn::Link());
   root_link->fromUrdf(urdf_model_interface.root_link_);
