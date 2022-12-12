@@ -1,7 +1,9 @@
-#ifndef ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
-#define ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
+//#ifndef ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
+//#define ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
 
-//#include <rosdyn_core/primitives.h>
+//#ifndef ROSDYN_CORE_PRIMITIVES_H
+#include <rosdyn_core/primitives.h>
+//#endif
 
 namespace rosdyn
 {
@@ -1438,4 +1440,4 @@ inline rosdyn::ChainPtr createChain(const rosdyn::Chain& cpy)
 
 }  // namespace rosdyn
 
-#endif  // ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
+//#endif  // ROSDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
