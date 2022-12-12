@@ -564,6 +564,6 @@ rosdyn::ChainPtr createChain(const rosdyn::Chain& chain);
 
 }  // namespace rosdyn
 
-#include <rosdyn_core/internal/primitives_impl.h>
 
-#endif  // ROSDYN_CORE_PRIMITIVES_H 
+#include <rosdyn_core/internal/primitives_impl.h>
+#endif  // ROSDYN_CORE_PRIMITIVES_H
