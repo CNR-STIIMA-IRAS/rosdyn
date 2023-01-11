@@ -192,7 +192,7 @@ inline Eigen::Vector6d spatialRotation(const Eigen::Vector6d& vec6_of_a_in_b, co
  */
 inline void spatialTranformation(const Eigen::Vector6d& twist_of_a_in_a, const Eigen::Affine3d& T_b_a, Eigen::Vector6d* twist_of_b_in_b)
 {
-  (*twist_of_b_in_b) << T_b_a.linear()*twist_of_a_in_a.block(0, 0, 3, 1) + ((Eigen::Vector3d)(twist_of_a_in_a.block(3, 0, 3, 1))).cross(T_b_a.translation()),
+  (*twist_of_b_in_b) << T_b_a.linear()*twist_of_a_in_a.block(0, 0, 3, 1) + ((Eigen::Vector3d)(T_b_a.linear()*twist_of_a_in_a.block(3, 0, 3, 1))).cross(T_b_a.translation()),
   T_b_a.linear()*twist_of_a_in_a.block(3, 0, 3, 1);
 }
 
@@ -214,7 +214,7 @@ inline Eigen::Vector6d spatialTranformation(const Eigen::Vector6d& twist_of_a_in
 inline void spatialDualTranformation(const Eigen::Vector6d& wrench_of_a_in_a, const Eigen::Affine3d& T_b_a, Eigen::Vector6d* wrench_of_b_b)
 {
   (*wrench_of_b_b) << T_b_a.linear()*wrench_of_a_in_a.block(0, 0, 3, 1),
-  T_b_a.linear()*wrench_of_a_in_a.block(3, 0, 3, 1) + ((Eigen::Vector3d)(wrench_of_a_in_a.block(0, 0, 3, 1))).cross(T_b_a.translation());
+  T_b_a.linear()*wrench_of_a_in_a.block(3, 0, 3, 1) + ((Eigen::Vector3d)(T_b_a.linear()*wrench_of_a_in_a.block(0, 0, 3, 1))).cross(T_b_a.translation());
 }
 
 /*
