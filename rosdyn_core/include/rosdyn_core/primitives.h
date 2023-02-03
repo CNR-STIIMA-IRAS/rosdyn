@@ -57,6 +57,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace rosdyn
 {
 
+class Joint;
+class Link;
+class Chain;
 
 class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
 {
@@ -97,6 +100,7 @@ protected:
 
   void computedTpc();
   void computeJacobian();
+
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Joint();
@@ -148,6 +152,15 @@ public:
   {
     return (m_type == FIXED);
   }
+
+  /**
+   * @brief propagateCloning return an indipendent copy of the Joint. It starts a cloning cascade,
+   * so that the child Link, its childs joints, and its child links are cloned too.
+   * @param cloned_parent_link is the parent link. It should be a cloned parent link.
+   * @return the cloned Joint. Each member of the object is a cloned version of the original one.
+   */
+  rosdyn::JointPtr& propagateCloning(const rosdyn::LinkPtr& cloned_parent_link = 0);
+
 };
 
 class Link: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Link>
@@ -162,7 +175,6 @@ protected:
   Eigen::Vector3d m_cog_in_c;
   Eigen::Matrix<double, 6, 6> m_Inertia_cc;
   rosdyn::VectorOfMatrix66d m_Inertia_cc_single_term;
-
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -210,6 +222,14 @@ public:
   }
 
   Eigen::VectorXd getNominalParameters() const;
+
+  /**
+   * @brief propagateCloning return an indipendent copy of the Link. It starts a cloning cascade,
+   * so that the child Joint, and its child Link are cloned too.
+   * @param cloned_parent_joint is the parent Joint. It should be a cloned parent Joint.
+   * @return the cloned Link. Each member of the object is a cloned version of the original one.
+   */
+  rosdyn::LinkPtr& propagateCloning(const rosdyn::JointPtr& cloned_parent_joint = 0);
 };
 
 class Chain
@@ -527,6 +547,11 @@ public:
   const Eigen::MatrixXd& getJointInertia(const Eigen::VectorXd& q);
   Eigen::VectorXd getNominalParameters();
 
+  /**
+   * @brief clone creates an indipendent clone of the chain, cloning also joints and links usign a cloning cascade
+   * @return the cloned, indipendent chain
+   */
+  rosdyn::ChainPtr& clone();
 };
 
 
