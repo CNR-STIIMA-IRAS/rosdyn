@@ -232,7 +232,7 @@ inline const Eigen::Vector6d& Joint::getScrew_of_child_in_parent()
   return m_screw_of_c_in_p;
 }
 
-inline rosdyn::JointPtr& Joint::propagateCloning(const rosdyn::LinkPtr& cloned_parent_link)
+inline rosdyn::JointPtr Joint::propagateCloning(const rosdyn::LinkPtr& cloned_parent_link)
 {
   rosdyn::JointPtr cloned_joint = std::make_shared<rosdyn::Joint>();
 
@@ -265,8 +265,8 @@ inline rosdyn::JointPtr& Joint::propagateCloning(const rosdyn::LinkPtr& cloned_p
   cloned_joint->m_name= this->m_name;
   cloned_joint->m_parent_link = cloned_parent_link;
 
-  if(m_child_link != 0)
-    cloned_joint->m_child_link = m_child_link->propagateCloning(cloned_joint);
+  if(this->m_child_link != 0)
+    cloned_joint->m_child_link = this->m_child_link->propagateCloning(cloned_joint);
   else
     cloned_joint->m_child_link = 0;
 
@@ -455,7 +455,7 @@ inline rosdyn::JointPtr Link::findChildJoint(const std::string& name)
   return ptr;
 }
 
-inline rosdyn::LinkPtr& Link::propagateCloning(const rosdyn::JointPtr& cloned_parent_joint)
+inline rosdyn::LinkPtr Link::propagateCloning(const rosdyn::JointPtr& cloned_parent_joint)
 {
   rosdyn::LinkPtr cloned_link = std::make_shared<rosdyn::Link>();
 
@@ -467,7 +467,7 @@ inline rosdyn::LinkPtr& Link::propagateCloning(const rosdyn::JointPtr& cloned_pa
   cloned_link->m_Inertia_cc = this->m_Inertia_cc;
   cloned_link->m_Inertia_cc_single_term = this->m_Inertia_cc_single_term;
 
-  for(const rosdyn::JointPtr& child_joint:m_child_joints)
+  for(const rosdyn::JointPtr& child_joint:this->m_child_joints)
   {
     cloned_link->m_child_joints.push_back(child_joint->propagateCloning(cloned_link));
     cloned_link->m_child_links.push_back(cloned_link->m_child_joints.back()->getChildLink());
@@ -549,7 +549,7 @@ inline Chain& Chain::operator=(const Chain& rhs)
   return *this;
 }
 
-inline rosdyn::ChainPtr& Chain::clone()
+inline rosdyn::ChainPtr Chain::clone()
 {
   rosdyn::ChainPtr cloned_chain = std::make_shared<rosdyn::Chain>();
 
@@ -563,12 +563,13 @@ inline rosdyn::ChainPtr& Chain::clone()
   }
 
   rosdyn::LinkPtr cloned_root_link = root_link->propagateCloning();
+
   std::string base_link_name = this->m_links_name.front();
   std::string ee_link_name = this->m_links_name.back();
   Eigen::Vector3d gravity = this->m_gravity;
 
   std::string error;
-  if(cloned_chain->init(error,cloned_root_link,base_link_name,ee_link_name,gravity))
+  if(!cloned_chain->init(error,cloned_root_link,base_link_name,ee_link_name,gravity))
     throw std::runtime_error(error.c_str());
 
   return cloned_chain;
@@ -639,7 +640,6 @@ inline bool Chain::init(std::string& error,
   m_joint_inertia_extended.resize(m_joints_number, m_joints_number);
   m_joint_inertia_extended.setZero();
 
-
   m_input_to_chain_joint.resize(m_joints_number, m_joints_number);
   m_input_to_chain_joint.setIdentity();
   m_chain_to_input_joint = m_input_to_chain_joint;
@@ -658,7 +658,6 @@ inline bool Chain::init(std::string& error,
 
   m_wrenches_regressor.resize(m_links_number);
 
-
   Eigen::Vector6d zero_vector;
   zero_vector.setZero();
   for (unsigned int idx = 0; idx < m_links_number; idx++)
@@ -676,7 +675,6 @@ inline bool Chain::init(std::string& error,
     m_gravity_wrenches.push_back(zero_vector);
     m_wrenches_regressor.at(idx).setZero();
   }
-
 
   m_sorted_q.resize(m_joints_number);
   m_sorted_Dq.resize(m_joints_number);
@@ -697,8 +695,8 @@ inline bool Chain::init(std::string& error,
 
   m_T_bl.resize(m_links_number);
   m_T_bl.at(0).setIdentity();
-  computeFrames();
 
+  computeFrames();
   setInputJointsName(m_moveable_joints_name);
 
   return true;
