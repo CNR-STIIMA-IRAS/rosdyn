@@ -25,7 +25,7 @@ else()
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
-  std_msgs roscpp urdf eigen_matrix_utils kinematics_filters roslint
+  std_msgs roscpp urdf eigen_matrix_utils
 )
 
 find_package(Eigen3 REQUIRED COMPONENTS)
@@ -39,7 +39,7 @@ endif()
 
 catkin_package(
   INCLUDE_DIRS include ${EIGEN3_INCLUDE_DIRS}
-  CATKIN_DEPENDS roscpp  std_msgs  urdf eigen_matrix_utils roslint kinematics_filters
+  CATKIN_DEPENDS roscpp  std_msgs  urdf eigen_matrix_utils
   DEPENDS EIGEN3
 )
 
@@ -104,9 +104,3 @@ if(CATKIN_ENABLE_TESTING)
   endif()
 endif()
 
-#############
-## Lint ##
-#############
-
-set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-build/include_what_you_use,-runtime/references")
-roslint_cpp()
