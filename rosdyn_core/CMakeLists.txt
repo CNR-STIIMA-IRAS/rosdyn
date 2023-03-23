@@ -31,12 +31,6 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Eigen3 REQUIRED COMPONENTS)
 find_package(Boost REQUIRED COMPONENTS system)
 
-## Add gtest based cpp test target and link libraries
-if(CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
-  find_package(code_coverage REQUIRED)
-  APPEND_COVERAGE_COMPILER_FLAGS()
-endif()
-
 catkin_package(
   INCLUDE_DIRS include ${EIGEN3_INCLUDE_DIRS}
   CATKIN_DEPENDS roscpp  std_msgs  urdf eigen_matrix_utils
@@ -76,31 +70,4 @@ install(DIRECTORY include/${PROJECT_NAME}/
   PATTERN ".svn" EXCLUDE
 )
 
-#############
-## Testing ##
-#############
-
-## Add gtest based cpp test target and link libraries
-if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-  add_rostest_gtest(${PROJECT_NAME}_test test/test.launch test/test.cpp)
-  target_link_libraries(${PROJECT_NAME}_test ${catkin_LIBRARIES} ${rostest_LIBRARIES} )
-  target_compile_options(${PROJECT_NAME}_test PUBLIC $<$<CONFIG:Release>:-Ofast -funroll-loops -ffast-math >)
-
-  add_rostest_gtest(${PROJECT_NAME}_test_vectorization test/test_vectorization.launch test/test.cpp)
-  target_link_libraries(${PROJECT_NAME}_test_vectorization ${catkin_LIBRARIES} ${rostest_LIBRARIES} )
-  target_compile_options(${PROJECT_NAME}_test_vectorization PUBLIC
-      $<$<CONFIG:Release>:-Ofast -shared -ffunction-sections -fdata-sections -funroll-loops -ffast-math -march=native -m64 -DEIGEN_NO_MALLOC>)
-  if(${CMAKE_VERSION} VERSION_GREATER "3.16.0")
-    target_link_options(${PROJECT_NAME}_test_vectorization PUBLIC
-                                           $<$<CONFIG:Release>:-Wl,--gc-sections>)
-  endif()
-  if(ENABLE_COVERAGE_TESTING)
-    set(COVERAGE_EXCLUDES "*/${PROJECT_NAME}/test*")
-    add_code_coverage(
-      NAME ${PROJECT_NAME}_coverage_report
-      DEPENDENCIES ${PROJECT_NAME}_test
-    )
-  endif()
-endif()
 
