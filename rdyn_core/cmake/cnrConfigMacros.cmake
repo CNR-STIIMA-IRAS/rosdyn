@@ -21,8 +21,9 @@ macro(get_project_name filename extracted_name extracted_version)
 
   if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" LESS 3.0)
     cmake_policy(SET CMP0048 OLD)
-  else()  
+  else()
     cmake_policy(SET CMP0048 NEW)
+    cmake_policy(SET CMP0057 NEW)
   endif()
 
 endmacro()

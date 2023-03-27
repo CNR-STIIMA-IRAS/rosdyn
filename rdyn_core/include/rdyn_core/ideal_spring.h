@@ -41,10 +41,11 @@ protected:
   double m_offset;
 
 public:
-  IdealSpring(const std::string& joint_name, const std::string& robot_name, const ros::NodeHandle& nh): ComponentBase(joint_name, robot_name, nh)
+  IdealSpring(const std::string& joint_name, const std::string& robot_name, const std::vector<std::string> joint_names,
+      const std::map<std::string, double> parameters_map = {}, const std::map<std::string, double> constants_map = {})
+    : ComponentBase(joint_name, robot_name, joint_names, parameters_map, constants_map)
   {
     m_type = "spring";
-    loadParametersAndConstants();
 
     m_nominal_parameters.resize(2);
     m_elasticity = m_nominal_parameters(0) = m_parameters_map.at("elasticity");
@@ -69,11 +70,11 @@ public:
     return m_regressor;
   }
 
-  bool setParameters(const Eigen::Ref<Eigen::VectorXd>& parameters)
+  bool setParameters(const Eigen::Ref<Eigen::VectorXd>& parameters, std::string& what)
   {
     if (parameters.rows() != m_nominal_parameters.rows())
     {
-      ROS_WARN("dimensions mismatch between new parameters and the nominal one");
+      what = "dimensions mismatch between new parameters and the nominal one";
       return false;
     }
     m_nominal_parameters = parameters;

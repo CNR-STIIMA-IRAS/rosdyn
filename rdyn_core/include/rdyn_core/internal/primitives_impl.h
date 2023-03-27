@@ -1,5 +1,5 @@
-#ifndef RDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
-#define RDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
+#ifndef ROSDYN_RDYN_CORE_INCLUDE_RDYN_CORE_INTERNAL_PRIMITIVES_IMPL
+#define ROSDYN_RDYN_CORE_INCLUDE_RDYN_CORE_INTERNAL_PRIMITIVES_IMPL
 
 #include <algorithm>
 #include <chrono>
@@ -540,14 +540,13 @@ inline bool Chain::init(std::string& error,
 
   m_T_bl.resize(m_links_number);
   m_T_bl.at(0).setIdentity();
+
   computeFrames();
 
-  setInputJointsName(m_moveable_joints_name);
-
-  return true;
+  return setInputJointsName(m_moveable_joints_name, error);
 }
 
-inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_name)
+inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_name, std::string& what)
 {
   bool ok = true;
   m_input_to_chain_joint.resize(m_joints_number, joints_name.size());
@@ -576,7 +575,7 @@ inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_n
     }
     else
     {
-      ROS_WARN("Joint named '%s' not found", joints_name.at(idx).c_str());
+      what = "Joint named '"+joints_name.at(idx)+"' not found";
       ok = false;
     }
   }
@@ -619,10 +618,6 @@ inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_n
     m_DDq_max(idx) = jnt->getDDQMax();
     m_tau_max(idx) = jnt->getTauMax();
   }
-  ROS_DEBUG_STREAM("limits:\n q max= " << m_q_max.transpose()
-                   << "\nq min = " << m_q_min.transpose()
-                   << "\nDq max = " << m_Dq_max.transpose()
-                   << "\ntau max = " << m_tau_max.transpose());
 
   // for QP local IK
   m_CE.resize(m_active_joints_number, 0);
@@ -1152,29 +1147,25 @@ inline const Eigen::VectorXd& Chain::getJointTorqueNonLinearPart(const Eigen::Ve
 }
 
 inline Eigen::MatrixXd Chain::getRegressor(const Eigen::VectorXd& q,
-    const Eigen::VectorXd& Dq,
-    const Eigen::VectorXd& DDq)
+                                            const Eigen::VectorXd& Dq,
+                                              const Eigen::VectorXd& DDq)
 {
   if (q.rows() != Dq.rows())
   {
-    ROS_ERROR("Input data dimensions mismatch");
-    throw std::invalid_argument("Input data dimensions mismatch");
+    throw std::invalid_argument(
+        (std::string(__PRETTY_FUNCTION__ ) + ":" + std::to_string(__LINE__) + "Input data dimensions mismatch").c_str());
   }
 
   if (Dq.rows() != DDq.rows())
   {
-    ROS_ERROR("Input data dimensions mismatch");
-    throw std::invalid_argument("Input data dimensions mismatch");
+    throw std::invalid_argument(
+        (std::string(__PRETTY_FUNCTION__ ) + ":" + std::to_string(__LINE__) + "Input data dimensions mismatch").c_str());
   }
 
   getDTwist(q, Dq, DDq);
 
   if (m_is_regressor_computed)
   {
-    static bool verbose_ = true;
-    if (verbose_)
-      ROS_DEBUG("Regressor input element equals to the previous call. Returned the same dynamics Regressor");
-
     return m_chain_to_input_joint * m_regressor_extended;
   }
   for (int nl = (m_links_number - 1); nl > 0; nl--)
@@ -1408,4 +1399,4 @@ inline rdyn::ChainPtr createChain(const rdyn::Chain& cpy)
 
 }  // namespace rdyn
 
-#endif  // RDYN_CORE_INTERNAL_PRIMITIVES_IMPL_H
+#endif  /* ROSDYN_RDYN_CORE_INCLUDE_RDYN_CORE_INTERNAL_PRIMITIVES_IMPL */

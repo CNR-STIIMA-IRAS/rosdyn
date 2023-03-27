@@ -52,11 +52,12 @@ protected:
   }
 
 public:
-  FirstOrderPolynomialFriction(const std::string& joint_name, const std::string& robot_name, const ros::NodeHandle& nh): ComponentBase(joint_name, robot_name, nh)
+  FirstOrderPolynomialFriction(const std::string& joint_name, const std::string& robot_name, const std::vector<std::string> joint_names,
+      const std::map<std::string, double> parameters_map = {}, const std::map<std::string, double> constants_map = {})
+    : ComponentBase(joint_name, robot_name, joint_names, parameters_map, constants_map)
   {
     m_type = "friction";
-    loadParametersAndConstants();
-
+    
     if (m_constants_map.size() < 2)
       throw std::invalid_argument(robot_name + "/" + joint_name + "/friction/constants has wrong dimensions, " + std::to_string(m_constants_map.size()));
 
@@ -70,17 +71,17 @@ public:
     m_Dq_threshold = m_constants_map.at("min_velocity");
     if (m_Dq_threshold  < 1e-6)
     {
-      ROS_WARN("friction/min_velocity must be greater than 1.0e-6, set default value = 1.0e-6");
+      printf("friction/min_velocity must be greater than 1.0e-6, set default value = 1.0e-6");
       m_Dq_threshold = 1.0e-6;
-      m_nh.setParam(robot_name + "/" + joint_name + "/friction/constants/min_velocity", m_Dq_threshold);
+      //m_nh.setParam(robot_name + "/" + joint_name + "/friction/constants/min_velocity", m_Dq_threshold);
     }
 
     m_Dq_max = m_constants_map.at("max_velocity");
     if ((m_Dq_max <= 0))
     {
-      ROS_WARN("friction/max_velocity must be positive, set default value = 1.0e6");
+      printf("friction/max_velocity must be positive, set default value = 1.0e6");
       m_Dq_max = 1.0e6;
-      m_nh.setParam(robot_name + "/" + joint_name + "/friction/constants/max_velocity", m_Dq_max);
+      //m_nh.setParam(robot_name + "/" + joint_name + "/friction/constants/max_velocity", m_Dq_max);
     }
     m_regressor.resize(m_joints_number, 2);
     m_regressor.setZero();
@@ -134,11 +135,12 @@ public:
   {
 //     if (parameters.rows() != m_nominal_parameters.rows() )
 //     {
-//       ROS_WARN("dimensions mismatch between new parameters and the nominal one");
+//       prinf("dimensions mismatch between new parameters and the nominal one");
 //       return false;
 //     }
     m_nominal_parameters = parameters;
-    ROS_INFO_STREAM(m_component_joint_name << ": " << (parameters.transpose()));
+    std::cout << __PRETTY_FUNCTION__ << ":" << __LINE__ << ":" 
+      << m_component_joint_name << ": " << parameters.transpose() << std::endl;;
     m_parameters_map.at("coloumb") = m_nominal_parameters(0);
     m_parameters_map.at("viscous") = m_nominal_parameters(1);
     return true;

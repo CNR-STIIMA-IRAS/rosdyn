@@ -38,10 +38,16 @@ if(${CMAKE_VERSION} VERSION_GREATER  "3.16.0")
   if(USE_RAW_POINTERS)
     add_compile_definitions(USE_RAW_POINTERS=1)
   endif()
+  if(USE_ROS1)
+    add_compile_definitions(USE_ROS1=1)
+  endif()
 else()
   add_compile_options(-DMAX_NUM_AXES=${MAX_NUM_AXES})
   if(USE_RAW_POINTERS)
     add_compile_options(-DUSE_RAW_POINTERS=1)
+  endif()
+  if(USE_ROS1)
+    add_compile_options(-DUSE_ROS1=1)
   endif()
 endif()
 #############################
@@ -60,13 +66,14 @@ if(USE_ROS1)
 
   catkin_package(
     INCLUDE_DIRS include ${EIGEN3_INCLUDE_DIRS}
-    CATKIN_DEPENDS urdf eigen_matrix_utils kinematics_filters) 
+    CATKIN_DEPENDS urdf eigen_matrix_utils kinematics_filters)
 else()
   find_package(eigen_matrix_utils REQUIRED)
-  find_package(kinematics_filters REQUIRED )
+  find_package(kinematics_filters REQUIRED)
+  find_package(urdf REQUIRED)
 endif()
 
-cnr_install_directories(USE_ROS1 
+cnr_install_directories(USE_ROS1
   CNR_INSTALL_INCLUDE_DIR CNR_INSTALL_LIB_DIR CNR_INSTALL_BIN_DIR CNR_INSTALL_SHARE_DIR)
 cnr_enable_testing(ENABLE_TESTING ENABLE_COVERAGE USE_ROS1)
 #############################
@@ -82,7 +89,7 @@ if(USE_ROS1)
   list(APPEND DEPENDENCIES_INCLUDE_DIRS ${catkin_INCLUDE_DIRS})
   list(APPEND DEPENDENCIES_LIBRARIES ${catkin_LIBRARIES})
 else()
-  list(APPEND DEPENDENCIES_INCLUDE_DIRS ${eigen_matrix_utils_INCLUDE_DIRS} ${kinematics_filters_INCLUDE_DIRS})
+  list(APPEND DEPENDENCIES_INCLUDE_DIRS ${eigen_matrix_utils_INCLUDE_DIRS} ${kinematics_filters_INCLUDE_DIRS} ${urdf_INCLUDE_DIRS})
   list(APPEND DEPENDENCIES_LIBRARIES ${eigen_matrix_utils_LIBRARIES} ${kinematics_filters_LIBRARIES}  ${urdf_LIBRARIES})
 endif()
 

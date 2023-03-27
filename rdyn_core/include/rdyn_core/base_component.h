@@ -26,26 +26,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once  // NOLINT(build/header_guard)
+
 #include <string>
 #include <vector>
 
-#if ROS_VERSION_MINIMUM(1, 14, 1)
-# include <memory>
-namespace shared_ptr_namespace = std;
-#else
-# include <boost/concept_check.hpp>
-# include <boost/graph/graph_concepts.hpp>
-# include <boost/enable_shared_from_this.hpp>
-namespace shared_ptr_namespace = boost;
-#endif
-# include <Eigen/Core>
-# include <ros/ros.h>
+#include <rdyn_core/internal/types.h>
+#include <Eigen/Core>
 
 namespace rdyn
 {
 template<typename T>
-void maybe_unused(T const & v) 
-{ 
+void maybe_unused(T const & v)
+{
   static_cast<void>(v);
 }
 
@@ -79,13 +71,15 @@ protected:
   Eigen::VectorXd m_torques;
   Eigen::MatrixXd m_regressor;
   Eigen::VectorXd m_nominal_parameters;
-  ros::NodeHandle m_nh;
-
+  
   std::map<std::string, double> m_parameters_map;
   std::map<std::string, double> m_constants_map;
 
-  void loadParametersAndConstants()
+  void loadParametersAndConstants(const std::map<std::string, double> parameters_map, const std::map<std::string, double> constants_map)
   {
+    m_parameters_map = parameters_map;
+    m_constants_map = constants_map;
+    /*
     if (!m_nh.getParam(m_robot_name + "/" + m_component_joint_name + "/" + m_type + "/coefficients", m_parameters_map))
     {
       ROS_DEBUG_STREAM(m_component_joint_name + "/" + m_component_joint_name + "/" + m_type + "/coefficients NOT FOUND");  // NOLINT(whitespace/line_length)
@@ -96,18 +90,24 @@ protected:
       ROS_DEBUG_STREAM(m_component_joint_name + "/" + m_component_joint_name + "/" + m_type + "/constants NOT FOUND");
       m_constants_map.clear();
     }
+    */
   }
 
 public:
-  ComponentBase(const std::string& joint_name, const std::string& robot_name, const ros::NodeHandle& nh)
+  ComponentBase(const std::string& joint_name, const std::string& robot_name, const std::vector<std::string> joint_names,
+                  const std::map<std::string, double> parameters_map = {}, const std::map<std::string, double> constants_map = {})
   {
     m_component_joint_name = joint_name;
     m_robot_name = robot_name;
-    m_nh = nh;
+    m_joint_names = joint_names;
+
+    loadParametersAndConstants(parameters_map, constants_map);
+    /*
     if (!nh.getParam(robot_name + "/joint_names", m_joint_names))
     {
       throw std::invalid_argument("PARAMETER '" + robot_name + "/joint_names' NOT FOUND");
     }
+    */
     m_joints_number = m_joint_names.size();
 
     for (m_component_joint_number = 0; m_component_joint_number < m_joints_number; m_component_joint_number++)
@@ -160,17 +160,17 @@ public:
 
   virtual bool setParameters(const Eigen::Ref<Eigen::VectorXd>& parameters) = 0;
 
-  void saveParameters()
-  {
-    m_nh.setParam(m_robot_name + "/" + m_component_joint_name + "/" + m_type + "/coefficients", m_parameters_map);
-  }
+  // void saveParameters()
+  // {
+  //   m_nh.setParam(m_robot_name + "/" + m_component_joint_name + "/" + m_type + "/coefficients", m_parameters_map);
+  // }
 
   std::map<std::string, double> getParametersMap()
   {
     return m_parameters_map;
   }
 
-  bool setParameters(std::map<std::string, double> parameters)
+  bool setParameters(std::map<std::string, double> parameters, std::string& what)
   {
     for (const std::pair<const std::string, double>& par : parameters)
     {
@@ -180,7 +180,7 @@ public:
       }
       catch (std::out_of_range& ex)
       {
-        ROS_ERROR("parameter %s = %f is not a member of the component", par.first.c_str(), par.second);
+        what = "parameter "+ par.first +"=" + std::to_string(par.second) + " is not a member of the component";
         return false;
       }
     }

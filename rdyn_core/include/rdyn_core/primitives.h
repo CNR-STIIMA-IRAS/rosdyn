@@ -353,7 +353,7 @@ public:
                   const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
 
   // true: all the joints are in the chain descriptor (from urdf), false: at least one joint is not listed
-  bool setInputJointsName(const std::vector<std::string>& joints_name);
+  bool setInputJointsName(const std::vector<std::string>& joints_name, std::string& what);
   int  enforceLimits(const std::map<std::string,double>& max_velocities, 
                       const std::map<std::string,double>& max_accelerations,
                         std::string& error);

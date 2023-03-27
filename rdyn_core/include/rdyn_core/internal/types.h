@@ -24,10 +24,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef ROSDYM_CORE__TYPES_H
-#define ROSDYM_CORE__TYPES_H
+#ifndef RDYN_CORE__TYPES_H
+#define RDYN_CORE__TYPES_H
 
-#include <ros/common.h>
 #include <urdf/model.h>
 #include <urdf_model/model.h>
 
@@ -35,15 +34,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Eigen/StdVector>
 #include <rdyn_core/spacevect_algebra.h>
 
-#if ROS_VERSION_MINIMUM(1, 14, 1)
-  #include <memory>
-  namespace shared_ptr_namespace = std;
+#if defined(USE_ROS1)
+  #include <ros/common.h>>
+  #if ROS_VERSION_MINIMUM(1, 14, 1)
+    #include <memory>
+    namespace shared_ptr_namespace = std;
+  #else
+    #include <boost/concept_check.hpp>
+    #include <boost/graph/graph_concepts.hpp>
+    #include <boost/enable_shared_from_this.hpp>
+    namespace shared_ptr_namespace = boost;
+  #endif
 #else
-  #include <boost/concept_check.hpp>
-  #include <boost/graph/graph_concepts.hpp>
-  #include <boost/enable_shared_from_this.hpp>
-namespace shared_ptr_namespace = boost;
+  namespace shared_ptr_namespace = std;
 #endif
+
+
 
 namespace urdf
 {
@@ -142,5 +148,5 @@ typedef std::vector< Matrix610d, Eigen::aligned_allocator< Matrix610d > >       
 
 }
 
-#endif
+#endif  // RDYN_CORE__TYPES_H
 
