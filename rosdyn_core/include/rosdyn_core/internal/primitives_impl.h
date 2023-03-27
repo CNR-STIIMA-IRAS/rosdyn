@@ -178,6 +178,16 @@ inline int Chain::enforceLimitsFromRobotDescriptionParam(const std::string& full
   return error.length()>0 ? 0 : 1;
 }
 
+inline bool Chain::setInputJointsName(const std::vector<std::string>& joints_name)
+{
+  std::string what; 
+  bool ret = setInputJointsName(joints_name, what);
+  if(what.length())
+    ROS_ERROR(what);
+  
+  return ret;
+}
+
 
 inline rosdyn::ChainPtr createChain(const urdf::ModelInterface& urdf_model_interface,
     const std::string& base_frame, const std::string& tool_frame, const Eigen::Vector3d& gravity)

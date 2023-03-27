@@ -102,6 +102,7 @@ public:
               const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
 
   int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
+  bool setInputJointsName(const std::vector<std::string>& joints_name);
 };
 
 using ChainPtr = ::rosdyn::Chain::Ptr;
