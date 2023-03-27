@@ -34,8 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 # include <assert.h>
 
-# include <eigen3/Eigen/Geometry>
-# include <eigen3/Eigen/StdVector>
+# include <Eigen/Geometry>
+# include <Eigen/StdVector>
 
 # include <urdf/model.h>
 # include <urdf_model/model.h>
@@ -47,7 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # include <rdyn_core/friction_polynomial1.h>
 # include <rdyn_core/frame_distance.h>
 # include <Eigen/Geometry>
-# include<Eigen/StdVector>
+# include <Eigen/StdVector>
 # include <eigen_matrix_utils/eiquadprog.hpp>
 
 #include <rdyn_core/internal/types.h>

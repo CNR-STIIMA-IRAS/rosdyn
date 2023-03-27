@@ -181,9 +181,11 @@ inline int Chain::enforceLimitsFromRobotDescriptionParam(const std::string& full
 inline bool Chain::setInputJointsName(const std::vector<std::string>& joints_name)
 {
   std::string what; 
-  bool ret = setInputJointsName(joints_name, what);
+  bool ret = this->setInputJointsName(joints_name, what);
   if(what.length())
-    ROS_ERROR(what);
+  {
+    ROS_ERROR("%s",what.c_str());
+  }
   
   return ret;
 }
