@@ -27,14 +27,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <chrono>
 
-#include <rosdyn_core/primitives.h>
+#include <rdyn_core/primitives.h>
+#include <rdyn_core/internal/types.h>
+#include <rdyn_core/kinematics_saturation.h>
+#include <rdyn_core/urdf_parser.h>
 #include <string>
 #include <vector>
 #include <gtest/gtest.h>
 
 #include <thread>
 
-rosdyn::ChainPtr chain;
+rdyn::ChainPtr chain;
 
 
 TEST(Suite, chainPtrTest)
@@ -48,8 +51,7 @@ TEST(Suite, chainPtrTest)
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
 
-  chain = rosdyn::createChain(model, base_frame, tool_frame, grav);
-//  chain->setInputJointsName(js.name);
+  chain = rdyn::createChain(model, base_frame, tool_frame, grav);
 
   unsigned int n_joints = chain->getActiveJointsNumber();
   Eigen::VectorXd q(n_joints);
@@ -71,7 +73,7 @@ TEST(Suite, chainPtrTest)
   Eigen::Vector6d acc_twist_of_tool_in_base;
   Eigen::Vector6d jerk_twist_of_tool_in_base;
 
-  rosdyn::VectorOfVector6d twists, nonlinacc_twists, linacc_twists, acc_twists, jerk_twists;  // NOLINT(whitespace/line_length)
+  rdyn::VectorOfVector6d twists, nonlinacc_twists, linacc_twists, acc_twists, jerk_twists;  // NOLINT(whitespace/line_length)
 
   Eigen::Matrix6Xd jacobian_of_tool_in_base;
   jacobian_of_tool_in_base.resize(6, chain->getActiveJointsNumber());
@@ -198,18 +200,17 @@ TEST(Suite, staticChainTest)
   std::string tool_frame = "tool0";
 
   urdf::Model model;
-  model.initParam("robot_description");
+  EXPECT_TRUE(model.initFile("/home/feynman/ros_ws/src/rosdyn/rdyn_core/test/ur10.urdf") );
 
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
 
-  rosdyn::Chain chain;
+  rdyn::Chain chain;
   std::string error;
-  rosdyn::LinkPtr root_link;
-  NEW_HEAP(root_link, rosdyn::Link());
+  rdyn::LinkPtr root_link;
+  NEW_HEAP(root_link, rdyn::Link());
   root_link->fromUrdf(GET(model.root_link_));
   chain.init(error,root_link, base_frame, tool_frame, grav);
-//  chain->setInputJointsName(js.name);
 
   unsigned int n_joints = chain.getActiveJointsNumber();
   Eigen::VectorXd q(n_joints);
@@ -231,7 +232,7 @@ TEST(Suite, staticChainTest)
   Eigen::Vector6d acc_twist_of_tool_in_base;
   Eigen::Vector6d jerk_twist_of_tool_in_base;
 
-  rosdyn::VectorOfVector6d twists, nonlinacc_twists, linacc_twists, acc_twists, jerk_twists;  // NOLINT(whitespace/line_length)
+  rdyn::VectorOfVector6d twists, nonlinacc_twists, linacc_twists, acc_twists, jerk_twists;  // NOLINT(whitespace/line_length)
 
   Eigen::Matrix6Xd jacobian_of_tool_in_base;
   jacobian_of_tool_in_base.resize(6, chain.getActiveJointsNumber());

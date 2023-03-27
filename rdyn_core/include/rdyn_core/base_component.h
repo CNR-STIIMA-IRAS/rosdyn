@@ -41,7 +41,7 @@ namespace shared_ptr_namespace = boost;
 # include <Eigen/Core>
 # include <ros/ros.h>
 
-namespace rosdyn
+namespace rdyn
 {
 template<typename T>
 void maybe_unused(T const & v) 
@@ -189,6 +189,6 @@ public:
 };
 
 
-typedef  shared_ptr_namespace::shared_ptr<rosdyn::ComponentBase> ComponentPtr;
-}  // namespace rosdyn
+typedef  shared_ptr_namespace::shared_ptr<rdyn::ComponentBase> ComponentPtr;
+}  // namespace rdyn
 

@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Eigen/Geometry>
 
-namespace rosdyn
+namespace rdyn
 {
 
 /*
@@ -148,5 +148,5 @@ inline void getFrameDistanceQuatJac(const Eigen::Affine3d& T_wa,  const Eigen::A
   jacobian = jacobian_;
 }
 
-}  // namespace rosdyn
+}  // namespace rdyn
 

@@ -26,7 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#include <rosdyn_core/primitives.h>
+#include <rdyn_core/primitives.h>
+#include <rdyn_core/urdf_parser.h>
 #include <string>
 #include <vector>
 
@@ -46,7 +47,8 @@ int main(int argc, char **argv)
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
 
-  shared_ptr_namespace::shared_ptr<rosdyn::Chain> chain = rosdyn::createChain(model, base_frame, tool_frame, grav);
+  shared_ptr_namespace::shared_ptr<rdyn::Chain> chain = rdyn::createChain(model, base_frame, tool_frame, grav);
+
 
   unsigned int n_joints = chain->getActiveJointsNumber();
   Eigen::VectorXd q(n_joints);

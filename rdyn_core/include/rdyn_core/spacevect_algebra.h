@@ -61,7 +61,7 @@ typedef Matrix<double, 6, 6>  Matrix66d;
  *
  */
 
-namespace rosdyn
+namespace rdyn
 {
 
 /* compute the skew-symmetric matrix of a vector
@@ -192,7 +192,7 @@ inline Eigen::Vector6d spatialRotation(const Eigen::Vector6d& vec6_of_a_in_b, co
  */
 inline void spatialTranformation(const Eigen::Vector6d& twist_of_a_in_a, const Eigen::Affine3d& T_b_a, Eigen::Vector6d* twist_of_b_in_b)
 {
-  (*twist_of_b_in_b) << T_b_a.linear()*twist_of_a_in_a.block(0, 0, 3, 1) + ((Eigen::Vector3d)(T_b_a.linear()*twist_of_a_in_a.block(3, 0, 3, 1))).cross(T_b_a.translation()),
+  (*twist_of_b_in_b) << T_b_a.linear()*twist_of_a_in_a.block(0, 0, 3, 1) + ((Eigen::Vector3d)(twist_of_a_in_a.block(3, 0, 3, 1))).cross(T_b_a.translation()),
   T_b_a.linear()*twist_of_a_in_a.block(3, 0, 3, 1);
 }
 
@@ -214,7 +214,7 @@ inline Eigen::Vector6d spatialTranformation(const Eigen::Vector6d& twist_of_a_in
 inline void spatialDualTranformation(const Eigen::Vector6d& wrench_of_a_in_a, const Eigen::Affine3d& T_b_a, Eigen::Vector6d* wrench_of_b_b)
 {
   (*wrench_of_b_b) << T_b_a.linear()*wrench_of_a_in_a.block(0, 0, 3, 1),
-  T_b_a.linear()*wrench_of_a_in_a.block(3, 0, 3, 1) + ((Eigen::Vector3d)(T_b_a.linear()*wrench_of_a_in_a.block(0, 0, 3, 1))).cross(T_b_a.translation());
+  T_b_a.linear()*wrench_of_a_in_a.block(3, 0, 3, 1) + ((Eigen::Vector3d)(wrench_of_a_in_a.block(0, 0, 3, 1))).cross(T_b_a.translation());
 }
 
 /*
@@ -231,7 +231,7 @@ inline Eigen::Vector6d spatialDualTranformation(const Eigen::Vector6d& wrench_of
 
 inline void computeSpatialInertiaMatrix(const Eigen::Ref<Eigen::Matrix3d>& inertia, const Eigen::Ref<Eigen::Vector3d> cog, const double& mass, Eigen::Ref<Eigen::Matrix<double, 6, 6>> spatial_inertia)
 {
-  Eigen::Matrix3d cog_skew = rosdyn::skew(cog);
+  Eigen::Matrix3d cog_skew = rdyn::skew(cog);
   spatial_inertia.block(0, 0, 3, 3) = mass * Eigen::MatrixXd::Identity(3, 3);
   spatial_inertia.block(0, 3, 3, 3) = mass * cog_skew.transpose();
   spatial_inertia.block(3, 0, 3, 3) = mass * cog_skew;
@@ -260,5 +260,5 @@ inline Eigen::Affine3d spatialIntegration(const Eigen::Affine3d& T_b_a, const Ei
   return T_b_ap;
 }
 
-}  // namespace rosdyn
+}  // namespace rdyn
 

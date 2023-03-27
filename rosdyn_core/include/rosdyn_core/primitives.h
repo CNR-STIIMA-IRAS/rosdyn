@@ -30,308 +30,49 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string>
 #include <vector>
-#include <cmath>
-#include <cstdint>
-# include <assert.h>
+#include <Eigen/Core>
 
-# include <eigen3/Eigen/Geometry>
-# include <eigen3/Eigen/StdVector>
-
-
-# include <urdf/model.h>
-# include <urdf_model/model.h>
-# include <ros/console.h>
-
-# include <rosdyn_core/urdf_parser.h>
-# include <rosdyn_core/spacevect_algebra.h>
-# include <rosdyn_core/ideal_spring.h>
-# include <rosdyn_core/friction_polynomial2.h>
-# include <rosdyn_core/friction_polynomial1.h>
-# include <rosdyn_core/frame_distance.h>
-# include <Eigen/Geometry>
-# include<Eigen/StdVector>
-# include <eigen_matrix_utils/eiquadprog.hpp>
-
-#include <rosdyn_core/internal/types.h>
+# include <rdyn_core/internal/types.h>
+# include <rdyn_core/primitives.h>
 
 namespace rosdyn
 {
 
-class Joint;
-class Link;
-class Chain;
+using Joint = rdyn::Joint;
+using JointPtr = rdyn::JointPtr;
+using JointConstPtr = rdyn::JointConstPtr;
+using Link = rdyn::Link;
+using LinkPtr = rdyn::LinkPtr;
+using LinkConstPtr = rdyn::LinkConstPtr;
 
-class Joint: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Joint>
+
+using VectorXd = rdyn::VectorXd;
+using MatrixXd = rdyn::MatrixXd;
+using Matrix6Xd = rdyn::Matrix6Xd;
+using Matrix66d = rdyn::Matrix66d;
+using ExtendedMatrixXd = rdyn::ExtendedMatrixXd;
+using VectorOfAffine3d = rdyn::VectorOfAffine3d;
+using VectorOfVector6d = rdyn::VectorOfVector6d;
+using VectorOfMatrix66d = rdyn::VectorOfMatrix66d;
+using Matrix610d = rdyn::Matrix610d;
+using VectorOfMatrix610d = rdyn::VectorOfMatrix610d;
+
+/**
+ * 
+ */
+class Chain : public rdyn::Chain
 {
 public:
-  enum Type {REVOLUTE, PRISMATIC, FIXED  };
-protected:
-
-  Type m_type;  // NOLINT(whitespace/braces)
-
-  double m_q_max;
-  double m_q_min;
-  double m_Dq_max;
-  double m_DDq_max;
-  double m_tau_max;
-
-  Eigen::Affine3d m_T_pj;           // transformation parent <- joint
-  Eigen::Affine3d m_last_T_pc;      // transformation parent <- child
-  Eigen::Matrix3d m_last_R_jc;      // rotatation     joint  <- child
-
-  Eigen::Vector6d m_screw_of_c_in_p;  // skew of child origin in parent
-
-  Eigen::Vector3d m_axis_in_j;
-  Eigen::Matrix3d m_skew_axis_in_j;
-  Eigen::Matrix3d m_square_skew_axis_in_j;
-  Eigen::Matrix3d m_identity;
-
-  Eigen::Vector3d m_axis_in_p;
-  Eigen::Matrix3d m_skew_axis_in_p;
-  Eigen::Matrix3d m_square_skew_axis_in_p;
-  Eigen::Matrix3d m_R_pj;
-
-
-  double m_last_q;  // last value of q
-
-  std::string m_name;
-  rosdyn::LinkPtr m_parent_link;
-  rosdyn::LinkPtr m_child_link;
-
-  void computedTpc();
-  void computeJacobian();
-
-public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Joint();
-  void fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::LinkPtr& parent_link, const urdf::LinkPtr& child_link);
-  int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
-  rosdyn::JointPtr pointer();
-  const std::string& getName() const
-  {
-    return m_name;
-  }
 
-  rosdyn::LinkPtr getChildLink()
-  {
-    return m_child_link;
-  }
+  #if defined(USE_RAW_POINTERS)
+    using Ptr = Chain*;
+    using ConstPtr = const Chain*;
+  #else
+    using Ptr = shared_ptr_namespace::shared_ptr< rosdyn::Chain >;
+    using ConstPtr = shared_ptr_namespace::shared_ptr< rosdyn::Chain const>;
+  #endif
 
-  rosdyn::LinkPtr getParentLink()
-  {
-    return m_parent_link;
-  }
-
-  const Type& getType()const {return m_type;}
-
-  const Eigen::Affine3d& getTransformation(const double& q = 0);
-  const Eigen::Vector6d& getScrew_of_child_in_parent();
-
-  const double& getQMax() const
-  {
-    return m_q_max;
-  }
-  const double& getQMin() const
-  {
-    return m_q_min;
-  }
-  const double& getDQMax() const
-  {
-    return m_Dq_max;
-  }
-  const double& getDDQMax() const
-  {
-    return m_DDq_max;
-  }
-  const double& getTauMax() const
-  {
-    return m_tau_max;
-  }
-
-  bool isFixed() const
-  {
-    return (m_type == FIXED);
-  }
-
-  /**
-   * @brief propagateCloning return an indipendent copy of the Joint. It starts a cloning cascade,
-   * so that the child Link, its childs joints, and its child links are cloned too.
-   * @param cloned_parent_link is the parent link. It should be a cloned parent link.
-   * @return the cloned Joint. Each member of the object is a cloned version of the original one.
-   */
-  rosdyn::JointPtr propagateCloning(const rosdyn::LinkPtr& cloned_parent_link = 0);
-
-};
-
-class Link: public shared_ptr_namespace::enable_shared_from_this<rosdyn::Link>
-{
-protected:
-  rosdyn::JointPtr m_parent_joint;
-  std::vector<rosdyn::JointPtr> m_child_joints;
-  std::vector<rosdyn::LinkPtr> m_child_links;
-  std::string m_name;
-
-  double m_mass;
-  Eigen::Vector3d m_cog_in_c;
-  Eigen::Matrix<double, 6, 6> m_Inertia_cc;
-  rosdyn::VectorOfMatrix66d m_Inertia_cc_single_term;
-
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Link() {}
-
-  void fromUrdf(const urdf::LinkPtr& urdf_link,
-                const rosdyn::JointPtr& parent_joint = 0);
-  rosdyn::LinkPtr pointer();
-
-  const std::string& getName() const
-  {
-    return m_name;
-  }
-
-  rosdyn::JointPtr getParentJoint()
-  {
-    return m_parent_joint;
-  }
-
-  std::vector<rosdyn::JointPtr> getChildrenJoints()
-  {
-    return m_child_joints;
-  }
-
-  rosdyn::LinkPtr findChild(const std::string& name);
-  rosdyn::JointPtr findChildJoint(const std::string& name);
-  const Eigen::Matrix66d& getSpatialInertia() const
-  {
-    return m_Inertia_cc;
-  }
-
-  const rosdyn::VectorOfMatrix66d& getSpatialInertiaTerms() const
-  {
-    return m_Inertia_cc_single_term;
-  }
-
-  const double& getMass() const
-  {
-    return m_mass;
-  }
-
-  const Eigen::Vector3d& getCog() const
-  {
-    return m_cog_in_c;
-  }
-
-  Eigen::VectorXd getNominalParameters() const;
-
-  /**
-   * @brief propagateCloning return an indipendent copy of the Link. It starts a cloning cascade,
-   * so that the child Joint, and its child Link are cloned too.
-   * @param cloned_parent_joint is the parent Joint. It should be a cloned parent Joint.
-   * @return the cloned Link. Each member of the object is a cloned version of the original one.
-   */
-  rosdyn::LinkPtr propagateCloning(const rosdyn::JointPtr& cloned_parent_joint = 0);
-};
-
-class Chain
-{
-protected:
-  std::vector<rosdyn::LinkPtr> m_links;
-  std::vector<rosdyn::JointPtr> m_joints;
-  unsigned int m_joints_number;
-  unsigned int m_active_joints_number;
-  unsigned int m_links_number;
-
-  std::vector<std::string> m_links_name;
-  std::map<std::string, unsigned int> m_joints_name;
-  std::vector<std::string> m_moveable_joints_name;
-  std::vector<std::string> m_active_joints_name;
-
-  std::map<std::string, std::vector<unsigned int>> m_parent_moveable_joints_of_link;
-
-  Eigen::Matrix6Xd m_jacobian;
-
-  Eigen::Affine3d m_T_bt;                               // base <- tool
-
-  Eigen::VectorXd m_last_q;
-  Eigen::VectorXd m_sorted_q;
-
-  Eigen::VectorXd m_last_Dq;
-  Eigen::VectorXd m_sorted_Dq;
-
-  Eigen::VectorXd m_last_DDq;
-  Eigen::VectorXd m_sorted_DDq;
-
-  Eigen::VectorXd m_last_DDDq;
-  Eigen::VectorXd m_sorted_DDDq;
-
-  Eigen::VectorXd m_q_max;
-  Eigen::VectorXd m_q_min;
-  Eigen::VectorXd m_Dq_max;
-  Eigen::VectorXd m_DDq_max;
-  Eigen::VectorXd m_tau_max;
-
-  // for QP local ik solver
-  Eigen::MatrixXd m_CE;
-  Eigen::VectorXd m_ce0;
-  Eigen::MatrixXd m_CI;
-  Eigen::VectorXd m_ci0;
-  Eigen::MatrixXd m_H;
-  Eigen::VectorXd m_f;
-  Eigen::VectorXd m_joint_error;
-  Eigen::Vector6d m_cart_error_in_b;
-
-
-  Eigen::VectorXd m_joint_torques;
-  Eigen::VectorXd m_active_joint_torques;
-  Eigen::MatrixXd m_regressor_extended;
-
-  Eigen::MatrixXd m_input_to_chain_joint;
-  Eigen::MatrixXd m_chain_to_input_joint;
-  std::vector<unsigned int> m_active_joints;
-
-  rosdyn::VectorOfAffine3d m_T_bl;
-  bool m_is_screws_computed;
-  bool m_is_jac_computed;
-  bool m_is_vel_computed;
-  bool m_is_acc_computed;
-  bool m_is_linacc_computed;
-  bool m_is_nonlinacc_computed;
-  bool m_is_jerk_computed;
-  bool m_is_linjerk_computed;
-  bool m_is_nonlinjerk_computed;
-  bool m_is_wrench_computed;
-  bool m_is_regressor_computed;
-  bool m_is_chain_ok = true;
-
-  rosdyn::VectorOfVector6d m_screws_of_c_in_b;
-
-  rosdyn::VectorOfVector6d m_Ds;
-
-  // twists of c in b
-  rosdyn::VectorOfVector6d m_twists;
-  // Dtwists of c in b
-  rosdyn::VectorOfVector6d m_Dtwists;
-  rosdyn::VectorOfVector6d m_Dtwists_linear_part;
-  rosdyn::VectorOfVector6d m_Dtwists_nonlinear_part;
-
-  rosdyn::VectorOfVector6d m_DDtwists;
-  rosdyn::VectorOfVector6d m_DDtwists_linear_part;
-  rosdyn::VectorOfVector6d m_DDtwists_nonlinear_part;
-
-  rosdyn::VectorOfVector6d m_wrenches;
-  rosdyn::VectorOfVector6d m_inertial_wrenches;
-  rosdyn::VectorOfVector6d m_gravity_wrenches;
-  rosdyn::VectorOfMatrix610d m_wrenches_regressor;
-
-  Eigen::Vector3d m_gravity;
-  Eigen::MatrixXd m_joint_inertia;
-  Eigen::MatrixXd m_joint_inertia_extended;
-
-  void computeScrews();
-  void computeFrames();
-
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   Chain() = default;
   ~Chain() = default;
@@ -348,212 +89,23 @@ public:
           const std::string& base_link_name,
             const std::string& ee_link_name, 
               const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
+
+  /**
+   * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   * AS DIFFERENCE FROM rdyn::Chain, the first param is the ros parameter 
+   * namespace where the urdf is stored, and not the file path. 
+   * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  */
   Chain(const std::string& robot_description,
           const std::string& base_link_name,
             const std::string& ee_link_name,
               const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
-  bool init(std::string& error,
-            rosdyn::LinkPtr root_link,
-              const std::string& base_link_name,
-                const std::string& ee_link_name,
-                  const Eigen::Vector3d& gravity = Eigen::Vector3d::Zero());
 
-  // true: all the joints are in the chain descriptor (from urdf), false: at least one joint is not listed
-  bool setInputJointsName(const std::vector<std::string>& joints_name);
   int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
-  const std::vector<std::string>& getMoveableJointNames() const
-  {
-    return m_moveable_joints_name;
-  }
-  const std::string& getMoveableJointName(const size_t& iAx) const
-  {
-    return getMoveableJointNames().at(iAx);
-  }
-  const unsigned int& getLinksNumber() const
-  {
-    return m_links_number;
-  }
-  const unsigned int& getJointsNumber() const
-  {
-    return m_joints_number;
-  }
-  const unsigned int& getActiveJointsNumber() const
-  {
-    return m_active_joints_number;
-  }
-  const std::vector<std::string>& getActiveJointsName() const
-  {
-    return m_active_joints_name;
-  }
-  const std::string& getActiveJointName(const size_t& iAx) const
-  {
-    return m_active_joints_name.at(iAx);
-  }
-  const std::vector<std::string>& getLinksName() const
-  {
-    return m_links_name;
-  }
-  const std::vector<rosdyn::LinkPtr>& getLinks() const
-  {
-    return m_links;
-  }
-  const std::vector<rosdyn::JointPtr>& getJoints() const
-  {
-    return m_joints;
-  }
-  const Eigen::Vector3d& getGravity() const
-  {
-    return m_gravity;
-  }
-  const bool& isOk() const
-  {
-    return m_is_chain_ok;
-  }
-  const Eigen::VectorXd& getQMax() const
-  {
-    return m_q_max;
-  }
-  const Eigen::VectorXd& getQMin() const
-  {
-    return m_q_min;
-  }
-  const Eigen::VectorXd& getDQMax() const
-  {
-    return m_Dq_max;
-  }
-  const Eigen::VectorXd& getDDQMax() const
-  {
-    return m_DDq_max;
-  }
-  const Eigen::VectorXd& getTauMax() const
-  {
-    return m_tau_max;
-  }
-  const double& getQMax   (int iAx) const { return m_q_max(iAx); }
-  const double& getQMin   (int iAx) const { return m_q_min(iAx); }
-  const double& getDQMax  (int iAx) const { return m_Dq_max(iAx);    }
-  const double& getDDQMax (int iAx) const { return m_DDq_max(iAx);   }
-  const double& getTauMax (int iAx) const { return m_tau_max(iAx);   }
-
-  double getQMax   (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_q_max(idx); }
-  double getQMin   (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_q_min(idx); }
-  double getDQMax  (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_Dq_max(idx); }
-  double getDDQMax (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_DDq_max(idx); }
-  double getTauMax (const std::string& name) const {int idx=jointIndex(name); return idx==-1 ? NAN : m_tau_max(idx); }
-  int jointIndex (const std::string& name) const
-  {
-    auto it = std::find(m_moveable_joints_name.begin(),m_moveable_joints_name.end(), name);
-    return it == m_moveable_joints_name.end() ? -1 : std::distance(m_moveable_joints_name.begin(), it);
-  }
-
-  /*
-   * Kinematics methods
-   */
-  const Eigen::Affine3d& getTransformation(const Eigen::VectorXd& q);
-  const Eigen::Affine3d& getTransformationLink(const Eigen::VectorXd& q, const std::string& link_name);
-  const rosdyn::VectorOfAffine3d& getTransformations(const Eigen::VectorXd& q);
-  const Eigen::Matrix6Xd& getJacobian(const Eigen::VectorXd& q);
-  Eigen::Matrix6Xd getJacobianLink(const Eigen::VectorXd& q,const std::string& link_name);
-  const rosdyn::VectorOfVector6d& getTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
-  const Eigen::Vector6d& getTwistLink(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const std::string& link_name);
-  const Eigen::Vector6d& getTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
-  {
-    return getTwist(q, Dq).back();
-  }
-  const rosdyn::VectorOfVector6d& getDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  const Eigen::Vector6d& getDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
-  {
-    return getDTwist(q, Dq, DDq).back();
-  }
-  const rosdyn::VectorOfVector6d& getDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq);
-  const Eigen::Vector6d& getDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDq)
-  {
-    return getDTwistLinearPart(q, DDq).back();
-  }
-  const rosdyn::VectorOfVector6d& getDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
-  const Eigen::Vector6d& getDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq)
-  {
-    return getDTwistNonLinearPart(q, Dq).back();
-  }
-  const rosdyn::VectorOfVector6d& getDDTwistLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq);
-  const Eigen::Vector6d& getDDTwistLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& DDDq)
-  {
-    return getDDTwistLinearPart(q, DDDq).back();
-  }
-  const rosdyn::VectorOfVector6d& getDDTwistNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  const Eigen::Vector6d& getDDTwistNonLinearPartTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq)
-  {
-    return getDDTwistNonLinearPart(q, Dq, DDq).back();
-  }
-  const rosdyn::VectorOfVector6d& getDDTwist(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq);
-  const Eigen::Vector6d& getDDTwistTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, const Eigen::VectorXd& DDDq)
-  {
-    return getDDTwist(q, Dq, DDq, DDDq).back();
-  }
-
-  /* get all the multiturn solution. q is in the output vector.
-   */
-  std::vector<Eigen::VectorXd> getMultiplicity(const Eigen::VectorXd& q);
-
-  /* Iterative solve the IK problem.
-   * Each iteration the solution is updated by a term dq
-   *
-   * solution+=dq
-   *
-   * the value dq is chosen solving the problem:
-   * minimize (J*dq-cartesian_error_in_b)'*(J*dq-cartesian_error_in_b)
-   *
-   * considering the constraints:
-   * q_min <= solution+dq <= q_max
-   *
-   */
-  bool computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, const Eigen::VectorXd& seed, const double& toll = 1e-4, const ros::Duration& max_time = ros::Duration(0.005));
-
-  /* Iterative solve the weighted IK problem.
-   * the weight term can be used to switch off some components:
-   * for example: selecting W=[1;1;1;0;0;0], only the translation terms are consider for the IK solution.
-   * Each iteration the solution is updated by a term dq
-   *
-   * solution+=dq
-   *
-   * the value dq is chosen solving the problem:
-   * minimize (J*dq-cartesian_error_in_b)'*W*(J*dq-cartesian_error_in_b)
-   *
-   * considering the constraints:
-   * q_min <= solution+dq <= q_max
-   *
-   */
-  bool computeWeigthedLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d& T_b_t, Eigen::Vector6d weight, const Eigen::VectorXd& seed, const double& toll = 1e-4, const ros::Duration& max_time = ros::Duration(0.005));
-
-  /*
-   * Dynamics methods
-   *
-   * NOTE: ext_wrenches_in_link_frame are intended as wrenches applied TO the the link(s)
-   *
-   */
-  const rosdyn::VectorOfVector6d& getWrench(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame);
-  const Eigen::Vector6d& getWrenchTool(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame)
-  {
-    return getWrench(q, Dq, DDq, ext_wrenches_in_link_frame).back();
-  }
-  const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq, rosdyn::VectorOfVector6d& ext_wrenches_in_link_frame);
-  const Eigen::VectorXd& getJointTorque(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq, const Eigen::VectorXd& DDq);
-  const Eigen::VectorXd& getJointTorqueNonLinearPart(const Eigen::VectorXd& q, const Eigen::VectorXd& Dq);
-
-  Eigen::MatrixXd getRegressor(const Eigen::VectorXd& q,
-                               const Eigen::VectorXd& Dq,
-                               const Eigen::VectorXd& DDq);
-
-  const Eigen::MatrixXd& getJointInertia(const Eigen::VectorXd& q);
-  Eigen::VectorXd getNominalParameters();
-
-  /**
-   * @brief clone creates an indipendent clone of the chain, cloning also joints and links usign a cloning cascade
-   * @return the cloned, indipendent chain
-   */
-  rosdyn::ChainPtr clone();
 };
 
+using ChainPtr = ::rosdyn::Chain::Ptr;
+using ConstChainPtr = ::rosdyn::Chain::ConstPtr;
 
 /**
  * @brief construct the shared_ptr of a chain
@@ -589,6 +141,6 @@ rosdyn::ChainPtr createChain(const rosdyn::Chain& chain);
 
 }  // namespace rosdyn
 
-
 #include <rosdyn_core/internal/primitives_impl.h>
-#endif  // ROSDYN_CORE_PRIMITIVES_H
+
+#endif  // ROSDYN_CORE_PRIMITIVES_H 

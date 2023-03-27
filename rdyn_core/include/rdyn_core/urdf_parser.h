@@ -30,15 +30,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 # include <urdf/model.h>
-# include <ros/console.h>
 # include <Eigen/Geometry>
 # include <Eigen/StdVector>
 # include <boost/enable_shared_from_this.hpp>
 # include <boost/shared_ptr.hpp>
-# include <rosdyn_core/spacevect_algebra.h>
+# include <rdyn_core/spacevect_algebra.h>
 
 
-namespace rosdyn
+namespace rdyn
 {
 
 inline Eigen::Affine3d urdfPoseToAffine(urdf::Pose pose)
@@ -56,4 +55,4 @@ inline Eigen::Vector3d urdfVectorToEigen(urdf::Vector3 vector)
   return eigen_vector;
 }
 
-}  // namespace rosdyn
+}  // namespace rdyn

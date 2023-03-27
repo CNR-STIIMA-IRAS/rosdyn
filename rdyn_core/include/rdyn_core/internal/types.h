@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
-#include <rosdyn_core/spacevect_algebra.h>
+#include <rdyn_core/spacevect_algebra.h>
 
 #if ROS_VERSION_MINIMUM(1, 14, 1)
   #include <memory>
@@ -93,34 +93,34 @@ namespace urdf
 #endif
 
 
-namespace rosdyn
+namespace rdyn
 {
 class Joint;
 class Link;
 class Chain;
 
 #if defined(USE_RAW_POINTERS)
-typedef rosdyn::Joint* JointPtr;
-typedef rosdyn::Link * LinkPtr;
-typedef rosdyn::Chain* ChainPtr;
+typedef rdyn::Joint* JointPtr;
+typedef rdyn::Link * LinkPtr;
+typedef rdyn::Chain* ChainPtr;
 
-typedef const rosdyn::Joint* JointConstPtr;
-typedef const rosdyn::Link * LinkConstPtr;
-typedef const rosdyn::Chain* ChainConstPtr;
+typedef const rdyn::Joint* JointConstPtr;
+typedef const rdyn::Link * LinkConstPtr;
+typedef const rdyn::Chain* ChainConstPtr;
 #else
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Joint   > JointPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Link    > LinkPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Chain   > ChainPtr;
+typedef shared_ptr_namespace::shared_ptr< rdyn::Joint   > JointPtr;
+typedef shared_ptr_namespace::shared_ptr< rdyn::Link    > LinkPtr;
+typedef shared_ptr_namespace::shared_ptr< rdyn::Chain   > ChainPtr;
 
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Joint const> JointConstPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Link  const> LinkConstPtr;
-typedef shared_ptr_namespace::shared_ptr< rosdyn::Chain const> ChainConstPtr;
+typedef shared_ptr_namespace::shared_ptr< rdyn::Joint const> JointConstPtr;
+typedef shared_ptr_namespace::shared_ptr< rdyn::Link  const> LinkConstPtr;
+typedef shared_ptr_namespace::shared_ptr< rdyn::Chain const> ChainConstPtr;
 #endif
 
 #if defined(MAX_NUM_AXES) && (MAX_NUM_AXES!=0)
   #define STR_HELPER(x) #x
   #define STR(x) STR_HELPER(x)
-  #pragma message "ROSDYN MAX NUM AXES: " STR(MAX_NUM_AXES)
+  #pragma message "RDYN MAX NUM AXES: " STR(MAX_NUM_AXES)
   #define NUM_MAX_AXES MAX_NUM_AXES
 #else
   #define NUM_MAX_AXES 40

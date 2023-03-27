@@ -28,10 +28,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once  // NOLINT(build/header_guard)
 #include <string>
 #include <vector>
-#include <rosdyn_core/base_component.h>
+#include <rdyn_core/base_component.h>
 
 
-namespace rosdyn
+namespace rdyn
 {
 
 class IdealSpring: public ComponentBase
@@ -84,6 +84,6 @@ public:
   }
 };
 
-}  // namespace rosdyn
+}  // namespace rdyn
 
 
