@@ -1,7 +1,7 @@
 ![](../Documentation/rdyn_logo.png)
 
 
-ROSdyn_core is an Eigen-based Dynamics (header) library for robot chains. 
+dyn_core is an Eigen-based Dynamics (header) library for robot chains. 
 
 
 ## Build/Installation 
@@ -80,9 +80,9 @@ Eigen::Affine3d T_base_tool; // desired transformation
 Eigen::VectorXd seed; // initial seed
 Eigen::VectorXd sol;  // solution
 if (chian->computeLocalIk(sol, T_base_tool, seed))
-  ROS_INFO("ok");
+  std::cout << "ok" << std::endl;
 else
-  ROS_ERROR("no solution found");
+  std::cout << "no solution found" << std::endl;
 
 
 // joint torque tau = joint_inertia_matrix*DDq+ tau_non_linear
