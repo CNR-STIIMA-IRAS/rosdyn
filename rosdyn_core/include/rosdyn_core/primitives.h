@@ -62,6 +62,9 @@ using VectorOfMatrix610d = rdyn::VectorOfMatrix610d;
  */
 class Chain : public rdyn::Chain
 {
+private: 
+  using rdyn::Chain::setInputJointsName; // This changes the fathers' function scope
+  
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -103,7 +106,7 @@ public:
 
   int  enforceLimitsFromRobotDescriptionParam(const std::string& full_param_path, std::string& error);
   
-  using rdyn::Chain::setInputJointsName;
+
   bool setInputJointsName(const std::vector<std::string>& joints_name);
 
 };
