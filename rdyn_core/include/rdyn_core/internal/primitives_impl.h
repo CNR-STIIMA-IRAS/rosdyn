@@ -1399,4 +1399,4 @@ inline rdyn::ChainPtr createChain(const rdyn::Chain& cpy)
 
 }  // namespace rdyn
 
-#endif  // RDYN_RDYN_CORE_INCLUDE_RDYN_CORE_INTERNAL_PRIMITIVES_IMPL 
+#endif  // RDYN_RDYN_CORE_INCLUDE_RDYN_CORE_INTERNAL_PRIMITIVES_IMPL

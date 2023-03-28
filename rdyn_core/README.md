@@ -1,7 +1,7 @@
 ![](../Documentation/rdyn_logo.png)
 
 
-dyn_core is an Eigen-based Dynamics (header) library for robot chains. 
+rdyn_core is an Eigen-based Dynamics (header) library for robot chains.
 
 
 ## Build/Installation 
