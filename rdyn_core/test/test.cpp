@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <chrono>
+#include <boost/filesystem.hpp>
 
 #include <rdyn_core/primitives.h>
 #include <rdyn_core/internal/types.h>
@@ -40,13 +41,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 rdyn::ChainPtr chain;
 
 
+#if !defined(PROJECT_SRC_DIRECTORY)
+  #error "The test need that the src directory is pre-compiled. Check the CMAKE";
+#else
+  constexpr const char* _PROJECT_SRC_DIRECTORY = PROJECT_SRC_DIRECTORY;
+#endif
+
 TEST(Suite, chainPtrTest)
 {
+  boost::filesystem::path src_path(_PROJECT_SRC_DIRECTORY);
+  boost::filesystem::path urdf_path = src_path / "test/ur10.urdf";
+  std::cout << "The config file path is : " << urdf_path << std::endl;	
+
   std::string base_frame = "base_link";
   std::string tool_frame = "tool0";
 
   urdf::Model model;
-  model.initParam("robot_description");
+  model.initFile(urdf_path.string());
   
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
@@ -196,11 +207,15 @@ TEST(Suite, chainPtrTest)
 
 TEST(Suite, staticChainTest)
 {
+  boost::filesystem::path src_path(_PROJECT_SRC_DIRECTORY);
+  boost::filesystem::path urdf_path = src_path / "test/ur10.urdf";
+  std::cout << "The config file path is : " << urdf_path << std::endl;	
+
   std::string base_frame = "base_link";
   std::string tool_frame = "tool0";
 
   urdf::Model model;
-  EXPECT_TRUE(model.initFile("/home/feynman/ros_ws/src/rosdyn/rdyn_core/test/ur10.urdf") );
+  EXPECT_TRUE(model.initFile(urdf_path.string()) );
 
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
@@ -390,9 +405,7 @@ TEST(Suite, threadID)
 int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "jacobian_speed_test");
   
-
   return RUN_ALL_TESTS();
 
 }

@@ -25,24 +25,29 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+#include <boost/filesystem.hpp>
 #include <rdyn_core/primitives.h>
 #include <rdyn_core/urdf_parser.h>
 #include <string>
 #include <vector>
-
 #include <thread>
 
+#if !defined(PROJECT_SRC_DIRECTORY)
+  #error "The test need that the src directory is pre-compiled. Check the CMAKE";
+#else
+  constexpr const char* _PROJECT_SRC_DIRECTORY = PROJECT_SRC_DIRECTORY;
+#endif
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "jacobian_speed_test");
+  boost::filesystem::path src_path(_PROJECT_SRC_DIRECTORY);
+  boost::filesystem::path urdf_path = src_path / "test/ur10.urdf";
+  std::cout << "The config file path is : " << urdf_path << std::endl;	
 
-  ros::Rate rate(1);
-  std::string base_frame = "ur10_base_link";
-  std::string tool_frame = "ur10_ee_link";
+  std::string base_frame = "base_link";
+  std::string tool_frame = "tool0";
 
   urdf::Model model;
-  model.initParam("robot_description");
+  model.initFile(urdf_path.string());
 
   Eigen::Vector3d grav;
   grav << 0, 0, -9.806;
@@ -177,21 +182,21 @@ int main(int argc, char **argv)
     jerk_twist_of_tool_in_base = chain->getDDTwistTool(q, Dq, DDq, DDDq);
   }
 
-  printf("average on %d trials: \nnote:\ncompute torque implies computing acceleration,\ncompute acceleration implies computing velocity,\ncompute velocity implies computing pose", ntrial);  // NOLINT(whitespace/line_length)
-  printf("computation time No operation                                    = %8.5f [us]", t_null / ntrial);
-  printf("computation time pose                                            = %8.5f [us]", t_pose_eigen / ntrial);
-  printf("computation time jacobian                                        = %8.5f [us]", t_jac_eigen / ntrial);
-  printf("computation time velocity twists for all links                   = %8.5f [us]", t_vel_eigen / ntrial);
-  printf("computation time linear raceleration twists for all links        = %8.5f [us]", t_linacc_eigen / ntrial);
-  printf("computation time non linear acceleration twists for all links    = %8.5f [us]", t_nonlinacc_eigen / ntrial);
-  printf("computation time acceleration twists for all links               = %8.5f [us]", t_acc_eigen  / ntrial);
-  printf("computation time jerk twists for all links                       = %8.5f [us]", t_jerk_eigen / ntrial);
-  printf("computation time joint torque                                    = %8.5f [us]", t_torque_eigen / ntrial);
-  printf("computation time joint inertia                                   = %8.5f [us]", t_inertia_eigen / ntrial);
+  printf("average on %d trials: \nnote:\ncompute torque implies computing acceleration,\ncompute acceleration implies computing velocity,\ncompute velocity implies computing pose\n", ntrial);  // NOLINT(whitespace/line_length)
+  printf("computation time No operation                                    = %8.5f [us]\n", t_null / ntrial);
+  printf("computation time pose                                            = %8.5f [us]\n", t_pose_eigen / ntrial);
+  printf("computation time jacobian                                        = %8.5f [us]\n", t_jac_eigen / ntrial);
+  printf("computation time velocity twists for all links                   = %8.5f [us]\n", t_vel_eigen / ntrial);
+  printf("computation time linear raceleration twists for all links        = %8.5f [us]\n", t_linacc_eigen / ntrial);
+  printf("computation time non linear acceleration twists for all links    = %8.5f [us]\n", t_nonlinacc_eigen / ntrial);
+  printf("computation time acceleration twists for all links               = %8.5f [us]\n", t_acc_eigen  / ntrial);
+  printf("computation time jerk twists for all links                       = %8.5f [us]\n", t_jerk_eigen / ntrial);
+  printf("computation time joint torque                                    = %8.5f [us]\n", t_torque_eigen / ntrial);
+  printf("computation time joint inertia                                   = %8.5f [us]\n", t_inertia_eigen / ntrial);
 
   auto st = std::chrono::high_resolution_clock::now();
   std::thread::id this_id = std::this_thread::get_id();
   auto et = std::chrono::high_resolution_clock::now();
-  std::cout << "GET ID "  << this_id << " | TIME  = " << std::chrono::duration_cast<std::chrono::seconds>(et-st).count() * 1e6 << "[us]";
+  std::cout << "GET ID "  << this_id << " | TIME  = " << std::chrono::duration_cast<std::chrono::seconds>(et-st).count() * 1e6 << "[us]" << std::endl;
   return 0;
 }

@@ -59,7 +59,7 @@ endif()
 ## DEPENDANCIES            ##
 #############################
 find_package(Eigen3 REQUIRED COMPONENTS)
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 
 if(USE_ROS1)
   find_package(catkin REQUIRED COMPONENTS urdf eigen_matrix_utils kinematics_filters)
@@ -105,8 +105,12 @@ target_link_libraries(${PROJECT_NAME} "${DEPENDENCIES_LIBRARIES}")
 if(BUILD_EXAMPLE)
 ## example of usage
   add_executable(rdyn_speed_test test/rdyn_speed_test.cpp)
-  add_dependencies(rdyn_speed_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-  target_link_libraries(rdyn_speed_test ${catkin_LIBRARIES})
+  target_link_libraries(rdyn_speed_test ${PROJECT_NAME})
+  if(${CMAKE_VERSION} VERSION_GREATER  "3.16.0")
+    add_compile_definitions(PROJECT_SRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}")
+  else()
+    add_compile_options(-DPROJECT_SRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
 endif()
 #################
 ## END - Build ##
@@ -184,10 +188,18 @@ endif()
 ## Testing       ##
 ###################
 if(ENABLE_TESTING)
+      
+  if(${CMAKE_VERSION} VERSION_GREATER  "3.16.0")
+      add_compile_definitions(PROJECT_SRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}")
+    else()
+      add_compile_options(-DPROJECT_SRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+
   if(USE_ROS1)
     add_rostest_gtest(${PROJECT_NAME}_test test/test.launch test/test.cpp)
     target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME} ${rostest_LIBRARIES} )
     target_compile_options(${PROJECT_NAME}_test PUBLIC $<$<CONFIG:Release>:-Ofast -funroll-loops -ffast-math >)
+    
 
     add_rostest_gtest(${PROJECT_NAME}_test_vectorization test/test_vectorization.launch test/test.cpp)
     target_link_libraries(${PROJECT_NAME}_test_vectorization ${PROJECT_NAME} ${rostest_LIBRARIES} )
@@ -204,6 +216,27 @@ if(ENABLE_TESTING)
         DEPENDENCIES ${PROJECT_NAME}_test
       )
     endif()
+  else()
+    include_directories(${GTEST_INCLUDE_DIRS})
+    add_executable(${PROJECT_NAME}_test test/test.cpp)
+    target_include_directories(${PROJECT_NAME}_test PUBLIC
+                            "$<BUILD_INTERFACE:${GTEST_INCLUDE_DIRS}>"
+                            "$<INSTALL_INTERFACE:${GTEST_INCLUDE_DIRS}>")
+    if(${CMAKE_VERSION} VERSION_GREATER  "3.16.0")
+      target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME} gtest Threads::Threads)
+    else()
+      target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME} gtest)
+      if(THREADS_HAVE_PTHREAD_ARG)
+        target_compile_options(${PROJECT_NAME}_test PUBLIC "-pthread")
+      endif()
+      if(CMAKE_THREAD_LIBS_INIT)
+        target_link_libraries(${PROJECT_NAME}_test "${CMAKE_THREAD_LIBS_INIT}")
+      endif()
+    endif()
+    target_compile_definitions(${PROJECT_NAME}_test PRIVATE TEST_DIR="${CMAKE_CURRENT_LIST_DIR}/test")
+    cnr_target_compile_options(${PROJECT_NAME}_test)
+
+    gtest_add_tests(${PROJECT_NAME}_test "${CMAKE_SOURCE_DIR}/test/config/" AUTO)
   endif()
 endif()
 ###################
