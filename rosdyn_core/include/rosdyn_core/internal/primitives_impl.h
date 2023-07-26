@@ -75,7 +75,7 @@ inline int enforceLimitsFromRobotDescriptionParam(double& Dq_max,
   return what.length()>0 ? 0 : 1;
 }
 
-inline Chain::Chain(const Chain& cpy)
+inline Chain::Chain(const Chain& cpy) : rdyn::Chain(cpy)
 {
 
   rosdyn::LinkPtr root_link = cpy.getLinks().front();

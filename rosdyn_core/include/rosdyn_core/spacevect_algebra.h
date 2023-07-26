@@ -26,18 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once  // NOLINT(build/header_guard)
-#include <string>
-#include <vector>
 
-# include <Eigen/Geometry>
-# include <Eigen/Core>
-
-namespace Eigen
-{
-typedef Matrix<double, 6,  1> Vector6d;
-typedef Matrix < double, 6, -1 > Matrix6Xd;
-typedef Matrix<double, 6, 6>  Matrix66d;
-}
+#include <rdyn_core/spacevect_algebra.h>
 
 
 
@@ -61,183 +51,135 @@ typedef Matrix<double, 6, 6>  Matrix66d;
  *
  */
 
-namespace rdyn
+namespace rosdyn
 {
 
 /* compute the skew-symmetric matrix of a vector
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Matrix3d skew(const Eigen::Vector3d& vec)
-{
-  Eigen::Matrix3d mat;
-  mat << 0, -vec(2), vec(1),
-      vec(2), 0, -vec(0),
-      -vec(1), vec(0), 0;
-  return mat;
-}
+{ return rdyn::skew(vec); }
+
 
 /* compute the vector from a skew-symmetric matrix
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Vector3d unskew(const Eigen::Matrix3d& mat)
-{
-  return Eigen::Vector3d(mat(2, 1), mat(0, 2), mat(1, 0));
-}
+{ return rdyn::unskew(mat);}
 
 /*
  * for twist
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline void spatialCrossProduct(const Eigen::Vector6d& vet1, const Eigen::Vector6d& vet2, Eigen::Vector6d* res)
-{
-  res->block(3, 0, 3, 1) = ((Eigen::Vector3d)(vet1.block(3, 0, 3, 1))).cross((Eigen::Vector3d)vet2.block(3, 0, 3, 1));
-  res->block(0, 0, 3, 1) = ((Eigen::Vector3d)(vet1.block(3, 0, 3, 1))).cross((Eigen::Vector3d)vet2.block(0, 0, 3, 1)) +
-                           ((Eigen::Vector3d)(vet1.block(0, 0, 3, 1))).cross((Eigen::Vector3d)vet2.block(3, 0, 3, 1));
-}
+{ return rdyn::spatialCrossProduct(vet1, vet2, res);}
 
 /*
  * for twist
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Vector6d spatialCrossProduct(const Eigen::Vector6d& vet1, const Eigen::Vector6d& vet2)
-{
-  Eigen::Vector6d res;
-  spatialCrossProduct(vet1, vet2, &res);
-  return res;
-}
+{ return rdyn::spatialCrossProduct(vet1, vet2);}
 
 /*
  * for wrench
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline void spatialDualCrossProduct(const Eigen::Vector6d& vet1, const Eigen::Vector6d& vet2, Eigen::Vector6d* res)
-{
-  res->block(3, 0, 3, 1) = ((Eigen::Vector3d)(vet1.block(3, 0, 3, 1))).cross((Eigen::Vector3d)vet2.block(3, 0, 3, 1)) +
-                           ((Eigen::Vector3d)(vet1.block(0, 0, 3, 1))).cross((Eigen::Vector3d)vet2.block(0, 0, 3, 1));
-  res->block(0, 0, 3, 1) = ((Eigen::Vector3d)(vet1.block(3, 0, 3, 1))).cross((Eigen::Vector3d)vet2.block(0, 0, 3, 1));
-}
+{ return rdyn::spatialDualCrossProduct(vet1, vet2, res);}
 
 /*
  * for wrench
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Vector6d spatialDualCrossProduct(const Eigen::Vector6d& vet1, const Eigen::Vector6d& vet2)
-{
-  Eigen::Vector6d res;
-  spatialDualCrossProduct(vet1, vet2, &res);
-  return res;
-}
+{ return rdyn::spatialDualCrossProduct(vet1, vet2);}
 
 /*
  * TWIST: Change point of application from a to b without changing thereference frame b.
  * translate the twist_of_a_in_b to the twist_of_c_in_b, where distance_from_a_to_c_in_b is the distance between the frames expressed in frame b
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline void spatialTranslation(const Eigen::Vector6d& twist_of_a_in_b, const Eigen::Vector3d& distance_from_a_to_c_in_b, Eigen::Vector6d* twist_of_c_in_b)
-{
-  (*twist_of_c_in_b) = twist_of_a_in_b;
-  twist_of_c_in_b->block(0, 0, 3, 1) = twist_of_a_in_b.block(0, 0, 3, 1) + ((Eigen::Vector3d)(twist_of_a_in_b.block(3, 0, 3, 1))).cross(distance_from_a_to_c_in_b);
-}
+{ return rdyn::spatialTranslation(twist_of_a_in_b, distance_from_a_to_c_in_b, twist_of_c_in_b);}
 
 /*
  * TWIST: Change point of application from a to b without changing thereference frame b.
  * translate the twist_of_a_in_b to the twist_of_c_in_b, where distance_from_a_to_c_in_b is the distance between the frames expressed in frame b
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Vector6d spatialTranslation(const Eigen::Vector6d& twist_of_a_in_b, const Eigen::Vector3d& distance_from_a_to_c_in_b)
-{
-  Eigen::Vector6d twist_of_c_in_b;
-  spatialTranslation(twist_of_a_in_b, distance_from_a_to_c_in_b, &twist_of_c_in_b);
-  return twist_of_c_in_b;
-}
+{ return rdyn::spatialTranslation(twist_of_a_in_b, distance_from_a_to_c_in_b);}
 
 /*
  * WRENCH: Change point of application from a to b without changing thereference frame b.
  * translate the wrench_of_a_in_b to the wrench_of_c_in_b, where distance_from_a_to_c_in_b is the distance between the frames expressed in frame b
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline void spatialDualTranslation(const Eigen::Vector6d& wrench_of_a_in_b, const Eigen::Vector3d& distance_from_a_to_c_in_b, Eigen::Vector6d* wrench_of_c_in_b)
-{
-  (*wrench_of_c_in_b) = wrench_of_a_in_b;
-  wrench_of_c_in_b->block(3, 0, 3, 1) = wrench_of_a_in_b.block(3, 0, 3, 1) + ((Eigen::Vector3d)(wrench_of_a_in_b.block(0, 0, 3, 1))).cross(distance_from_a_to_c_in_b);
-}
+{ return rdyn::spatialDualTranslation(wrench_of_a_in_b, distance_from_a_to_c_in_b, wrench_of_c_in_b);}
 
 /*
  * WRENCH: Change point of application from a to b without changing thereference frame b.
  * translate the wrench_of_a_in_b to the wrench_of_c_in_b, where distance_from_a_to_c_in_b is the distance between the frames expressed in frame b
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Vector6d spatialDualTranslation(const Eigen::Vector6d& wrench_of_a_in_b, const Eigen::Vector3d& distance_from_a_to_c_in_b)
-{
-  Eigen::Vector6d wrench_of_c_in_b;
-  spatialDualTranslation(wrench_of_a_in_b, distance_from_a_to_c_in_b, &wrench_of_c_in_b);
-  return wrench_of_c_in_b;
-}
+{ return rdyn::spatialDualTranslation(wrench_of_a_in_b, distance_from_a_to_c_in_b);}
 
 /*
  * TWIST AND WRENCH: change the reference frame without change the  point of application.
  * Rotate twist_of_a_in_b to twist_of_a_c, applying the rotation rot_b_c (= T_b_c.linear())
  * Rotate wrench_of_a_in_b to wrench_of_a_c, applying the rotation rot_b_c (= T_b_c.linear())
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline void spatialRotation(const Eigen::Vector6d& vec6_of_a_in_b, const Eigen::Matrix3d& rot_b_c, Eigen::Vector6d* vec6_of_a_in_c)
-{
-  (*vec6_of_a_in_c) << rot_b_c*vec6_of_a_in_b.block(0, 0, 3, 1), rot_b_c*vec6_of_a_in_b.block(3, 0, 3, 1);
-}
+{ return rdyn::spatialRotation(vec6_of_a_in_b, rot_b_c, vec6_of_a_in_c);}
 
 /*
  * TWIST AND WRENCH: change the reference frame without change the  point of application.
  * Rotate twist_of_a_in_b to twist_of_a_c, applying the rotation rot_b_c (= T_b_c.linear())
  * Rotate wrench_of_a_in_b to wrench_of_a_c, applying the rotation rot_b_c (= T_b_c.linear())
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Vector6d spatialRotation(const Eigen::Vector6d& vec6_of_a_in_b, const Eigen::Matrix3d& rot_b_c)
-{
-  Eigen::Vector6d vec6_of_a_in_c;
-  spatialRotation(vec6_of_a_in_b, rot_b_c, &vec6_of_a_in_c);
-  return vec6_of_a_in_c;
-}
+{ return rdyn::spatialRotation(vec6_of_a_in_b, rot_b_c);}
 
 /*
  * TWIST: change the reference frame and change the  point of application.
  * Rototraslation twist_of_a_in_a to twist_of_b_b, applying the transformation T_b_c
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline void spatialTranformation(const Eigen::Vector6d& twist_of_a_in_a, const Eigen::Affine3d& T_b_a, Eigen::Vector6d* twist_of_b_in_b)
-{
-  (*twist_of_b_in_b) << T_b_a.linear()*twist_of_a_in_a.block(0, 0, 3, 1) + ((Eigen::Vector3d)(twist_of_a_in_a.block(3, 0, 3, 1))).cross(T_b_a.translation()),
-  T_b_a.linear()*twist_of_a_in_a.block(3, 0, 3, 1);
-}
+{ return rdyn::spatialTranformation(twist_of_a_in_a, T_b_a, twist_of_b_in_b);}
 
 /*
  * TWIST: change the reference frame and change the  point of application.
  * Rototraslation twist_of_a_in_a to twist_of_b_b, applying the transformation T_b_a
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Vector6d spatialTranformation(const Eigen::Vector6d& twist_of_a_in_a, const Eigen::Affine3d& T_b_a)
-{
-  Eigen::Vector6d twist_of_b_in_b;
-  spatialTranformation(twist_of_a_in_a, T_b_a, &twist_of_b_in_b);
-  return twist_of_b_in_b;
-}
+{ return rdyn::spatialTranformation(twist_of_a_in_a, T_b_a);}
 
 /*
  * WRENCH: change the reference frame and change the  point of application.
  * Rototraslation wrench_of_a_in_a to wrench_of_b_b, applying the transformation T_b_a
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline void spatialDualTranformation(const Eigen::Vector6d& wrench_of_a_in_a, const Eigen::Affine3d& T_b_a, Eigen::Vector6d* wrench_of_b_b)
-{
-  (*wrench_of_b_b) << T_b_a.linear()*wrench_of_a_in_a.block(0, 0, 3, 1),
-  T_b_a.linear()*wrench_of_a_in_a.block(3, 0, 3, 1) + ((Eigen::Vector3d)(wrench_of_a_in_a.block(0, 0, 3, 1))).cross(T_b_a.translation());
-}
+{ return rdyn::spatialDualTranformation(wrench_of_a_in_a, T_b_a, wrench_of_b_b);}
 
 /*
  * WRENCH: change the reference frame and change the  point of application.
  * Rototraslation wrench_of_a_in_a to wrench_of_b_b, applying the transformation T_b_a
  */
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline Eigen::Vector6d spatialDualTranformation(const Eigen::Vector6d& wrench_of_a_in_a, const Eigen::Affine3d& T_b_a)
-{
-  Eigen::Vector6d wrench_of_b_b;
-  spatialDualTranformation(wrench_of_a_in_a, T_b_a, &wrench_of_b_b);
-  return wrench_of_b_b;
-}
+{ return rdyn::spatialDualTranformation(wrench_of_a_in_a, T_b_a); }
 
-
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
 inline void computeSpatialInertiaMatrix(const Eigen::Ref<Eigen::Matrix3d> inertia, const Eigen::Ref<Eigen::Vector3d> cog, const double& mass, Eigen::Ref<Eigen::Matrix<double, 6, 6>> spatial_inertia)
-{
-  Eigen::Matrix3d cog_skew = rdyn::skew(cog);
-  spatial_inertia.block(0, 0, 3, 3) = mass * Eigen::MatrixXd::Identity(3, 3);
-  spatial_inertia.block(0, 3, 3, 3) = mass * cog_skew.transpose();
-  spatial_inertia.block(3, 0, 3, 3) = mass * cog_skew;
-  spatial_inertia.block(3, 3, 3, 3) = inertia + mass * (cog_skew * cog_skew.transpose());
-}
-
+{ return rdyn::computeSpatialInertiaMatrix(inertia, cog, mass, spatial_inertia);}
 
 /*
  * Spatial integration:
@@ -248,17 +190,11 @@ inline void computeSpatialInertiaMatrix(const Eigen::Ref<Eigen::Matrix3d> inerti
  * R_ap_a = angleaxis( norm(w_a_in_a*dt), verso(w_a_in_a) )
  * w_a_in_a = Rba'*w_a_in_b
  */
-inline Eigen::Affine3d spatialIntegration(const Eigen::Affine3d& T_b_a, const Eigen::Ref<Eigen::Vector6d>& twist_of_a_in_b, const double& dt)
-{
-  Eigen::Affine3d T_b_ap=T_b_a;
-  T_b_ap.translation()+=twist_of_a_in_b.head(3)*dt;
+[[deprecated("Include rdyn_core/spacevect_agebra.h and use namespace rdyn")]]
+inline Eigen::Affine3d spatialIntegration(const Eigen::Affine3d& T_b_a, const Eigen::Ref<Eigen::Vector6d> twist_of_a_in_b, const double& dt)
+{ return rdyn::spatialIntegration(T_b_a, twist_of_a_in_b, dt); }
 
-  Eigen::Vector3d w_a_in_a=T_b_a.linear().transpose()*twist_of_a_in_b.tail(3);
-  double amplitude=w_a_in_a.norm();
-  Eigen::AngleAxisd R_ap_in_a=Eigen::AngleAxisd(amplitude*dt,w_a_in_a/amplitude);
-  T_b_ap.linear()=T_b_a.linear()*R_ap_in_a;
-  return T_b_ap;
-}
+}  // namespace rosdyn
 
-}  // namespace rdyn
+
 
