@@ -86,8 +86,8 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
   {
     if (!urdf_joint->limits)
     {
-      std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
-                << "' is malformed in the URDF! no limits are found. Using 1e10 as default" << std::endl;
+      ROS_DEBUG_STREAM( "[rosdyn core] Joint '" << urdf_joint->name
+                << "' is malformed in the URDF! no limits are found. Using 1e10 as default");
 
       m_q_max=1e10;
       m_q_min=-1e10;
@@ -100,20 +100,18 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
       m_q_min   = urdf_joint->limits->lower;
       if(m_q_max<=m_q_min)
       {
-        std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
+        ROS_DEBUG_STREAM("[rosdyn core] Joint '" << urdf_joint->name
                   << "' is malformed in the URDF! The range of motion is not specified properly "
-                  << "(upper: " << urdf_joint->limits->upper << ", lower: " << urdf_joint->limits->lower << ")" << std::endl;
-        std::cerr << "Superimposed +/-2 M_PI rad" << std::endl;
+                  << "(upper: " << urdf_joint->limits->upper << ", lower: " << urdf_joint->limits->lower << ") Superimposed +/-2 M_PI rad");
         m_q_max = 2 * M_PI;
         m_q_min = -2 * M_PI;
       }
       m_Dq_max  = urdf_joint->limits->velocity;
       if(m_Dq_max<=0.0)
       {
-        std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
+        ROS_DEBUG_STREAM("[rosdyn core] Joint '" << urdf_joint->name
                   << "' is malformed in the URDF! The max velocity isn't positive (vel: "
-                  << urdf_joint->limits->velocity <<")" << std::endl;
-        std::cerr << "Superimposed 2 * M_PI rad / sec" << std::endl;
+                  << urdf_joint->limits->velocity <<") Superimposed 2 * M_PI rad / sec" );
         m_Dq_max = 2 * M_PI ;
       }
       m_DDq_max = 10.0 * m_Dq_max;
@@ -124,8 +122,8 @@ inline void Joint::fromUrdf(const urdf::JointPtr& urdf_joint, const rosdyn::Link
   {
     if (!urdf_joint->limits)
     {
-      std::cerr<<  "[rosdyn core] Joint '" << urdf_joint->name
-                << "' is malformed in the URDF! no limits are found. Using 1e10 as default" << std::endl;
+      ROS_DEBUG_STREAM("[rosdyn core] Joint '" << urdf_joint->name
+                << "' is malformed in the URDF! no limits are found. Using 1e10 as default" );
 
       m_q_max=1e10;
       m_q_min=-1e10;
@@ -774,10 +772,10 @@ inline bool Chain::setInputJointsName(const std::vector< std::string >& joints_n
     m_DDq_max(idx) = jnt->getDDQMax();
     m_tau_max(idx) = jnt->getTauMax();
   }
-  ROS_DEBUG_STREAM("limits:\n q max= " << m_q_max.transpose()
-                   << "\nq min = " << m_q_min.transpose()
-                   << "\nDq max = " << m_Dq_max.transpose()
-                   << "\ntau max = " << m_tau_max.transpose());
+  ROS_DEBUG_STREAM("limits: q max: [" << m_q_max.transpose() 
+                   << "] q min: [" << m_q_min.transpose()
+                   << "] Dq max: [" << m_Dq_max.transpose()
+                   << "] tau max [" << m_tau_max.transpose() <<"]");
 
   // for QP local IK
   m_CE.resize(m_active_joints_number, 0);
