@@ -1252,7 +1252,7 @@ inline bool Chain::computeLocalIk(Eigen::VectorXd& sol, const Eigen::Affine3d &T
   assert(seed.size()==m_q_min.size());
   sol = seed;
 
-  while(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - ti).count() < max_time_s)
+  while(std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - ti).count() < 1e3*max_time_s)
   {
 
     rdyn::getFrameDistance(T_b_t, getTransformation(sol), m_cart_error_in_b);
@@ -1289,7 +1289,7 @@ inline bool Chain::computeWeigthedLocalIk(Eigen::VectorXd& sol, const Eigen::Aff
 
   sol = seed;
 
-  while(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - ti).count() < max_time_s)
+  while(std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - ti).count() < 1e3*max_time_s)
   {
     rdyn::getFrameDistance(T_b_t, getTransformation(sol), m_cart_error_in_b);
 
