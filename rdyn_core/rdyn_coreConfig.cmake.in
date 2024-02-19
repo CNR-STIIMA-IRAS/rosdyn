@@ -12,7 +12,6 @@ include("${rdyn_core_DIR}/export_rdyn_core.cmake")
 include(CMakeFindDependencyMacro)
 find_dependency(eigen_matrix_utils REQUIRED)
 find_dependency(kinematics_filters REQUIRED)
-find_dependency(urdf REQUIRED)
 
 
 # These are IMPORTED targets created by rdyn_coreTargets.cmake
