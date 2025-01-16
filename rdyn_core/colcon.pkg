@@ -1,0 +1,3 @@
+{
+    "hooks": ["share/rdyn_core/hook/ament_prefix_path.dsv", "share/rdyn_core/hook/python_path.dsv"]
+}
