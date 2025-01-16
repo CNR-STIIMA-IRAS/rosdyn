@@ -19,6 +19,7 @@ option(ENABLE_COVERAGE_TESTING  "ENABLE COVERAGE TESTING" OFF)
 option(BUILD_EXAMPLE            "COMPILE THE EXAMPLE" ON)
 option(MAX_NUM_AXES             "Change from allocation in heap (MAX_NUM_AXES=-1) to allocation in stack (MAX_NUM_AXES>0)." -1)
 option(USE_RAW_POINTERS         "Use raw pointer instead of shared pointer (code optimization)" FALSE)
+option(PYBIND                   "Create Python bindings" ON)
 #############################
 ## END - OPTIONS           ##
 #############################
@@ -80,6 +81,40 @@ endif()
 ## END - Build ##
 #################
 
+##########################
+## ## - Python Bindings ##
+##########################
+
+if(PYBIND)
+  find_package(Python COMPONENTS REQUIRED
+    Interpreter
+    Development)
+
+  find_package(pybind11 CONFIG REQUIRED)
+
+  set(PYTHON_BINDINGS_PATH "${CMAKE_SOURCE_DIR}/python/bindings.cpp")
+  pybind11_add_module(rdyn_py ${PYTHON_BINDINGS_PATH})
+
+  target_include_directories(rdyn_py PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include> #if BUILD_INTERFACE, add ${CMAKE_SOURCE_DIR}/include (headers taken by source directory)
+    $<INSTALL_INTERFACE:include> # if INSTALL_INTERFACE, add header from install path
+  )
+
+  target_link_libraries(rdyn_py PRIVATE
+    rdyn_core::rdyn_core
+  )
+
+  install(TARGETS rdyn_py
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin)
+
+endif()
+
+###########################
+## END - Python Bindings ##
+###########################
+
 ### #############
 ### ## Install ##
 ### #############
@@ -123,7 +158,6 @@ add_custom_command(
     COMMAND xargs rm -vf < install_manifest.txt || echo Nothing in
             install_manifest.txt to be uninstalled!
 )
-
 
 ### install(DIRECTORY include/${PROJECT_NAME}
 ###         DESTINATION ${CNR_INSTALL_INCLUDE_DIR}
@@ -210,4 +244,3 @@ endif()
 ###################
 ## END - Testing ##
 ###################
-
