@@ -11,7 +11,25 @@ PYBIND11_MODULE(rdyn_py, m) {
       py::arg("q"),
       py::arg("Dq"),
       py::arg("DDq")
-    );
+    )
+    .def("getJointTorque", [](rdyn::Chain& self,
+                              const Eigen::VectorXd& q,
+                              const Eigen::VectorXd& Dq,
+                              const Eigen::VectorXd& DDq) -> Eigen::VectorXd
+      {
+        return self.getJointTorque(q, Dq, DDq);
+      },
+      py::arg("q"),
+      py::arg("Dq"),
+      py::arg("DDq")
+    )
+    .def("getMoveableJointNames", &rdyn::Chain::getMoveableJointNames)
+    .def("getLinksNumber", &rdyn::Chain::getLinksNumber)
+    .def("getJointsNumber", &rdyn::Chain::getJointsNumber)
+    .def("getActiveJointsNumber", &rdyn::Chain::getActiveJointsNumber)
+    .def("getActiveJointsName", &rdyn::Chain::getActiveJointsName)
+    .def("getLinksName", &rdyn::Chain::getLinksName)
+    .def("getNominalParameters", &rdyn::Chain::getNominalParameters);
 
   m.def("createChain", [](const std::string& file,
                                const std::string& base_frame,
