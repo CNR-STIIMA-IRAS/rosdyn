@@ -1,0 +1,4 @@
+- git:
+    local-name: common/cnr_control_toolbox
+    uri: https://github.com/CNR-STIIMA-IRAS/cnr_control_toolbox
+    version: modern_cmake
