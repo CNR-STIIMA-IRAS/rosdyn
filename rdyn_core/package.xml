@@ -17,7 +17,7 @@
   <buildtool_depend>cmake</buildtool_depend>
 
   
-  <depend>urdfdom</depend>
+  <depend>liburdfdom-dev</depend>
   <depend>cnr_control_toolbox</depend>
   <export>
   </export>
