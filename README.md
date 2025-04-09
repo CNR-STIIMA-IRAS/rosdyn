@@ -1,18 +1,27 @@
 ![](Documentation/rosdyn_logo.png)
 
 
-ROSdyn implements a fully automated procedure able to calibrate the robot dynamics model.
+Rdyn is a C++ library to compute kinematics and dynamics of serial robots.
+This includes computations of Jacobians, forward and inverse kinematics, dynamics matrices and so on.
 
-It is integrated with MoveIt! to automatically compute, simulate, and execute identification trajectory. The result is stored in a URDF file.
+__IMPORTANT__ rosdyn_identification has been moved [here](https://github.com/CNR-STIIMA-IRAS/rosdyn_identification).
+
 
 ## Build/Installation
 
-The software can be installed with the following [rosinstall file](rosdyn.rosinstall).
+### Requirements
 
-Travis CI Kinetic Build: [![Build Status](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn.svg?branch=melodic-devel)](https://travis-ci.org/CNR-STIIMA-IRAS/rosdyn)
+```
+sudo apt install liburdfdom-dev liburdfdom-headers-dev liburdfdom-tools
+git clone -- branch modern_cmake cnr_control_toolbox: https://github.com/CNR-STIIMA-IRAS/cnr_control_toolbox.git
+```
 
+### Usage with ROS
 
-__IMPORTANT__ rosdyn_identification has been moved [here](https://github.com/CNR-STIIMA-IRAS/rosdyn_identification).
+To use with ROS:
+- For ROS2, just clone the repo in your workspace and build with colcon.
+- For ROS1, just clone the repo in your workspace, do ```catkin config --install```, and build with catkin.
+
 
 ## List of packages
 
